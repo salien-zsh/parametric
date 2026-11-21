@@ -1,0 +1,27 @@
+node_modules/
+
+# Local build and test output
+dist/
+desktop-release/
+desktop-final/
+desktop-out/
+test-results/
+playwright-report/
+coverage/
+
+# Local tooling and unrelated nested repositories
+.workbuddy/
+AutoParametric/
+tools/i18n/.backup/
+
+# Local credentials and signing material
+.env
+.env.*
+*.pfx
+*.p12
+*.pem
+*.key
+
+*.log
+.DS_Store
+Thumbs.db

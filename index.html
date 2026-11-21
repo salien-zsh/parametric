@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>参数化三维设计</title>
+    <meta name="description" content="浏览器中的参数化三维零件、装配与工程图工具：约束草图、B-rep 特征建模、零部件放置、物料清单，以及 STEP、STL、SVG 与 PDF 导出。" />
+    <link rel="canonical" href="https://parametric.puter.com/" />
+    <meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1f2226" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="参数化三维设计" />
+    <meta property="og:title" content="参数化三维设计 — 开源零件、装配与工程图 CAD" />
+    <meta property="og:description" content="基于特征的开源三维 CAD，支持零件建模、零部件装配、工程图和物料清单。" />
+    <meta property="og:url" content="https://parametric.puter.com/" />
+    <meta property="og:image" content="https://parametric.puter.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="参数化三维设计界面，等轴测视图中显示一个拉伸零件。" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="参数化三维设计 — 开源零件、装配与工程图 CAD" />
+    <meta name="twitter:description" content="基于特征的开源三维 CAD，支持零件建模、零部件装配、工程图和物料清单。" />
+    <meta name="twitter:image" content="https://parametric.puter.com/og-image.png" />
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="./favicon-16.png" type="image/png" sizes="16x16" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180" />
+    <link rel="manifest" href="./manifest.json" />
+    <script>
+      // 首屏前解析主题，避免闪烁。
+      (function () {
+        var root = document.documentElement, t = 'system';
+        try { t = localStorage.getItem('parametric:theme') || 'system'; } catch (e) {}
+        var dark = t === 'dark' || (t === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+        root.dataset.theme = t;
+        root.dataset.themeResolved = dark ? 'dark' : 'light';
+      })();
+    </script>
+    <script>
+      // 桌面版由 preload 注入本地 SDK 垫片，完全离线，不加载任何外部脚本。
+      // 浏览器版仍按需加载 Puter SDK 与统计脚本（加载失败时 loadPuter 会自动降级）。
+      if (!window.desktopAPI) {
+        var s = document.createElement('script');
+        s.src = 'https://js.puter.com/v2/';
+        s.onerror = function () { window.__puterFailed = true; };
+        document.head.appendChild(s);
+        var a = document.createElement('script');
+        a.async = true;
+        a.src = 'https://plausible.io/js/pa-QfcEKlwntvJJ6OH6sc-As.js';
+        document.head.appendChild(a);
+      }
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳转到图形区</a>
+    <div id="app" aria-busy="true"></div>
+    <div id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+    <noscript>参数化三维设计需要启用 JavaScript 才能运行。</noscript>
+  </body>
+</html>

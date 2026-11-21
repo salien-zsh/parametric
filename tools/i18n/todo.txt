@@ -1,0 +1,193 @@
+001| (conflict)
+002| (projected)
+003| (redundant)
+004| portrait
+005|2. Draw
+006|3. Constrain
+007|4. Build
+008|A1 (841 x 594 mm)
+009|A2 (594 x 420 mm)
+010|A3 (420 x 297 mm)
+011|A4 (297 x 210 mm)
+012|Actions
+013|Add centerline
+014|Alpha
+015|Apps
+016|Arrange views
+017|Arrow keys
+018|Assistant
+019|Bevel selected edges.
+020|Blend between profiles to remove material.
+021|Blend between two or more profiles.
+022|Boss/Base
+023|Can edit
+024|Can edit and share
+025|Can view
+026|Cancel or clear selection
+027|Chamfer1
+028|Click a planar face to place at least one hole
+029|Click a planar face to place holes. Each click adds a hole. Edit the positions sketch afterwards to dimension them.
+030|Click one corner, then the opposite corner.
+031|Click the centre, then a corner.
+032|CommandManager
+033|Constrain
+034|Context menu of the feature in the design tree
+035|Could not open the STEP file
+036|Could not open the SolidWorks part
+037|Counterbore
+038|Countersink
+039|Create a reference plane offset from a plane or face.
+040|Current
+041|DATE
+042|DRAWN BY
+043|Default units for new parts
+044|Dimetric
+045|Dims
+046|Discard
+047|Discard changes and exit sketch
+048|Discard sketch changes
+049|Display
+050|Double-click a feature in the design tree or a face in the model to edit it. Everything after it rebuilds.
+051|Draft outward
+052|Draw
+053|Driven (reference only)
+054|Edited
+055|Editing sketch. Select entities or pick a sketch tool.
+056|Empty sketch
+057|End condition
+058|Enter a finite, positive density.
+059|Entities
+060|Equal spacing
+061|Esc
+062|Evaluate
+063|Exit sketch
+064|Exit the sketch and use Extruded Boss, Revolved Boss or a Cut. Then add fillets, chamfers, holes, shells and patterns.
+065|Extend
+066|Extrude1
+067|F6, Shift + F6
+068|Fillet1
+069|For construction
+070|Fully Defined
+071|Fully defined.
+072|Getting started
+073|Give arcs and circles the same centre. Pick two arcs or circles, or a point and an arc or circle.
+074|Give two lines the same length, or two arcs or circles the same radius. Pick two of them.
+075|Glass
+076|Hold sketch geometry where it is. Pick the geometry to fix.
+077|Hole1
+078|Hollow out the part, optionally removing faces.
+079|Image quality
+080|Insert
+081|It will be moved to your Puter Trash.
+082|Landscape
+083|Letter (11 x 8.5 in)
+084|Loading...
+085|Make a curve touch another without crossing it. Pick a line and an arc or circle, or two arcs or circles.
+086|Make a point lie on another point, or on a line, arc, circle or spline. Pick two points, or a point and a curve. Model edges and vertices work too.
+087|Make dimension driven
+088|Make dimension driving
+089|Make lines horizontal, or line up points horizontally. Pick a line, or two points.
+090|Make lines vertical, or line up points vertically. Pick a line, or two points.
+091|Make two lines parallel. Pick two lines.
+092|Make two lines perpendicular. Pick two lines.
+093|Middle drag, right drag or left drag on the model
+094|Mirror features or the body about a plane.
+095|Mirror two points, lines, arcs or circles about a line. Pick the two, then the line.
+096|Model
+097|New sketch
+098|Next or previous area (menu bar, CommandManager, design tree, graphics area, task pane, status bar, notifications)
+099|No constraints
+100|No parts saved in this browser yet. Sign in to Puter to keep parts in your cloud storage.
+101|No parts saved in this browser.
+102|No saved parts yet.
+103|Not in the sketch yet: adding a constraint projects it, linked to the model.
+104|Nothing trimmed. Click between intersections on a line, arc, or circle.
+105|Notifications
+106|Oak
+107|Open a part file, or a STEP or SolidWorks file
+108|Open a part from your Puter cloud or this browser
+109|Open a part saved in this browser
+110|Open in new tab
+111|Origins
+112|Over Defined
+113|Panels
+114|Parametric
+115|Part1
+116|Parts in this browser
+117|Path
+118|Pine
+119|Polycarbonate
+120|Projected from a model edge
+121|Projected from a model vertex
+122|Projected: model edge not found
+123|Put a point at the middle of a line. Pick a point and a line.
+124|Put two lines on the same infinite line. Pick two lines.
+125|Quick actions
+126|Ready
+127|Rename the feature in the design tree
+128|Reopen
+129|Reopen it to see those changes.
+130|Repeat features along one or two directions.
+131|Repeat features around an axis.
+132|Replace
+133|Restore
+134|Reverse (inward)
+135|Revolve a sketch around an axis to add material.
+136|Revolve1
+137|Right click or long press
+138|Roll
+139|Rotate view normal to the sketch plane when editing a sketch
+140|Round selected edges.
+141|Ruled (straight) sections
+142|Save the part to your Puter cloud first, then share it.
+143|Save to your Puter cloud (or this browser), or export STEP and STL files.
+144|Saved
+145|Saving here replaces that version.
+146|Select a chain of sketch curves before starting, then set the distance.
+147|Select a plane (Front, Top or Right) or a flat face and click Sketch. The view turns to face the plane.
+148|Select a plane or planar face
+149|Select a profile and a path
+150|Select at least two profile sketches
+151|Select in the graphics area
+152|Select sketch curves to offset first.
+153|Select sketch entities, drag them, or pick a sketch tool.
+154|Selections
+155|Sharing...
+156|Shell outward
+157|Shortcut bar
+158|Simple
+159|Simple, counterbored or countersunk holes on a face.
+160|Sketch1
+161|Sketch2
+162|Space
+163|Start from a blank part
+164|Sweep a profile along a path to remove material.
+165|Sweep a profile along a path.
+166|Tabloid (17 x 11 in)
+167|Taper faces relative to a neutral plane.
+168|This STEP file is too large to import (60 MB limit).
+169|This SolidWorks file is too large to open (200 MB limit).
+170|This cannot be undone.
+171|This file is too large to open as a part (200 MB limit).
+172|This geometry is fully defined, so it cannot be dragged.
+173|Trim
+174|Trimetric
+175|Two fingers
+176|Under Defined
+177|Unlink
+178|Use Line (L), Rectangle (R), Circle (C) and the other tools. Geometry snaps to points, midpoints and horizontal or vertical directions and adds matching constraints.
+179|Use Smart Dimension (D) to set sizes, and the Constrain group of the Sketch tab (Coincident, Parallel, Tangent...) to fix how geometry relates. Convert Entities projects model edges into the sketch, linked to the model. Blue geometry can still move; black is fully defined; red conflicts.
+180|Value must be greater than zero
+181|Variable names must be unique.
+182|View only
+183|Wheel, Shift + middle drag, pinch
+184|You already own this part.
+185|Your parts
+186|Zoom at cursor
+187|dX, dY, dZ
+188|it was
+189|not a valid value
+190|open an example
+191|open another part
+192|the part
+193|they were

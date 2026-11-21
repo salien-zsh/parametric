@@ -1,0 +1,230 @@
+// Builds the application chrome: title bar (brand, menus, quick access,
+// document title, command search, GitHub link, Apps launcher, account; or
+// puter.js's <puter-user-menu> in place of the last two), CommandManager
+// (tool groups and tabs), left pane, viewport host, task pane and status bar.
+
+import { h, formatShortcut } from '../ui/dom';
+import { icon } from '../ui/icons';
+import { attachTooltip } from '../ui/overlay';
+import { dropdown, type MenuItem, closeMenus } from '../ui/menu';
+import type { CommandRegistry } from './commands';
+import { appsButton } from './apps-panel';
+import { userMenuElement } from './user-menu';
+import { tr } from '../i18n';
+
+export const REPO_URL = 'https://github.com/salien-zsh/parametric';
+
+export type RibbonItem =
+  | { cmd: string; size?: 'big' | 'row'; menu?: string[] }
+  | { stack: { cmd: string; menu?: string[] }[] };
+
+export interface RibbonTab {
+  id: string;
+  label: string;
+  groups: RibbonItem[][];
+  /** Names of the groups, shown under them. */
+  labels?: string[];
+}
+
+export interface Shell {
+  root: HTMLElement;
+  menubar: HTMLElement;
+  docTitle: HTMLButtonElement;
+  docState: HTMLElement;
+  search: HTMLInputElement;
+  searchResults: HTMLElement;
+  account: HTMLButtonElement;
+  apps: HTMLButtonElement;
+  /** puter.js's <puter-user-menu>, when the loaded SDK defines it (see user-menu.ts). */
+  userMenu: HTMLElement | null;
+  cmTools: HTMLElement;
+  cmTabs: HTMLElement;
+  leftpane: HTMLElement;
+  lpTabs: HTMLElement;
+  lpBody: HTMLElement;
+  splitter: HTMLElement;
+  viewport: HTMLElement;
+  hud: HTMLElement;
+  confirm: HTMLElement;
+  taskpane: HTMLElement;
+  tpStrip: HTMLElement;
+  tpPanel: HTMLElement;
+  statusMsg: HTMLElement;
+  statusSketch: HTMLButtonElement;
+  statusUnits: HTMLButtonElement;
+  statusRebuild: HTMLElement;
+  statusCoords: HTMLElement;
+  treeToggle: HTMLButtonElement;
+  mobileMenu: HTMLButtonElement;
+}
+
+/** Button bound to a command, kept in sync with enabled/checked state. */
+export function commandButton(cmds: CommandRegistry, id: string, variant: 'icon' | 'big' | 'row' = 'icon', size = 18, menu?: string[]): HTMLElement {
+  const c = cmds.get(id);
+  if (!c) throw new Error(`Unknown command ${id}`);
+  let b: HTMLButtonElement;
+  if (variant === 'icon') {
+    b = h('button', { class: 'icon-btn', type: 'button', 'aria-label': c.label, 'data-cmd': id }, icon(c.icon ?? 'settings', size)) as HTMLButtonElement;
+  } else {
+    b = h('button', { class: `tool${variant === 'row' ? ' row' : ''}`, type: 'button', 'data-cmd': id },
+      icon(c.icon ?? 'settings', variant === 'big' ? 26 : 16), h('span', { class: 'lbl' }, c.label)) as HTMLButtonElement;
+  }
+  attachTooltip(b, c.label, c.shortcut, c.description);
+  b.addEventListener('click', () => cmds.run(id));
+  if (!menu || variant === 'icon') return b;
+  // Split button: the caret is a separate button (never nested in the main one).
+  const caret = h('button', { class: 'tool-caret', type: 'button', 'aria-label': `More ${c.label} options`, 'aria-haspopup': 'menu', 'aria-expanded': 'false' }, icon('chevronDown', 10));
+  caret.addEventListener('click', () => {
+    dropdown(caret, menu.map((m) => {
+      const mc = cmds.get(m)!;
+      return { label: mc.label, icon: mc.icon, shortcut: mc.shortcut, disabled: !cmds.isEnabled(m), run: () => cmds.run(m) };
+    }), { label: `${c.label} options` });
+  });
+  return h('div', { class: 'tool-split' }, b, caret);
+}
+
+export function syncCommandButtons(root: ParentNode, cmds: CommandRegistry) {
+  for (const b of root.querySelectorAll<HTMLButtonElement>('[data-cmd]')) {
+    const id = b.dataset.cmd!;
+    const c = cmds.get(id);
+    if (!c) continue;
+    b.disabled = !cmds.isEnabled(id);
+    if (c.checked) b.setAttribute('aria-pressed', String(cmds.isChecked(id)));
+  }
+}
+
+export function buildShell(cmds: CommandRegistry, menus: { label: string; items: () => MenuItem[] }[]): Shell {
+  const menubar = h('nav', { class: 'menubar', role: 'menubar', 'aria-label': tr("Main menu") });
+  const menuButtons: HTMLButtonElement[] = [];
+  let menuOpenIndex = -1;
+  const openAt = (i: number) => {
+    const b = menuButtons[(i + menuButtons.length) % menuButtons.length];
+    const idx = menuButtons.indexOf(b);
+    menuOpenIndex = idx;
+    dropdown(b, menus[idx].items(), {
+      label: menus[idx].label,
+      onNavigate: (d) => { closeMenus(); openAt(idx + d); },
+      onClose: () => { if (menuOpenIndex === idx) menuOpenIndex = -1; },
+    });
+  };
+  menus.forEach((m, i) => {
+    const b = h('button', { role: 'menuitem', 'aria-haspopup': 'menu', 'aria-expanded': 'false', type: 'button', tabindex: i === 0 ? '0' : '-1' }, m.label) as HTMLButtonElement;
+    b.addEventListener('click', () => openAt(i));
+    b.addEventListener('pointerenter', () => { if (menuOpenIndex >= 0 && menuOpenIndex !== i) { closeMenus(); openAt(i); } });
+    b.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); menuButtons[(i + 1) % menuButtons.length].focus(); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); menuButtons[(i - 1 + menuButtons.length) % menuButtons.length].focus(); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); openAt(i); }
+    });
+    menuButtons.push(b);
+    menubar.append(b);
+  });
+
+  const mobileMenu = h('button', { class: 'icon-btn mobile-only', type: 'button', 'aria-label': tr("Menu"), 'aria-haspopup': 'menu' }, icon('menu', 20)) as HTMLButtonElement;
+  mobileMenu.addEventListener('click', () => {
+    dropdown(mobileMenu, menus.map((m) => ({ label: m.label, submenu: m.items })), { label: tr("Menu") });
+  });
+
+  const quick = h('div', { class: 'quick', role: 'toolbar', 'aria-label': tr("Quick access") },
+    commandButton(cmds, 'new'), commandButton(cmds, 'open'), commandButton(cmds, 'save'),
+    h('span', { class: 'tb-sep hide-mobile' }),
+    commandButton(cmds, 'undo'), commandButton(cmds, 'redo'),
+    h('span', { class: 'tb-sep hide-mobile' }),
+    (() => { const b = commandButton(cmds, 'rebuild'); b.classList.add('hide-mobile'); return b; })(),
+    (() => { const b = commandButton(cmds, 'options'); b.classList.add('hide-tablet', 'hide-mobile'); return b; })());
+  for (const b of quick.querySelectorAll<HTMLElement>('[data-cmd="new"], [data-cmd="open"]')) b.classList.add('hide-mobile');
+
+  const docTitle = h('button', { class: 'doc-title', type: 'button', title: tr("Rename part") }, tr("Part1")) as HTMLButtonElement;
+  const docState = h('span', { class: 'doc-state', 'aria-live': 'polite' });
+  const search = h('input', { type: 'search', placeholder: tr("Search commands"), 'aria-label': tr("Search commands"), autocomplete: 'off', role: 'combobox', 'aria-expanded': 'false', 'aria-controls': 'cmd-results', 'aria-autocomplete': 'list' }) as HTMLInputElement;
+  const searchResults = h('div', { class: 'cmd-results', role: 'listbox', id: 'cmd-results', hidden: true });
+  const github = h('a', { class: 'icon-btn', href: REPO_URL, target: '_blank', rel: 'noopener noreferrer', 'aria-label': tr("Source code on GitHub") }, icon('github', 18));
+  attachTooltip(github, tr("Source code on GitHub"));
+  const apps = appsButton();
+  const account = h('button', { class: 'avatar-btn', type: 'button', 'aria-label': tr("Account"), 'aria-haspopup': 'menu' }) as HTMLButtonElement;
+  // puter.js was loaded (deferred) before this module ran, so it has defined
+  // <puter-user-menu> by now if it has one. Where it renders, the app's own
+  // launcher and account button stand down from the first paint.
+  const userMenu = userMenuElement();
+  if (userMenu && !userMenu.hidden) apps.hidden = account.hidden = true;
+
+  const titlebar = h('header', { class: 'titlebar' },
+    mobileMenu,
+    h('div', { class: 'tb-brand' }, h('img', { src: './icon-128.png', alt: '' }), h('span', { class: 'name' }, tr("Parametric")), h('span', { class: 'alpha-tag', title: tr("Early alpha") }, tr("Alpha"))),
+    menubar, h('span', { class: 'tb-sep hide-mobile' }), quick,
+    h('div', { class: 'tb-center' }, docTitle, docState),
+    h('div', { class: 'tb-right' }, h('div', { class: 'cmd-search' }, icon('search', 14), search, searchResults),
+      commandButton(cmds, 'assistant'),
+      (() => { const b = commandButton(cmds, 'share'); b.classList.add('hide-mobile'); return b; })(), github, apps, account, userMenu));
+
+  const cmTools = h('div', { class: 'cm-tools', role: 'toolbar', 'aria-label': tr("Commands") });
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => fitRibbon(cmTools)).observe(cmTools);
+  // A narrow window clips the tools on the right and the strip has no
+  // scrollbar: a plain mouse wheel scrolls it sideways (trackpads and touch
+  // already can).
+  cmTools.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.deltaX || !e.deltaY || cmTools.scrollWidth <= cmTools.clientWidth) return;
+    e.preventDefault();
+    cmTools.scrollLeft += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+  }, { passive: false });
+  const cmTabs = h('div', { class: 'cm-tabs', role: 'tablist', 'aria-label': tr("Command groups") });
+  const cm = h('section', { class: 'cm', 'aria-label': tr("CommandManager") }, cmTools, cmTabs);
+
+  const lpTabs = h('div', { class: 'lp-tabs' });
+  const lpBody = h('div', { class: 'lp-body', id: 'left-panel' });
+  const leftpane = h('aside', { class: 'leftpane', 'aria-label': tr("Design tree and properties") }, lpTabs, lpBody);
+  const splitter = h('div', { class: 'splitter', role: 'separator', 'aria-orientation': 'vertical', 'aria-label': tr("Resize panel"), tabindex: '0', 'aria-valuemin': '200', 'aria-valuemax': '520', 'aria-valuenow': '280' });
+  const hud = h('div', { class: 'hud', role: 'toolbar', 'aria-label': tr("View") });
+  const confirm = h('div', { class: 'confirm-corner', hidden: true });
+  const viewport = h('section', { class: 'viewport', id: 'main', 'aria-label': tr("Graphics area") }, hud, confirm);
+  const tpStrip = h('div', { class: 'tp-strip', role: 'tablist', 'aria-label': tr("Task pane"), 'aria-orientation': 'vertical' });
+  const tpPanel = h('div', { class: 'tp-panel', hidden: true });
+  const taskpane = h('aside', { class: 'taskpane', 'aria-label': tr("Task pane") }, tpStrip, tpPanel);
+  const workspace = h('main', { class: 'workspace' }, leftpane, splitter, viewport, taskpane);
+
+  const treeToggle = h('button', { class: 'cell mobile-only', type: 'button', 'aria-label': tr("Show design tree"), 'aria-expanded': 'false', 'aria-controls': 'left-panel' }, icon('tree', 14), tr("Tree")) as HTMLButtonElement;
+  const statusMsg = h('span', { class: 'msg', role: 'status', 'aria-live': 'polite' });
+  const statusCoords = h('span', { class: 'cell hide-mobile', 'aria-live': 'off' });
+  const statusRebuild = h('span', { class: 'cell hide-mobile', title: tr("Time of the last rebuild") });
+  const statusSketch = h('button', { class: 'cell', type: 'button', hidden: true }) as HTMLButtonElement;
+  const statusUnits = h('button', { class: 'cell', type: 'button', 'aria-haspopup': 'menu', title: tr("Unit system") }, 'MMGS') as HTMLButtonElement;
+  const statusbar = h('footer', { class: 'statusbar' }, treeToggle, statusMsg, statusCoords, statusSketch, statusRebuild, statusUnits);
+
+  const root = h('div', { class: 'app' }, titlebar, cm, workspace, statusbar);
+  return {
+    root, menubar, docTitle, docState, search, searchResults, account, apps, userMenu, cmTools, cmTabs, leftpane, lpTabs, lpBody, splitter, viewport, hud,
+    confirm, taskpane, tpStrip, tpPanel, statusMsg, statusSketch, statusUnits, statusRebuild, statusCoords, treeToggle, mobileMenu,
+  };
+}
+
+/** Renders one CommandManager tab's tools. */
+export function renderRibbon(target: HTMLElement, tab: RibbonTab, cmds: CommandRegistry) {
+  target.textContent = '';
+  tab.groups.forEach((group, i) => {
+    const name = tab.labels?.[i];
+    const g = h('div', { class: 'cm-group', role: 'group', ...(name ? { 'aria-label': name, 'data-group': name.toLowerCase() } : {}) });
+    for (const it of group) {
+      if ('stack' in it) {
+        const st = h('div', { class: 'cm-stack' });
+        for (const s of it.stack) st.append(commandButton(cmds, s.cmd, 'row', 16, s.menu));
+        g.append(st);
+      } else g.append(commandButton(cmds, it.cmd, it.size === 'row' ? 'row' : 'big', 26, it.menu));
+    }
+    target.append(g);
+  });
+  syncCommandButtons(target, cmds);
+  fitRibbon(target);
+}
+
+/**
+ * When a tab's tools are wider than the window, groups that can (the sketch
+ * constraints) show their row buttons as icons only, named in tooltips.
+ */
+export function fitRibbon(tools: HTMLElement) {
+  tools.classList.remove('compact');
+  if (tools.scrollWidth > tools.clientWidth + 1) tools.classList.add('compact');
+}
+
+export function shortcutLabel(s?: string) {
+  return formatShortcut(s);
+}

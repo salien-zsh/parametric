@@ -1,0 +1,92 @@
+name: Parametric desktop release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "desktop/**"
+      - "public/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - "tsconfig.json"
+      - ".github/workflows/parametric-desktop-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: parametric-desktop-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Check out source and tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Choose the next patch version
+        shell: pwsh
+        run: |
+          $current = [version]((Get-Content package.json -Raw | ConvertFrom-Json).version)
+          $major = $current.Major
+          $minor = $current.Minor
+          $patch = $current.Build
+          do {
+            $version = "$major.$minor.$patch"
+            $tag = "parametric-v$version"
+            if (-not (git tag --list $tag)) { break }
+            $patch++
+          } while ($true)
+          npm version $version --no-git-tag-version
+          "APP_VERSION=$version" >> $env:GITHUB_ENV
+          Write-Host "Building desktop release $version"
+
+      - name: Verify source
+        run: |
+          npm test
+          npm run i18n:check
+          npm run typecheck
+
+      - name: Build Windows installer and update metadata
+        run: npm run desktop:build
+
+      - name: Keep the build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: parametric-desktop-${{ env.APP_VERSION }}
+          path: |
+            desktop-release/Parametric-Desktop-Setup-${{ env.APP_VERSION }}.exe
+            desktop-release/Parametric-Desktop-Setup-${{ env.APP_VERSION }}.exe.blockmap
+            desktop-release/latest.yml
+          if-no-files-found: error
+
+      - name: Publish the update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: parametric-v${{ env.APP_VERSION }}
+          name: Parametric ${{ env.APP_VERSION }}
+          make_latest: true
+          generate_release_notes: true
+          files: |
+            desktop-release/Parametric-Desktop-Setup-${{ env.APP_VERSION }}.exe
+            desktop-release/Parametric-Desktop-Setup-${{ env.APP_VERSION }}.exe.blockmap
+            desktop-release/latest.yml
+          fail_on_unmatched_files: true

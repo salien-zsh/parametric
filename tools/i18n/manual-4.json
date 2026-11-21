@@ -1,0 +1,8 @@
+{
+  "\"{0}\" has unsaved changes{1}. Save them before you {2}?": "「{0}」有未保存的更改{1}。是否在{2}之前保存？",
+  " (including {0}, which is still open)": "（其中 {0} 仍处于打开状态）",
+  "Face ({0}) of {1}  Area {2}² equivalent": "面（{0}），属于 {1}　面积相当于 {2}²",
+  "{0} model item(s) selected. Use Convert Entities to project them into this sketch, linked to the model.": "已选择 {0} 个模型对象。使用「转换实体」将其投影到此草图中，并与模型关联。",
+  "{0} projected entities (red) lost their model edge and stay where they were. Delete or unlink them, or project the edge again.": "{0} 个投影图元（红色）丢失了模型边线，仍停留在原位置。请删除或解除链接，或重新投影该边线。",
+  "Up to {0} files can go with one message, so {1} left out.": "一条消息最多可附带 {0} 个文件，因此有 {1} 个未添加。"
+}

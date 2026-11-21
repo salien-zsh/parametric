@@ -1,0 +1,362 @@
+{
+  "files": 71,
+  "edits": 0,
+  "uniqueKeys": 1396,
+  "perFile": [
+    {
+      "file": "src/app/actions.ts",
+      "edits": 0,
+      "skipped": 305
+    },
+    {
+      "file": "src/app/app.ts",
+      "edits": 0,
+      "skipped": 135
+    },
+    {
+      "file": "src/app/apps-panel.ts",
+      "edits": 0,
+      "skipped": 16
+    },
+    {
+      "file": "src/app/assembly.ts",
+      "edits": 0,
+      "skipped": 81
+    },
+    {
+      "file": "src/app/assistant-host.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/app/commands.ts",
+      "edits": 0,
+      "skipped": 1
+    },
+    {
+      "file": "src/app/dialogs.ts",
+      "edits": 0,
+      "skipped": 138
+    },
+    {
+      "file": "src/app/drawing.ts",
+      "edits": 0,
+      "skipped": 54
+    },
+    {
+      "file": "src/app/examples.ts",
+      "edits": 0,
+      "skipped": 19
+    },
+    {
+      "file": "src/app/fileops.ts",
+      "edits": 0,
+      "skipped": 74
+    },
+    {
+      "file": "src/app/panels.ts",
+      "edits": 0,
+      "skipped": 132
+    },
+    {
+      "file": "src/app/pm.ts",
+      "edits": 0,
+      "skipped": 9
+    },
+    {
+      "file": "src/app/selection.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/app/settings.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/app/share.ts",
+      "edits": 0,
+      "skipped": 28
+    },
+    {
+      "file": "src/app/shell.ts",
+      "edits": 0,
+      "skipped": 39
+    },
+    {
+      "file": "src/app/sketch/constrain.ts",
+      "edits": 0,
+      "skipped": 15
+    },
+    {
+      "file": "src/app/sketch/dimgfx.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/app/sketch/editor.ts",
+      "edits": 0,
+      "skipped": 32
+    },
+    {
+      "file": "src/app/sketch/inference.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/app/sketch/panel.ts",
+      "edits": 0,
+      "skipped": 37
+    },
+    {
+      "file": "src/app/sketch/tools.ts",
+      "edits": 0,
+      "skipped": 58
+    },
+    {
+      "file": "src/app/start.ts",
+      "edits": 0,
+      "skipped": 42
+    },
+    {
+      "file": "src/app/taskpane.ts",
+      "edits": 0,
+      "skipped": 37
+    },
+    {
+      "file": "src/app/tree.ts",
+      "edits": 0,
+      "skipped": 45
+    },
+    {
+      "file": "src/app/user-menu.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/app/viewport.ts",
+      "edits": 0,
+      "skipped": 13
+    },
+    {
+      "file": "src/assistant/agent.ts",
+      "edits": 0,
+      "skipped": 10
+    },
+    {
+      "file": "src/assistant/attach.ts",
+      "edits": 0,
+      "skipped": 6
+    },
+    {
+      "file": "src/assistant/attachments.ts",
+      "edits": 0,
+      "skipped": 4
+    },
+    {
+      "file": "src/assistant/features.ts",
+      "edits": 0,
+      "skipped": 9
+    },
+    {
+      "file": "src/assistant/host.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/assistant/inspect.ts",
+      "edits": 0,
+      "skipped": 11
+    },
+    {
+      "file": "src/assistant/markdown.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/assistant/panel.ts",
+      "edits": 0,
+      "skipped": 78
+    },
+    {
+      "file": "src/assistant/prompt.ts",
+      "edits": 0,
+      "skipped": 2
+    },
+    {
+      "file": "src/assistant/refs.ts",
+      "edits": 0,
+      "skipped": 7
+    },
+    {
+      "file": "src/assistant/sketch.ts",
+      "edits": 0,
+      "skipped": 12
+    },
+    {
+      "file": "src/assistant/tools.ts",
+      "edits": 0,
+      "skipped": 224
+    },
+    {
+      "file": "src/assistant/units.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/drawing/pdf.ts",
+      "edits": 0,
+      "skipped": 1
+    },
+    {
+      "file": "src/drawing/sheet.ts",
+      "edits": 0,
+      "skipped": 26
+    },
+    {
+      "file": "src/kernel/build.ts",
+      "edits": 0,
+      "skipped": 103
+    },
+    {
+      "file": "src/kernel/client.ts",
+      "edits": 0,
+      "skipped": 6
+    },
+    {
+      "file": "src/kernel/occ.ts",
+      "edits": 0,
+      "skipped": 7
+    },
+    {
+      "file": "src/kernel/worker.ts",
+      "edits": 0,
+      "skipped": 4
+    },
+    {
+      "file": "src/main.ts",
+      "edits": 0,
+      "skipped": 2
+    },
+    {
+      "file": "src/model/assembly.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/model/document.ts",
+      "edits": 0,
+      "skipped": 21
+    },
+    {
+      "file": "src/model/features.ts",
+      "edits": 0,
+      "skipped": 53
+    },
+    {
+      "file": "src/model/ids.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/model/materials.ts",
+      "edits": 0,
+      "skipped": 15
+    },
+    {
+      "file": "src/model/planes.ts",
+      "edits": 0,
+      "skipped": 3
+    },
+    {
+      "file": "src/platform/ai.ts",
+      "edits": 0,
+      "skipped": 16
+    },
+    {
+      "file": "src/platform/files.ts",
+      "edits": 0,
+      "skipped": 13
+    },
+    {
+      "file": "src/platform/puter.ts",
+      "edits": 0,
+      "skipped": 9
+    },
+    {
+      "file": "src/platform/theme.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/render/camera.ts",
+      "edits": 0,
+      "skipped": 9
+    },
+    {
+      "file": "src/render/renderer.ts",
+      "edits": 0,
+      "skipped": 3
+    },
+    {
+      "file": "src/sketch/convert.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/sketch/external.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/sketch/geom.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/sketch/ops.ts",
+      "edits": 0,
+      "skipped": 22
+    },
+    {
+      "file": "src/sketch/profiles.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/sketch/solver.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/ui/dom.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/ui/longpress.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/ui/menu.ts",
+      "edits": 0,
+      "skipped": 10
+    },
+    {
+      "file": "src/ui/overlay.ts",
+      "edits": 0,
+      "skipped": 17
+    },
+    {
+      "file": "src/ui/regions.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
+      "file": "src/ui/tabs.ts",
+      "edits": 0,
+      "skipped": 6
+    }
+  ]
+}

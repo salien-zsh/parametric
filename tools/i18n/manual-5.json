@@ -1,0 +1,19 @@
+{
+  "A unit (\"{0}\") cannot be used here; give a plain number": "单位（\"{0}\"）不能用于此处，请填写纯数值",
+  "{0}() takes {1}": "{0}() 需要 {1}",
+  "one or more values": "一个或多个值",
+  "one value": "一个值",
+  "Unknown function \"{0}\"": "未知函数 \"{0}\"",
+  "Unknown name \"{0}\"": "未知名称 \"{0}\"",
+  "Expected \"{0}\"": "缺少 \"{0}\"",
+  "Unexpected \"{0}\"": "意外的字符 \"{0}\"",
+  "\"{0}\" has an error": "\"{0}\" 存在错误",
+  "Unexpected end of expression": "表达式意外结束",
+  "Unexpected text after expression": "表达式后有多余内容",
+  "Result is not a finite number": "结果不是有限数值",
+  "Unclosed quote": "引号未闭合",
+  "Division by zero": "除数为零",
+  "Enter a value": "请输入数值",
+  "Ctrl + middle drag, Shift + right drag": "Ctrl + 中键拖动，Shift + 右键拖动",
+  "Lines: drag the label sideways for horizontal or vertical distance. Two lines give an angle, parallel lines a distance. Circles are dimensioned by diameter, arcs by radius. Type \"=\" followed by a variable name to link a value.": "直线：横向拖动标签可标注水平或竖直距离。两条线可标注角度，平行线标注距离。圆按直径标注，圆弧按半径标注。输入 \"=\" 加变量名可将数值关联到变量。"
+}

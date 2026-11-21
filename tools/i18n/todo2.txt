@@ -1,0 +1,22 @@
+001|1 was
+002|A flanged bushing: 40 mm flange, 20 mm shaft, 10 mm bore
+003|A spur-gear-like disc: 60 mm across with 12 teeth and a 8 mm bore
+004|Calculate
+005|Change or ask about this part
+006|Conversation
+007|Describe a part to design
+008|Explain how this part is built
+009|It is
+010|Make the main sizes parametric with global variables
+011|Pasted image
+012|Read a sketch
+013|Round all the outer edges with 1 mm fillets
+014|Run a command
+015|Send
+016|Stopped.
+017|Stopped: another part was opened.
+018|The assistant needs Puter, which is not available right now. Check your connection and reload the page.
+019|The assistant sketches, adds features, edits dimensions, measures and checks its work in the model. Everything it changes in one message is a single undo step.
+020|They are
+021|This file
+022|What does it weigh in aluminium?

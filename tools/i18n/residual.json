@@ -1,0 +1,747 @@
+[
+  {
+    "file": "src/app/app.ts",
+    "line": 340,
+    "text": "Hide or show items"
+  },
+  {
+    "file": "src/app/dialogs.ts",
+    "line": 371,
+    "text": "Ctrl + middle drag, Shift + right drag"
+  },
+  {
+    "file": "src/app/sketch/tools.ts",
+    "line": 785,
+    "text": "Lines: drag the label sideways for horizontal or vertical distance. Two lines give an angle, parallel lines a distance. Circles are dimensioned by diameter, arcs by radius. Type \"=\" followed by a variable name to link a "
+  },
+  {
+    "file": "src/app/start.ts",
+    "line": 159,
+    "text": "Cloud storage is unavailable offline"
+  },
+  {
+    "file": "src/app/viewport.ts",
+    "line": 767,
+    "text": "Orientation triad. Click an axis to look along it."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 45,
+    "text": "Thin features are not supported yet. Sketch the wall as two offset contours instead."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 100,
+    "text": "A parameter has an invalid value"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 320,
+    "text": "A projected sketch entity lost its model edge and stays where it was. Delete it or project the edge again."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 335,
+    "text": "Select a plane or planar face"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 339,
+    "text": "The reference plane is missing or failed to build"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 344,
+    "text": "The selected face is not planar"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 372,
+    "text": "A referenced face no longer exists"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 388,
+    "text": "A referenced edge no longer exists"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 393,
+    "text": "Select a direction or axis"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 400,
+    "text": "The selected edge is not straight or circular"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 406,
+    "text": "Select a planar or cylindrical face"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 411,
+    "text": "The axis sketch is missing"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 414,
+    "text": "The axis line is missing"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 493,
+    "text": "There is no material to cut"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 495,
+    "text": "The cut removes all material"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 497,
+    "text": "The cut does not remove any material. Check its direction."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 515,
+    "text": "The profile sketch is missing or failed to build"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 520,
+    "text": "The selected regions are no longer in the sketch. Edit the feature and select them again."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 522,
+    "text": "The sketch has open contours. Close the profile to use it."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 522,
+    "text": "The sketch has no closed profile"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 524,
+    "text": "A selected region is no longer in the sketch and was left out. Edit the feature and select the regions again."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 525,
+    "text": "Open contours in the sketch were ignored"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 526,
+    "text": "Contours that cross each other were combined. Trim them where they cross, or select the regions to use."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 588,
+    "text": "Through All needs a body to extrude through. Use Blind."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 607,
+    "text": "There is no body to extrude through in this direction. Reverse the direction or use Blind."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 608,
+    "text": "Depth must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 614,
+    "text": "Direction 2 depth must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 619,
+    "text": "The draft angle cannot be negative. Use Draft outward to taper the other way."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 638,
+    "text": "The draft closes the profile before the end of the extrusion. Use a smaller draft angle or depth."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 670,
+    "text": "Draft could not be applied to the profile"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 676,
+    "text": "Draft could not be applied to the profile"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 692,
+    "text": "Select an axis of revolution (or add a centerline to the sketch)"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 697,
+    "text": "Angle must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 716,
+    "text": "The profile crosses the axis of revolution. Keep it on one side of the axis."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 777,
+    "text": "Select edges or faces"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 782,
+    "text": "There is no body to fillet"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 784,
+    "text": "Radius must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 795,
+    "text": "The fillet could not be created. Try a smaller radius or fewer edges."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 800,
+    "text": "The fillet could not be created. Try a smaller radius."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 808,
+    "text": "There is no body to chamfer"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 810,
+    "text": "Distance must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 812,
+    "text": "Distance 2 must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 814,
+    "text": "The chamfer angle must be between 0 and 90 degrees"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 840,
+    "text": "The chamfer could not be created. Try a smaller distance."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 844,
+    "text": "The chamfer could not be created. Try a smaller distance."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 852,
+    "text": "There is no body to shell"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 854,
+    "text": "Thickness must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 937,
+    "text": "The hole position sketch is missing"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 939,
+    "text": "Add sketch points to place holes"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 941,
+    "text": "Diameter must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 943,
+    "text": "Depth must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 948,
+    "text": "The counterbore diameter must be larger than the hole"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 949,
+    "text": "Counterbore depth must be greater than zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 952,
+    "text": "The hole depth must be greater than the counterbore depth"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 958,
+    "text": "The countersink diameter must be larger than the hole"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 959,
+    "text": "The countersink angle must be between 0 and 180 degrees"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 963,
+    "text": "The hole depth must be greater than the countersink depth"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 985,
+    "text": "Select features to pattern"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 992,
+    "text": "A seed feature no longer exists"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 993,
+    "text": "A seed feature comes after this feature in the tree"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 994,
+    "text": "A seed feature failed to build"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 995,
+    "text": "A seed feature cannot be patterned (only extrudes, revolves, holes, lofts, sweeps and patterns)"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1001,
+    "text": "The pattern has no instances"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1018,
+    "text": "There is no material to cut"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1021,
+    "text": "The copies of a cut do not remove any material. Check the direction and spacing."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1025,
+    "text": "The pattern removed all material"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1043,
+    "text": "Instance count must be between 1 and 1000"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1046,
+    "text": "Direction 1 spacing must not be zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1051,
+    "text": "Instance count must be between 1 and 1000"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1053,
+    "text": "Direction 2 spacing must not be zero"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1071,
+    "text": "Instance count must be between 2 and 1000"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1079,
+    "text": "Pattern instances fall on top of each other. Check the angle."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1089,
+    "text": "There is no body to mirror"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1108,
+    "text": "Only the first closed contour of each profile was used; the other contours were ignored"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1111,
+    "text": "Select at least two profiles"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1117,
+    "text": "The loft could not be created from these profiles"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1139,
+    "text": "Select a profile and a path"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1144,
+    "text": "The path sketch is missing"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1166,
+    "text": "The path sketch is empty"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1182,
+    "text": "There is no body to draft"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1183,
+    "text": "Select faces to draft"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1195,
+    "text": "Draft cannot be applied to one of the faces"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1201,
+    "text": "The draft could not be created"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1207,
+    "text": "The draft could not be created"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1237,
+    "text": "The imported file data is missing"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1427,
+    "text": "Distance could not be computed"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1440,
+    "text": "There is no geometry to export"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1461,
+    "text": "There is no geometry to export"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1468,
+    "text": "There is no geometry to export"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1555,
+    "text": "The STEP file could not be read"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1558,
+    "text": "The STEP file contains no geometry"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1574,
+    "text": "The feature could not be built"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1577,
+    "text": "The geometry kernel could not build this feature"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1587,
+    "text": "A closed path must be a single curve"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1597,
+    "text": "The path must be one connected chain of curves"
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1614,
+    "text": "The shell could not be created. Make it thinner than the radius of the fillets and rounded faces."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1615,
+    "text": "The shell could not be created. Try a smaller thickness."
+  },
+  {
+    "file": "src/kernel/build.ts",
+    "line": 1624,
+    "text": "The sweep could not be created. The profile should start at the path and be roughly perpendicular to it."
+  },
+  {
+    "file": "src/kernel/client.ts",
+    "line": 78,
+    "text": "the OpenCascade kernel failed"
+  },
+  {
+    "file": "src/kernel/client.ts",
+    "line": 85,
+    "text": "one of its replies could not be read"
+  },
+  {
+    "file": "src/kernel/occ.ts",
+    "line": 19,
+    "text": "Geometry kernel is not loaded"
+  },
+  {
+    "file": "src/kernel/worker.ts",
+    "line": 22,
+    "text": "The geometry kernel failed"
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 45,
+    "text": "This file is not a valid part file."
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 48,
+    "text": "This file is not a part created with Parametric."
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 49,
+    "text": "This part was created with a newer version of Parametric."
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 50,
+    "text": "The part file is damaged (unknown version)."
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 51,
+    "text": "The part file is damaged (no feature list)."
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 55,
+    "text": "The part file is damaged (invalid feature)."
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 59,
+    "text": "The part file is damaged (invalid feature identifiers)."
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 65,
+    "text": "The part file is damaged (invalid sketch)."
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 67,
+    "text": "The part file is damaged (invalid feature references)."
+  },
+  {
+    "file": "src/model/document.ts",
+    "line": 83,
+    "text": "The part file is damaged (invalid drawing)."
+  },
+  {
+    "file": "src/model/expr.ts",
+    "line": 164,
+    "text": "one or more values"
+  },
+  {
+    "file": "src/model/expr.ts",
+    "line": 177,
+    "text": "Unexpected end of expression"
+  },
+  {
+    "file": "src/model/expr.ts",
+    "line": 222,
+    "text": "Unexpected text after expression"
+  },
+  {
+    "file": "src/model/expr.ts",
+    "line": 223,
+    "text": "Result is not a finite number"
+  },
+  {
+    "file": "src/platform/ai.ts",
+    "line": 76,
+    "text": "all ai providers failed"
+  },
+  {
+    "file": "src/platform/ai.ts",
+    "line": 190,
+    "text": "The assistant needs Puter, which is not available right now. Check your connection and reload."
+  },
+  {
+    "file": "src/platform/ai.ts",
+    "line": 231,
+    "text": "Your Puter account ran out of AI credits, so the reply stopped."
+  },
+  {
+    "file": "src/platform/files.ts",
+    "line": 89,
+    "text": "This browser cannot store parts locally. Download the part or sign in to save it to your Puter cloud."
+  },
+  {
+    "file": "src/platform/files.ts",
+    "line": 98,
+    "text": "Browser storage is not available."
+  },
+  {
+    "file": "src/platform/files.ts",
+    "line": 105,
+    "text": "Browser storage is not available."
+  },
+  {
+    "file": "src/platform/files.ts",
+    "line": 120,
+    "text": "Puter storage is not available."
+  },
+  {
+    "file": "src/platform/files.ts",
+    "line": 122,
+    "text": "Sign in to Puter to save this part to your cloud, or use Save As to keep it in this browser."
+  },
+  {
+    "file": "src/platform/files.ts",
+    "line": 128,
+    "text": "Puter is not available right now. Check your connection and try again."
+  },
+  {
+    "file": "src/platform/files.ts",
+    "line": 129,
+    "text": "Sign in to Puter to open parts saved in your cloud."
+  },
+  {
+    "file": "src/platform/files.ts",
+    "line": 242,
+    "text": "Sign in to Puter to rename parts saved in your cloud."
+  },
+  {
+    "file": "src/platform/puter.ts",
+    "line": 132,
+    "text": "Puter is not available right now. Check your connection and try again."
+  },
+  {
+    "file": "src/platform/puter.ts",
+    "line": 140,
+    "text": "The sign-in window was blocked. Allow pop-ups for this site and try again."
+  },
+  {
+    "file": "src/platform/puter.ts",
+    "line": 170,
+    "text": "Your Puter storage is full. Free up space or upgrade your plan, then save again."
+  },
+  {
+    "file": "src/platform/puter.ts",
+    "line": 171,
+    "text": "Too many requests right now. Wait a moment and try again."
+  },
+  {
+    "file": "src/platform/puter.ts",
+    "line": 173,
+    "text": "Puter could not be reached. Check your connection and try again."
+  },
+  {
+    "file": "src/platform/puter.ts",
+    "line": 174,
+    "text": "This browser has run out of storage space for parts. Delete parts you no longer need, download this one, or sign in to save it to your Puter cloud."
+  },
+  {
+    "file": "src/platform/puter.ts",
+    "line": 175,
+    "text": "Something went wrong while talking to Puter."
+  },
+  {
+    "file": "src/render/renderer.ts",
+    "line": 428,
+    "text": "WebGL 2 is not available in this browser"
+  },
+  {
+    "file": "src/sketch/ops.ts",
+    "line": 77,
+    "text": "Projected geometry follows its model edge, so it cannot be trimmed, extended or filleted. Unlink it in the PropertyManager first."
+  },
+  {
+    "file": "src/sketch/ops.ts",
+    "line": 383,
+    "text": "These lines are in line with each other, so there is no distance to dimension. Use a Collinear constraint to keep them that way."
+  },
+  {
+    "file": "src/sketch/ops.ts",
+    "line": 386,
+    "text": "That point is an end of the line, so its distance to the line is always zero. Pick another point or line to dimension to."
+  },
+  {
+    "file": "src/sketch/ops.ts",
+    "line": 387,
+    "text": "That point lies on the line, so there is no distance to dimension. Use a Coincident constraint to keep it on the line."
+  },
+  {
+    "file": "src/sketch/ops.ts",
+    "line": 389,
+    "text": "These centres are at the same place, so there is no distance to dimension. Use a Concentric or Coincident constraint to keep them together."
+  },
+  {
+    "file": "src/sketch/ops.ts",
+    "line": 390,
+    "text": "These points are at the same place, so there is no distance to dimension. Use a Coincident constraint to keep them together."
+  },
+  {
+    "file": "src/sketch/ops.ts",
+    "line": 605,
+    "text": "Select a corner where exactly two lines meet"
+  },
+  {
+    "file": "src/sketch/ops.ts",
+    "line": 612,
+    "text": "The lines are parallel"
+  },
+  {
+    "file": "src/sketch/ops.ts",
+    "line": 614,
+    "text": "The fillet radius is too large for these lines"
+  }
+]

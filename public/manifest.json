@@ -1,0 +1,13 @@
+{
+  "name": "参数化三维设计",
+  "short_name": "参数化设计",
+  "description": "基于特征的开源三维 CAD，草图约束与特征历史全程可编辑。",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eef0f3",
+  "theme_color": "#f7f8fa",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

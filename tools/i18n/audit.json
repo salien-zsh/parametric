@@ -1,0 +1,1151 @@
+{
+  "totalKeys": 1254,
+  "usedInSource": 1249,
+  "dictEntries": 1014,
+  "flagged": [
+    {
+      "en": " (conflict)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": " (conflicting)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": " (driven, reference only)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": " (invited)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": " (projected)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": " (redundant)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": " (show the drawing first)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": " (the solver did not converge)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": " (there is no solid)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": " portrait",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "- none",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "3d print mesh",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "Arc",
+      "cats": [
+        "单个短标识符"
+      ]
+    },
+    {
+      "en": "Cut",
+      "cats": [
+        "单个短标识符"
+      ]
+    },
+    {
+      "en": "Delete",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Delete Constraint",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Delete Dimension",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Delete constraint",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Delete dimension",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Delete features",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Delete features. Sketches used only by deleted features go with them. Features that depend on deleted ones must be included or with_dependents set.",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Delete part",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Delete view",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "End Condition",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "End condition",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "End condition (default blind; a cut given no depth goes through_all)",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Enter a finite, positive density.",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Enter a name",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Esc",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "F6, Shift + F6",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Feature id or name the bar goes before, or null for the end",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "Move the rollback bar: features from this one on are not built (new features are inserted at the bar). null rolls to the end.",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "New",
+      "cats": [
+        "单个短标识符"
+      ]
+    },
+    {
+      "en": "OK",
+      "cats": [
+        "单个短标识符"
+      ]
+    },
+    {
+      "en": "Oak",
+      "cats": [
+        "单个短标识符"
+      ]
+    },
+    {
+      "en": "Pan",
+      "cats": [
+        "单个短标识符"
+      ]
+    },
+    {
+      "en": "Space",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "Top",
+      "cats": [
+        "单个短标识符"
+      ]
+    },
+    {
+      "en": "a feature",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "ai chat copilot design help agent claude",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "all ai providers failed",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "angle: at most 360 (a full revolve)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "array repeat",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "back to the model",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "cannot measure a spline",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "collaborate invite team access",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "color colour",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "constraint constrain relation sketch geometric",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "cut clip",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "decimals: 0 to 8",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "decode failed",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "decode timed out",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "density steel aluminum",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "depth is required unless end is through_all",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "direction2.depth is required for a blind second direction",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "direction2.direction is required",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "direction: edges only; for faces use normal",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "display style render",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "distance length angle area",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "drawing sheet 2d views print pdf",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "drill counterbore countersink",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "expressions: give at least one",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "extrusion pad boss",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "features: give at least one",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "full circle",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "fully defined",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "give edges and/or faces (every edge of a face is chamfered)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "give edges and/or faces (every edge of a face is filleted)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "hollow thickness",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "imported bodies have no parameters to change",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "it would be over-defined",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "name: cannot be empty",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "no change",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "no plane",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "none yet",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "normal to the plane",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "normal: faces only; for edges use direction (straight edges along it, circular edges around it)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "normal_to: that plane is not available",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "not a valid value",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "not built yet",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "not set",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "of one entity takes a line (its length)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "of_face: edges only (the edges bounding that face)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "on: that plane is not available in the current model",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "one of its replies could not be read",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "open an example",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "open another part",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "plane: that plane is not available in the current model (is it rolled back or failing?)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "pocket cut",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "points: give at least one hole centre",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "polar array",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "print drawing",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "profiles: at least two sketches, in order",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "project projection external geometry use reference model edge vertex link",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "reference geometry datum",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "regions: a list of points inside the profile regions to use",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "relation constrain geometric",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "revolution lathe",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "rolled back (not built)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "round radius blend",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "scale: a positive ratio such as 0.5 for 1:2",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "settings preferences theme",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "show hide visibility",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "showing the drawing",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "sketch contents change with edit_sketch",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "sketch draw",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "standard views arranged",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "start a new part",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "stp export cad",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "stp step sldprt solidworks import",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "suppressed (it depends on a suppressed feature)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "takes a line or two points (circle and arc centres count as points)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "takes one circle or arc",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "takes one line (angle from horizontal) or two lines",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "taper mould",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "the constraints conflict",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "the drawing sheet is shown",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "the origin",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "the part",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "the sketch plane is not resolved (the sketch may be rolled back or failing)",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "there is no drawing yet; set show: true first",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "there is no solid to draw yet",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "there is no view here",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "units decimals",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "variables parameters global",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "view orientation standard",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "viewing the model",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "volume weight inertia center of mass",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "zoomed to fit",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "\"{0}\" has unsaved changes{1}. Save them before you {2}?",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": " (including {0}, which is still open)",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "Face ({0}) of {1}  Area {2}² equivalent",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "{0} model item(s) selected. Use Convert Entities to project them into this sketch, linked to the model.",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "{0} projected entities (red) lost their model edge and stay where they were. Delete or unlink them, or project the edge again.",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "Up to {0} files can go with one message, so {1} left out.",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "{0}() takes {1}",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "it was",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "Ctrl + middle drag, Shift + right drag",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    },
+    {
+      "en": "one value",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "A unit (\"{0}\") cannot be used here; give a plain number",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "1 was",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "Unknown function \"{0}\"",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "Expected \"{0}\"",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "Unknown name \"{0}\"",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "they were",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "Unexpected \"{0}\"",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "one or more values",
+      "cats": [
+        "全小写单词串"
+      ]
+    },
+    {
+      "en": "\"{0}\" has an error",
+      "cats": [
+        "HTML/代码片段"
+      ]
+    },
+    {
+      "en": "Enter a value",
+      "cats": [
+        "快捷键/按键名"
+      ]
+    }
+  ],
+  "unusedKeys": [
+    "it was",
+    "1 was",
+    "They are",
+    "they were",
+    "It is"
+  ],
+  "missingKeys": [],
+  "untranslated": [
+    " (conflicting)",
+    " (driven, reference only)",
+    " (show the drawing first)",
+    " (the solver did not converge)",
+    " (there is no solid)",
+    " From now on, lengths in tool arguments and results use the new unit.",
+    "- none",
+    "Add a reference plane parallel to a plane or planar face at an offset (along its normal). Use it to sketch at a height or as a mirror plane.",
+    "Add horizontal/vertical relations to axis-aligned lines and coincident-with-origin to points at (0,0) (default true)",
+    "Add the wall outside the current surfaces instead of inside",
+    "Also delete every feature that depends on them",
+    "Also extrude the opposite way",
+    "Angle in degrees (360 for a full revolve)",
+    "Angle in degrees (distance_angle)",
+    "Arc end angle in degrees",
+    "Arguments to change, as the feature's add_ tool takes them",
+    "At most this many (default 60, at most 400)",
+    "Bevel edges. Faces chamfer every edge of each face.",
+    "Body: none yet (nothing solid has been built).",
+    "Chamfer type (default distance: equal distances)",
+    "Change a feature: any arguments of its add_ tool (only those given change), its name, suppression or visibility. Sketch contents change with edit_sketch.",
+    "Change an existing sketch. Operations run in this order: delete, shapes, project_edges, move_points, set_radius, construction, fillets, offsets, mirrors, relations, dimensions, set_dimensions; then the sketch is solved and the model rebuilt.",
+    "Change dimension values",
+    "Change what the user sees: orientation, look normal to a plane or face, zoom to fit, display style, and highlight (select) faces, edges or features to point them out.",
+    "Circle id",
+    "Close the polyline",
+    "Closed profiles: none.",
+    "Colour as #rrggbb",
+    "Command",
+    "Construction geometry (not part of profiles)",
+    "Copy features (extrudes, revolves, holes, lofts, sweeps, patterns) in a line or a grid. count includes the original.",
+    "Copy features around an axis. count includes the original.",
+    "Corner point id where exactly two lines meet",
+    "Countersink diameter at the surface",
+    "Countersink included angle (e.g. 90 or 82)",
+    "Create a sketch on a plane or planar face with shapes, relations and dimensions in one step. Returns the entity ids with coordinates, the definition status and the closed profiles. The sketch is added at the end of the tree (before the rollback bar).",
+    "Decimal places shown for lengths (0-8)",
+    "Delete features. Sketches used only by deleted features go with them. Features that depend on deleted ones must be included or with_dependents set.",
+    "Depth (blind), or total depth (mid_plane, half each side)",
+    "Depth for blind holes",
+    "Depth type (default through_all, or blind when depth is given)",
+    "Dimension id or name",
+    "Display style",
+    "Display style for the picture",
+    "Distance between instances",
+    "Distance; closed chains grow for positive, shrink for negative",
+    "Draft angle in degrees",
+    "Draft angle in degrees (tapers the side walls inward)",
+    "Drill along the sketch normal instead",
+    "Driving dimensions to add (after the relations)",
+    "Edge names",
+    "Edges: only straight edges along this direction or circular edges around this axis",
+    "Edges: only the edges bounding this face",
+    "End condition (default blind; a cut given no depth goes through_all)",
+    "Entity ids to make construction geometry",
+    "Entity ids to make normal (not construction) geometry",
+    "Entity ids to mirror",
+    "Entity, relation or dimension ids to delete (deleting a point deletes curves using it)",
+    "Error: not run. Your reply reached the output limit while writing this call, so its arguments were cut off. Split the work into smaller calls.",
+    "Error: the arguments could not be read as JSON.",
+    "Error: the view could not be captured.",
+    "Error: there is no view to capture here.",
+    "Everything in one sketch: its plane and how sketch coordinates map to world space, every entity with ids and coordinates, relations and dimensions, definition status (degrees of freedom, conflicts) and the closed profiles it forms.",
+    "Existing sketch whose stand-alone points are the hole centres",
+    "Expressions to evaluate",
+    "Extrude a sketch's closed profiles into a boss (adds material) or a cut. Bosses go along the sketch normal, cuts against it (into the face a sketch sits on); reverse flips that.",
+    "Extrude the other way",
+    "Face names",
+    "Face names, edge names or feature ids to select",
+    "Faces to open (empty: a closed hollow body)",
+    "Feature id or name",
+    "Feature id or name the bar goes before, or null for the end",
+    "Feature ids or names",
+    "Feature ids or names to describe in full (then the rest of the part is left out)",
+    "Feature ids to mirror; empty or omitted mirrors the whole body",
+    "Features: none (empty part).",
+    "Geometric relations to add (after the shapes)",
+    "Global variables: none.",
+    "Go the other way",
+    "Height",
+    "Hide or show (sketches, planes)",
+    "Hole diameter",
+    "Hole type (default simple)",
+    "Hollow the body to a wall thickness, opening the removed faces.",
+    "I have nothing to add.",
+    "Landscape (true) or portrait",
+    "Lay out front, top, right and isometric views at a fitting scale",
+    "Line entity id",
+    "Line id to mirror about",
+    "Line, arc or circle ids (a connected chain offsets as one)",
+    "List faces or edges of the current body with their names (what fillet, chamfer, shell, sketch planes, axes and measure take), types, positions, normals, radii, lengths and areas. Filter to find exactly the ones you need.",
+    "Loft through two or more closed profile sketches (on different parallel or angled planes) in order.",
+    "Long sketches: start the entity and relation lists at this index (the answer says where the rest starts)",
+    "Look at the model: a screenshot of the graphics area, optionally from a standard orientation (the user's view is restored afterwards). Use it to check shapes, proportions and that features look right.",
+    "Make it a reference (true) or driving (false) dimension",
+    "Mass properties are not available for this body.",
+    "Mass: set a material (set_part) to get the mass.",
+    "Minimum distance between two faces, edges or world points, with the closest points. Also reports the angle between two planar faces or two straight edges.",
+    "Mirror entities about a line",
+    "Mirror features (or the whole body when features is empty) about a plane.",
+    "Model edge names to project into the sketch as fixed curves (Convert Entities)",
+    "Model to paper scale, e.g. 0.5 for 1:2",
+    "Move points before solving",
+    "Move the rollback bar: features from this one on are not built (new features are inserted at the bar). null rolls to the end.",
+    "New display name",
+    "New radius",
+    "New value",
+    "Not run: an earlier change in this reply failed.",
+    "Not run: the user stopped the assistant.",
+    "Nothing changed.",
+    "Nothing to change.",
+    "Number of instances including the original",
+    "OVER-DEFINED",
+    "Offset curves",
+    "Offset distance along the normal",
+    "Offset the other way",
+    "One direction or symmetric about the sketch plane",
+    "Only faces created by this feature id (edges: edges bordering such faces)",
+    "Only names containing this text",
+    "Optional id (letters, digits, _ or -)",
+    "Optional points inside the closed regions to use (sketch coordinates); by default every region is used, nested ones alternating material/holes",
+    "Optional sketch name",
+    "Optional; inferred from refs when omitted",
+    "Orientation to look from (default: the current view)",
+    "Other way",
+    "Part properties: name, unit system (stored geometry keeps its size), decimals shown, material (for mass) and colour.",
+    "Path sketch id",
+    "Point id",
+    "Points in order",
+    "Polygon radius goes to the vertices (true) or the flats (false)",
+    "Polygon sides",
+    "Profile sketch id",
+    "Profile sketch ids in order",
+    "Reference dimension that only reports its value",
+    "Relation",
+    "Remove material",
+    "Remove material instead of adding it",
+    "Rename the sketch",
+    "Resize circles (an existing radius/diameter dimension wins; change it with set_dimensions instead)",
+    "Revolve a sketch's closed profiles around an axis into a boss or cut. The profile must lie on one side of the axis.",
+    "Revolve the other way",
+    "Rolled to the end",
+    "Rotation in degrees",
+    "Round edges with a constant radius. Faces round every edge of each face.",
+    "Round sketch corners",
+    "Run an app command the user would otherwise click: save the part, or export it (opens a save dialog for the user).",
+    "Second direction (grid)",
+    "Second distance (two_distances)",
+    "Seed feature ids",
+    "Selection: nothing.",
+    "Shape type",
+    "Shapes to add",
+    "Show (true) or leave (false) the drawing sheet",
+    "Sketch id",
+    "Sketch id or name",
+    "Slot length between arc centres",
+    "Spread instances over the angle (default true); false: angle is the step between instances",
+    "Standard orientation",
+    "Straight sections between profiles",
+    "Suppress (skip in the rebuild) or unsuppress",
+    "Swap which face the first distance is measured on",
+    "Sweep a closed profile along a path sketch (open or closed curves). The profile should sit at the start of the path, roughly perpendicular to it.",
+    "Taper outward instead",
+    "The arguments could not be read.",
+    "The assistant is still answering",
+    "The part as it is now: units, material, global variables, every feature in build order with its arguments and rebuild status, the body's size, and the selection. Pass feature ids to get just those features in full: their arguments (exactly what edit_feature takes) and faces.",
+    "The part has no body yet.",
+    "The part's 2D drawing sheet: show or hide it, lay out standard views, add views, and set sheet size, orientation, scale and title block.",
+    "The reply hit its length limit while writing this step.",
+    "The screenshot from capture_view:",
+    "Tilt faces by an angle about a neutral plane (for moulded parts).",
+    "Tilt the other way",
+    "Title block title",
+    "Total angle in degrees (default 360)",
+    "Value to drive the geometry to; omit to lock the current size",
+    "Variable name (letters, digits, _)",
+    "Variable names to delete",
+    "Variables to create or change",
+    "Views to add",
+    "Volume, surface area, mass (from the material density), centre of mass and principal moments of the body.",
+    "Wall thickness",
+    "What to list",
+    "Width",
+    "Zoom to fit",
+    "angle: at most 360 (a full revolve)",
+    "back to the model",
+    "cannot measure a spline",
+    "color: #rrggbb",
+    "commands need the app's interface",
+    "decimals: 0 to 8",
+    "depth is required unless end is through_all",
+    "direction2.depth is required for a blind second direction",
+    "direction2.direction is required",
+    "direction: edges only; for faces use normal",
+    "drawings need the app's interface",
+    "expressions: give at least one",
+    "features: give at least one",
+    "full circle",
+    "fully defined",
+    "give edges and/or faces (every edge of a face is chamfered)",
+    "give edges and/or faces (every edge of a face is filleted)",
+    "imported bodies have no parameters to change",
+    "it would be over-defined",
+    "name: cannot be empty",
+    "no change",
+    "no plane",
+    "none yet",
+    "normal to the plane",
+    "normal: faces only; for edges use direction (straight edges along it, circular edges around it)",
+    "normal_to: that plane is not available",
+    "not built yet",
+    "not set",
+    "of one entity takes a line (its length)",
+    "of_face: edges only (the edges bounding that face)",
+    "on: that plane is not available in the current model",
+    "plane: that plane is not available in the current model (is it rolled back or failing?)",
+    "points: give at least one hole centre",
+    "profiles: at least two sketches, in order",
+    "regions: a list of points inside the profile regions to use",
+    "rolled back (not built)",
+    "scale: a positive ratio such as 0.5 for 1:2",
+    "sheet: A4, A3, A2, A1, Letter or Tabloid",
+    "showing the drawing",
+    "sketch contents change with edit_sketch",
+    "standard views arranged",
+    "suppressed (it depends on a suppressed feature)",
+    "takes a line or two points (circle and arc centres count as points)",
+    "takes one circle or arc",
+    "takes one line (angle from horizontal) or two lines",
+    "the constraints conflict",
+    "the drawing sheet is shown",
+    "the origin",
+    "the sketch plane is not resolved (the sketch may be rolled back or failing)",
+    "there is no drawing yet; set show: true first",
+    "there is no solid to draw yet",
+    "there is no view here",
+    "thin: thin (wall) features are not supported. Sketch the wall as a closed profile (e.g. an offset of the outline), or build the solid and use add_shell.",
+    "units: MMGS, CGS, MKS or IPS",
+    "viewing the model",
+    "zoomed to fit"
+  ]
+}

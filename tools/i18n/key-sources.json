@@ -1,0 +1,3926 @@
+{
+  "Line": [
+    "src/app/actions.ts",
+    "src/app/sketch/panel.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch straight lines.": [
+    "src/app/actions.ts"
+  ],
+  "Centerline": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch construction lines used as axes and for symmetry.": [
+    "src/app/actions.ts"
+  ],
+  "Corner Rectangle": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch a rectangle from two corners.": [
+    "src/app/actions.ts"
+  ],
+  "Center Rectangle": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch a rectangle from its centre.": [
+    "src/app/actions.ts"
+  ],
+  "Circle": [
+    "src/app/actions.ts",
+    "src/app/sketch/panel.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch a circle from its centre and radius.": [
+    "src/app/actions.ts"
+  ],
+  "Perimeter Circle": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch a circle through three points.": [
+    "src/app/actions.ts"
+  ],
+  "Centerpoint Arc": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch an arc from its centre, start and end.": [
+    "src/app/actions.ts"
+  ],
+  "Tangent Arc": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch an arc tangent to the end of a line or arc.": [
+    "src/app/actions.ts"
+  ],
+  "3 Point Arc": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch an arc through its ends and a point on it.": [
+    "src/app/actions.ts"
+  ],
+  "Polygon": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch a regular polygon.": [
+    "src/app/actions.ts"
+  ],
+  "Straight Slot": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch a slot with rounded ends.": [
+    "src/app/actions.ts"
+  ],
+  "Spline": [
+    "src/app/actions.ts",
+    "src/app/sketch/panel.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch a smooth curve through points.": [
+    "src/app/actions.ts"
+  ],
+  "Point": [
+    "src/app/actions.ts",
+    "src/app/sketch/panel.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch points, for example to place holes.": [
+    "src/app/actions.ts"
+  ],
+  "Smart Dimension": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Add a dimension; its type depends on what you select and where you place it.": [
+    "src/app/actions.ts"
+  ],
+  "Sketch Fillet": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Round the corner between two lines.": [
+    "src/app/actions.ts"
+  ],
+  "Trim Entities": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Remove parts of curves up to their intersections.": [
+    "src/app/actions.ts"
+  ],
+  "Extend Entities": [
+    "src/app/actions.ts",
+    "src/app/sketch/tools.ts"
+  ],
+  "Extend a line to the next curve.": [
+    "src/app/actions.ts"
+  ],
+  "view orientation standard": [
+    "src/app/actions.ts"
+  ],
+  "display style render": [
+    "src/app/actions.ts"
+  ],
+  "show hide visibility": [
+    "src/app/actions.ts"
+  ],
+  "sketch draw": [
+    "src/app/actions.ts"
+  ],
+  "New": [
+    "src/app/actions.ts",
+    "src/app/taskpane.ts"
+  ],
+  "Start a new part.": [
+    "src/app/actions.ts"
+  ],
+  "Open...": [
+    "src/app/actions.ts"
+  ],
+  "Open a saved part.": [
+    "src/app/actions.ts"
+  ],
+  "Open from Device...": [
+    "src/app/actions.ts"
+  ],
+  "Open a part file, or a STEP or SolidWorks file, from this device.": [
+    "src/app/actions.ts"
+  ],
+  "Save": [
+    "src/app/actions.ts",
+    "src/app/fileops.ts"
+  ],
+  "Save the part.": [
+    "src/app/actions.ts"
+  ],
+  "Save As...": [
+    "src/app/actions.ts",
+    "src/app/share.ts"
+  ],
+  "Download Part File": [
+    "src/app/actions.ts"
+  ],
+  "Download the part file to this device.": [
+    "src/app/actions.ts"
+  ],
+  "Export STEP...": [
+    "src/app/actions.ts"
+  ],
+  "stp export cad": [
+    "src/app/actions.ts"
+  ],
+  "Export the solid as a STEP file.": [
+    "src/app/actions.ts"
+  ],
+  "Export STL...": [
+    "src/app/actions.ts"
+  ],
+  "3d print mesh": [
+    "src/app/actions.ts"
+  ],
+  "Export the solid as an STL mesh for 3D printing.": [
+    "src/app/actions.ts"
+  ],
+  "Import...": [
+    "src/app/actions.ts"
+  ],
+  "stp step sldprt solidworks import": [
+    "src/app/actions.ts"
+  ],
+  "Insert a STEP file or SolidWorks part as a solid body.": [
+    "src/app/actions.ts"
+  ],
+  "Rename Part...": [
+    "src/app/actions.ts"
+  ],
+  "Assistant": [
+    "src/app/actions.ts",
+    "src/app/taskpane.ts"
+  ],
+  "ai chat copilot design help agent claude": [
+    "src/app/actions.ts"
+  ],
+  "Design and change the part by describing what you want.": [
+    "src/app/actions.ts"
+  ],
+  "Share...": [
+    "src/app/actions.ts"
+  ],
+  "collaborate invite team access": [
+    "src/app/actions.ts"
+  ],
+  "Let other Puter users view or edit this part.": [
+    "src/app/actions.ts"
+  ],
+  "Part Properties...": [
+    "src/app/actions.ts"
+  ],
+  "units decimals": [
+    "src/app/actions.ts"
+  ],
+  "Name, units and precision.": [
+    "src/app/actions.ts"
+  ],
+  "Undo": [
+    "src/app/actions.ts"
+  ],
+  "Redo": [
+    "src/app/actions.ts"
+  ],
+  "Rebuild": [
+    "src/app/actions.ts"
+  ],
+  "Rebuild the model.": [
+    "src/app/actions.ts"
+  ],
+  "Force Rebuild": [
+    "src/app/actions.ts"
+  ],
+  "Rebuild every feature from scratch.": [
+    "src/app/actions.ts"
+  ],
+  "Repeat Last Command": [
+    "src/app/actions.ts"
+  ],
+  "Delete": [
+    "src/app/actions.ts",
+    "src/app/app.ts",
+    "src/app/dialogs.ts",
+    "src/app/fileops.ts",
+    "src/app/sketch/editor.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Edit Feature": [
+    "src/app/actions.ts"
+  ],
+  "Suppress": [
+    "src/app/actions.ts",
+    "src/app/app.ts"
+  ],
+  "Unsuppress": [
+    "src/app/actions.ts",
+    "src/app/app.ts"
+  ],
+  "Roll to End": [
+    "src/app/actions.ts"
+  ],
+  "Edit Material...": [
+    "src/app/actions.ts"
+  ],
+  "density steel aluminum": [
+    "src/app/actions.ts"
+  ],
+  "Appearance...": [
+    "src/app/actions.ts"
+  ],
+  "color colour": [
+    "src/app/actions.ts"
+  ],
+  "Equations...": [
+    "src/app/actions.ts"
+  ],
+  "variables parameters global": [
+    "src/app/actions.ts"
+  ],
+  "Global variables and equations that drive dimensions.": [
+    "src/app/actions.ts"
+  ],
+  "Options...": [
+    "src/app/actions.ts",
+    "src/app/start.ts"
+  ],
+  "settings preferences theme": [
+    "src/app/actions.ts"
+  ],
+  "Sketch": [
+    "src/app/actions.ts",
+    "src/app/panels.ts",
+    "src/app/sketch/panel.ts"
+  ],
+  "Create a new sketch on a plane or planar face, or edit the selected sketch.": [
+    "src/app/actions.ts"
+  ],
+  "Exit Sketch": [
+    "src/app/actions.ts",
+    "src/app/sketch/panel.ts"
+  ],
+  "Offset Entities": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts"
+  ],
+  "Copy selected sketch curves at a distance.": [
+    "src/app/actions.ts"
+  ],
+  "Mirror Entities": [
+    "src/app/actions.ts"
+  ],
+  "Mirror selected sketch entities about a line.": [
+    "src/app/actions.ts"
+  ],
+  "Convert Entities": [
+    "src/app/actions.ts",
+    "src/app/sketch/constrain.ts"
+  ],
+  "project projection external geometry use reference model edge vertex link": [
+    "src/app/actions.ts"
+  ],
+  "Project model edges, faces or vertices into the sketch. The projected geometry stays linked to the model and follows it when it changes.": [
+    "src/app/actions.ts"
+  ],
+  "Construction Geometry": [
+    "src/app/actions.ts",
+    "src/app/sketch/editor.ts"
+  ],
+  "Toggle selected sketch entities between normal and construction geometry.": [
+    "src/app/actions.ts"
+  ],
+  "Add Constraint": [
+    "src/app/actions.ts"
+  ],
+  "relation constrain geometric": [
+    "src/app/actions.ts"
+  ],
+  "Add geometric constraints between selected sketch entities.": [
+    "src/app/actions.ts"
+  ],
+  "Select geometry; the constraints that fit appear in the PropertyManager. Or pick a constraint in the Constrain group of the Sketch tab.": [
+    "src/app/actions.ts"
+  ],
+  "constraint constrain relation sketch geometric": [
+    "src/app/actions.ts"
+  ],
+  "Extruded Boss": [
+    "src/app/actions.ts"
+  ],
+  "Extrude a sketch to add material.": [
+    "src/app/actions.ts"
+  ],
+  "extrusion pad boss": [
+    "src/app/actions.ts"
+  ],
+  "Revolved Boss": [
+    "src/app/actions.ts"
+  ],
+  "Revolve a sketch around an axis to add material.": [
+    "src/app/actions.ts"
+  ],
+  "revolution lathe": [
+    "src/app/actions.ts"
+  ],
+  "Extruded Cut": [
+    "src/app/actions.ts"
+  ],
+  "Extrude a sketch to remove material.": [
+    "src/app/actions.ts"
+  ],
+  "pocket cut": [
+    "src/app/actions.ts"
+  ],
+  "Revolved Cut": [
+    "src/app/actions.ts"
+  ],
+  "Revolve a sketch to remove material.": [
+    "src/app/actions.ts"
+  ],
+  "Swept Boss": [
+    "src/app/actions.ts"
+  ],
+  "Sweep a profile along a path.": [
+    "src/app/actions.ts"
+  ],
+  "Swept Cut": [
+    "src/app/actions.ts"
+  ],
+  "Sweep a profile along a path to remove material.": [
+    "src/app/actions.ts"
+  ],
+  "Lofted Boss": [
+    "src/app/actions.ts"
+  ],
+  "Blend between two or more profiles.": [
+    "src/app/actions.ts"
+  ],
+  "Lofted Cut": [
+    "src/app/actions.ts"
+  ],
+  "Blend between profiles to remove material.": [
+    "src/app/actions.ts"
+  ],
+  "Fillet": [
+    "src/app/actions.ts",
+    "src/assistant/panel.ts"
+  ],
+  "Round selected edges.": [
+    "src/app/actions.ts"
+  ],
+  "round radius blend": [
+    "src/app/actions.ts"
+  ],
+  "Chamfer": [
+    "src/app/actions.ts",
+    "src/assistant/panel.ts"
+  ],
+  "Bevel selected edges.": [
+    "src/app/actions.ts"
+  ],
+  "Shell": [
+    "src/app/actions.ts",
+    "src/assistant/panel.ts"
+  ],
+  "Hollow out the part, optionally removing faces.": [
+    "src/app/actions.ts"
+  ],
+  "hollow thickness": [
+    "src/app/actions.ts"
+  ],
+  "Hole": [
+    "src/app/actions.ts",
+    "src/assistant/panel.ts"
+  ],
+  "Simple, counterbored or countersunk holes on a face.": [
+    "src/app/actions.ts"
+  ],
+  "drill counterbore countersink": [
+    "src/app/actions.ts"
+  ],
+  "Draft": [
+    "src/app/actions.ts",
+    "src/app/panels.ts",
+    "src/assistant/panel.ts"
+  ],
+  "Taper faces relative to a neutral plane.": [
+    "src/app/actions.ts"
+  ],
+  "taper mould": [
+    "src/app/actions.ts"
+  ],
+  "Linear Pattern": [
+    "src/app/actions.ts"
+  ],
+  "Repeat features along one or two directions.": [
+    "src/app/actions.ts"
+  ],
+  "array repeat": [
+    "src/app/actions.ts"
+  ],
+  "Circular Pattern": [
+    "src/app/actions.ts"
+  ],
+  "Repeat features around an axis.": [
+    "src/app/actions.ts"
+  ],
+  "polar array": [
+    "src/app/actions.ts"
+  ],
+  "Mirror": [
+    "src/app/actions.ts",
+    "src/assistant/panel.ts"
+  ],
+  "Mirror features or the body about a plane.": [
+    "src/app/actions.ts"
+  ],
+  "Plane": [
+    "src/app/actions.ts",
+    "src/app/app.ts",
+    "src/app/dialogs.ts",
+    "src/app/panels.ts"
+  ],
+  "Create a reference plane offset from a plane or face.": [
+    "src/app/actions.ts"
+  ],
+  "reference geometry datum": [
+    "src/app/actions.ts"
+  ],
+  "Measure": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts",
+    "src/assistant/panel.ts"
+  ],
+  "distance length angle area": [
+    "src/app/actions.ts"
+  ],
+  "Measure distances, lengths, angles and areas.": [
+    "src/app/actions.ts"
+  ],
+  "Mass Properties": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts"
+  ],
+  "volume weight inertia center of mass": [
+    "src/app/actions.ts"
+  ],
+  "Volume, mass, centre of mass and inertia.": [
+    "src/app/actions.ts"
+  ],
+  "Section View": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts"
+  ],
+  "cut clip": [
+    "src/app/actions.ts"
+  ],
+  "Show the part cut by a plane.": [
+    "src/app/actions.ts"
+  ],
+  "Zoom to Fit": [
+    "src/app/actions.ts"
+  ],
+  "Make Drawing": [
+    "src/app/actions.ts"
+  ],
+  "drawing sheet 2d views print pdf": [
+    "src/app/actions.ts"
+  ],
+  "Open the 2D drawing of this part with standard views.": [
+    "src/app/actions.ts"
+  ],
+  "Back to Model": [
+    "src/app/actions.ts",
+    "src/app/drawing.ts"
+  ],
+  "Standard Views": [
+    "src/app/actions.ts"
+  ],
+  "Arrange front, top, right and isometric views at a fitting scale.": [
+    "src/app/actions.ts"
+  ],
+  "Export PDF": [
+    "src/app/actions.ts"
+  ],
+  "print drawing": [
+    "src/app/actions.ts"
+  ],
+  "Export SVG": [
+    "src/app/actions.ts"
+  ],
+  "Zoom In": [
+    "src/app/actions.ts"
+  ],
+  "Zoom Out": [
+    "src/app/actions.ts"
+  ],
+  "Previous View": [
+    "src/app/actions.ts"
+  ],
+  "Front": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts",
+    "src/drawing/sheet.ts"
+  ],
+  "Back": [
+    "src/app/actions.ts",
+    "src/drawing/sheet.ts"
+  ],
+  "Left": [
+    "src/app/actions.ts",
+    "src/drawing/sheet.ts"
+  ],
+  "Right": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts",
+    "src/drawing/sheet.ts"
+  ],
+  "Top": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts",
+    "src/drawing/sheet.ts"
+  ],
+  "Bottom": [
+    "src/app/actions.ts",
+    "src/drawing/sheet.ts"
+  ],
+  "Isometric": [
+    "src/app/actions.ts",
+    "src/drawing/sheet.ts"
+  ],
+  "Trimetric": [
+    "src/app/actions.ts"
+  ],
+  "Dimetric": [
+    "src/app/actions.ts"
+  ],
+  "Normal To": [
+    "src/app/actions.ts"
+  ],
+  "Look straight at the selected plane, face or the sketch plane.": [
+    "src/app/actions.ts"
+  ],
+  "Select a plane or planar face first.": [
+    "src/app/actions.ts"
+  ],
+  "View Orientation": [
+    "src/app/actions.ts"
+  ],
+  "Display Style": [
+    "src/app/actions.ts"
+  ],
+  "Hide/Show Items": [
+    "src/app/actions.ts"
+  ],
+  "Shaded With Edges": [
+    "src/app/actions.ts"
+  ],
+  "Shaded": [
+    "src/app/actions.ts"
+  ],
+  "Hidden Lines Removed": [
+    "src/app/actions.ts"
+  ],
+  "Hidden Lines Visible": [
+    "src/app/actions.ts"
+  ],
+  "Wireframe": [
+    "src/app/actions.ts"
+  ],
+  "Perspective": [
+    "src/app/actions.ts"
+  ],
+  "Planes": [
+    "src/app/actions.ts"
+  ],
+  "Origins": [
+    "src/app/actions.ts"
+  ],
+  "Sketches": [
+    "src/app/actions.ts"
+  ],
+  "Sketch Constraints": [
+    "src/app/actions.ts"
+  ],
+  "Sketch Dimensions": [
+    "src/app/actions.ts"
+  ],
+  "System Theme": [
+    "src/app/actions.ts"
+  ],
+  "Light Theme": [
+    "src/app/actions.ts"
+  ],
+  "Dark Theme": [
+    "src/app/actions.ts"
+  ],
+  "Design Tree": [
+    "src/app/actions.ts"
+  ],
+  "Shortcut Bar": [
+    "src/app/actions.ts"
+  ],
+  "Show the most used commands at the cursor.": [
+    "src/app/actions.ts"
+  ],
+  "Keyboard Shortcuts": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts",
+    "src/app/start.ts"
+  ],
+  "Source Code on GitHub": [
+    "src/app/actions.ts"
+  ],
+  "About Parametric": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts"
+  ],
+  "Features": [
+    "src/app/actions.ts",
+    "src/app/panels.ts"
+  ],
+  "Draw": [
+    "src/app/actions.ts"
+  ],
+  "Modify": [
+    "src/app/actions.ts"
+  ],
+  "Constrain": [
+    "src/app/actions.ts"
+  ],
+  "Evaluate": [
+    "src/app/actions.ts"
+  ],
+  "Drawing": [
+    "src/app/actions.ts",
+    "src/app/app.ts",
+    "src/app/drawing.ts",
+    "src/assistant/panel.ts",
+    "src/drawing/pdf.ts"
+  ],
+  "View": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts",
+    "src/app/shell.ts"
+  ],
+  "File": [
+    "src/app/actions.ts",
+    "src/assistant/attachments.ts",
+    "src/assistant/panel.ts"
+  ],
+  "Recent": [
+    "src/app/actions.ts",
+    "src/app/start.ts"
+  ],
+  "Edit": [
+    "src/app/actions.ts"
+  ],
+  "Display": [
+    "src/app/actions.ts"
+  ],
+  "Orientation": [
+    "src/app/actions.ts"
+  ],
+  "Hide/Show": [
+    "src/app/actions.ts",
+    "src/app/app.ts"
+  ],
+  "Theme": [
+    "src/app/actions.ts",
+    "src/app/dialogs.ts"
+  ],
+  "Insert": [
+    "src/app/actions.ts"
+  ],
+  "Boss/Base": [
+    "src/app/actions.ts"
+  ],
+  "Cut": [
+    "src/app/actions.ts"
+  ],
+  "Pattern/Mirror": [
+    "src/app/actions.ts"
+  ],
+  "Reference Geometry": [
+    "src/app/actions.ts"
+  ],
+  "Tools": [
+    "src/app/actions.ts"
+  ],
+  "Sketch Entities": [
+    "src/app/actions.ts"
+  ],
+  "Sketch Tools": [
+    "src/app/actions.ts"
+  ],
+  "Dimensions and Constraints": [
+    "src/app/actions.ts"
+  ],
+  "Help": [
+    "src/app/actions.ts"
+  ],
+  "Getting Started": [
+    "src/app/actions.ts",
+    "src/app/taskpane.ts"
+  ],
+  "Modify Value...": [
+    "src/app/actions.ts"
+  ],
+  "Make Driving": [
+    "src/app/actions.ts"
+  ],
+  "Make Driven (reference)": [
+    "src/app/actions.ts"
+  ],
+  "Delete Dimension": [
+    "src/app/actions.ts"
+  ],
+  "Delete dimension": [
+    "src/app/actions.ts"
+  ],
+  "Delete Constraint": [
+    "src/app/actions.ts"
+  ],
+  "Delete constraint": [
+    "src/app/actions.ts"
+  ],
+  "Edit Sketch": [
+    "src/app/actions.ts"
+  ],
+  "Rename": [
+    "src/app/actions.ts",
+    "src/app/app.ts"
+  ],
+  "Show": [
+    "src/app/actions.ts"
+  ],
+  "Hide": [
+    "src/app/actions.ts"
+  ],
+  "Roll Back to Here": [
+    "src/app/actions.ts"
+  ],
+  "Sketch on This": [
+    "src/app/actions.ts"
+  ],
+  "Offset Plane": [
+    "src/app/actions.ts"
+  ],
+  "Show/Hide Planes": [
+    "src/app/actions.ts"
+  ],
+  "Select a Plane": [
+    "src/app/actions.ts"
+  ],
+  "Select one of the planes shown, or a planar face of the model, to sketch on.": [
+    "src/app/actions.ts"
+  ],
+  "Geometry engine failed to start": [
+    "src/app/app.ts"
+  ],
+  "The geometry engine is taking a long time": [
+    "src/app/app.ts"
+  ],
+  "Large imports can take a few minutes. If it has stopped responding, restart it; your part is kept.": [
+    "src/app/app.ts"
+  ],
+  "Restart engine": [
+    "src/app/app.ts"
+  ],
+  "Keep waiting": [
+    "src/app/app.ts"
+  ],
+  "Geometry engine restarted": [
+    "src/app/app.ts"
+  ],
+  "Design tree": [
+    "src/app/app.ts",
+    "src/app/tree.ts"
+  ],
+  "PropertyManager": [
+    "src/app/app.ts"
+  ],
+  "Panels": [
+    "src/app/app.ts"
+  ],
+  "Expand panel": [
+    "src/app/app.ts"
+  ],
+  "Close panel": [
+    "src/app/app.ts"
+  ],
+  "Start a command to see its properties here.": [
+    "src/app/app.ts"
+  ],
+  "OK": [
+    "src/app/app.ts",
+    "src/app/dialogs.ts",
+    "src/ui/overlay.ts"
+  ],
+  "OK (Enter)": [
+    "src/app/app.ts"
+  ],
+  "Cancel": [
+    "src/app/app.ts",
+    "src/app/dialogs.ts",
+    "src/app/fileops.ts",
+    "src/app/sketch/editor.ts",
+    "src/ui/overlay.ts"
+  ],
+  "Cancel (Esc)": [
+    "src/app/app.ts"
+  ],
+  "Hide or show items": [
+    "src/app/app.ts"
+  ],
+  "Part1": [
+    "src/app/app.ts",
+    "src/app/fileops.ts",
+    "src/app/shell.ts",
+    "src/app/start.ts"
+  ],
+  "View orientation": [
+    "src/app/app.ts"
+  ],
+  "Editing sketch. Select entities or pick a sketch tool.": [
+    "src/app/app.ts"
+  ],
+  "Ready": [
+    "src/app/app.ts"
+  ],
+  "Edited": [
+    "src/app/app.ts"
+  ],
+  "Saved": [
+    "src/app/app.ts"
+  ],
+  "Loading the geometry engine...": [
+    "src/app/app.ts"
+  ],
+  "Some pending equations were replaced by their values": [
+    "src/app/app.ts"
+  ],
+  "Rebuild failed": [
+    "src/app/app.ts"
+  ],
+  "The geometry engine stopped again while rebuilding this part. Undo the last change or edit the part to try again.": [
+    "src/app/app.ts"
+  ],
+  "Drawing. Drag views to arrange them; export to PDF or SVG from the Drawing tab.": [
+    "src/app/app.ts"
+  ],
+  "Model or drawing": [
+    "src/app/app.ts"
+  ],
+  "Model": [
+    "src/app/app.ts"
+  ],
+  "a feature": [
+    "src/app/app.ts"
+  ],
+  "Face": [
+    "src/app/app.ts",
+    "src/app/panels.ts"
+  ],
+  "Face ({0}) of {1}  Area {2}² equivalent": [
+    "src/app/app.ts"
+  ],
+  "the part": [
+    "src/app/app.ts"
+  ],
+  "Edge": [
+    "src/app/app.ts"
+  ],
+  "Origin": [
+    "src/app/app.ts",
+    "src/app/sketch/panel.ts",
+    "src/app/tree.ts"
+  ],
+  "Context menu": [
+    "src/app/app.ts",
+    "src/app/dialogs.ts"
+  ],
+  "Feature menu": [
+    "src/app/app.ts"
+  ],
+  "Reference menu": [
+    "src/app/app.ts"
+  ],
+  "Dimension menu": [
+    "src/app/app.ts"
+  ],
+  "Constraint menu": [
+    "src/app/app.ts"
+  ],
+  "Quick actions": [
+    "src/app/app.ts"
+  ],
+  "Shortcut bar": [
+    "src/app/app.ts"
+  ],
+  "Exit sketch": [
+    "src/app/app.ts"
+  ],
+  "Discard sketch changes": [
+    "src/app/app.ts"
+  ],
+  "Discard changes and exit sketch": [
+    "src/app/app.ts"
+  ],
+  "Sketch changes": [
+    "src/app/app.ts"
+  ],
+  "That plane is not available.": [
+    "src/app/app.ts"
+  ],
+  "New sketch": [
+    "src/app/app.ts"
+  ],
+  "Editing sketch. Pick a sketch tool or select entities.": [
+    "src/app/app.ts"
+  ],
+  "Discard changes?": [
+    "src/app/app.ts"
+  ],
+  "Leave the sketch and undo the changes made since you started editing it?": [
+    "src/app/app.ts"
+  ],
+  "Discard changes": [
+    "src/app/app.ts"
+  ],
+  "Rollback": [
+    "src/app/app.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Apps": [
+    "src/app/apps-panel.ts"
+  ],
+  "Close": [
+    "src/app/apps-panel.ts",
+    "src/app/dialogs.ts",
+    "src/app/pm.ts",
+    "src/ui/overlay.ts"
+  ],
+  "Open Apps in a new tab": [
+    "src/app/apps-panel.ts"
+  ],
+  "Open in new tab": [
+    "src/app/apps-panel.ts"
+  ],
+  "Your Puter apps": [
+    "src/app/apps-panel.ts"
+  ],
+  "Loading your apps": [
+    "src/app/apps-panel.ts"
+  ],
+  "Space": [
+    "src/app/commands.ts"
+  ],
+  "Add variable": [
+    "src/app/dialogs.ts"
+  ],
+  "Equations and Global Variables": [
+    "src/app/dialogs.ts"
+  ],
+  "Name": [
+    "src/app/dialogs.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Value / Equation": [
+    "src/app/dialogs.ts"
+  ],
+  "Evaluates to": [
+    "src/app/dialogs.ts"
+  ],
+  "Used by": [
+    "src/app/dialogs.ts"
+  ],
+  "Variable names must be unique.": [
+    "src/app/dialogs.ts"
+  ],
+  "Edit equations": [
+    "src/app/dialogs.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Material": [
+    "src/app/dialogs.ts",
+    "src/app/tree.ts"
+  ],
+  "Not specified": [
+    "src/app/dialogs.ts",
+    "src/app/drawing.ts"
+  ],
+  "Custom...": [
+    "src/app/dialogs.ts"
+  ],
+  "Custom material": [
+    "src/app/dialogs.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Custom material name": [
+    "src/app/dialogs.ts"
+  ],
+  "Density in kg per cubic metre": [
+    "src/app/dialogs.ts"
+  ],
+  "Enter a finite, positive density.": [
+    "src/app/dialogs.ts"
+  ],
+  "The material sets the density used for mass properties.": [
+    "src/app/dialogs.ts"
+  ],
+  "Apply": [
+    "src/app/dialogs.ts"
+  ],
+  "Edit material": [
+    "src/app/dialogs.ts"
+  ],
+  "Part name": [
+    "src/app/dialogs.ts",
+    "src/app/fileops.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Unit system": [
+    "src/app/dialogs.ts",
+    "src/app/shell.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Decimal places": [
+    "src/app/dialogs.ts"
+  ],
+  "Part Properties": [
+    "src/app/dialogs.ts"
+  ],
+  "Units": [
+    "src/app/dialogs.ts"
+  ],
+  "Changing units only changes how values are shown. The geometry keeps its size.": [
+    "src/app/dialogs.ts"
+  ],
+  "Part properties": [
+    "src/app/dialogs.ts",
+    "src/assistant/panel.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Some equations were replaced by their values": [
+    "src/app/dialogs.ts"
+  ],
+  "System": [
+    "src/app/dialogs.ts",
+    "src/app/start.ts"
+  ],
+  "Light": [
+    "src/app/dialogs.ts",
+    "src/app/start.ts"
+  ],
+  "Dark": [
+    "src/app/dialogs.ts",
+    "src/app/start.ts"
+  ],
+  "Default units for new parts": [
+    "src/app/dialogs.ts"
+  ],
+  "Image quality": [
+    "src/app/dialogs.ts"
+  ],
+  "Fast (coarse tessellation)": [
+    "src/app/dialogs.ts"
+  ],
+  "Normal": [
+    "src/app/dialogs.ts"
+  ],
+  "Fine (smooth curves)": [
+    "src/app/dialogs.ts"
+  ],
+  "Rotate view normal to the sketch plane when editing a sketch": [
+    "src/app/dialogs.ts"
+  ],
+  "Reverse mouse wheel zoom direction": [
+    "src/app/dialogs.ts"
+  ],
+  "Options": [
+    "src/app/dialogs.ts",
+    "src/app/sketch/panel.ts"
+  ],
+  "Done": [
+    "src/app/dialogs.ts",
+    "src/app/share.ts"
+  ],
+  "There is no solid body yet.": [
+    "src/app/dialogs.ts"
+  ],
+  "Volume": [
+    "src/app/dialogs.ts"
+  ],
+  "Surface area": [
+    "src/app/dialogs.ts"
+  ],
+  "Center of mass": [
+    "src/app/dialogs.ts"
+  ],
+  "Copy": [
+    "src/app/dialogs.ts"
+  ],
+  "Could not copy to the clipboard. Try again, or select and copy the report text manually.": [
+    "src/app/dialogs.ts"
+  ],
+  "Clipboard unavailable": [
+    "src/app/dialogs.ts"
+  ],
+  "Copied to the clipboard": [
+    "src/app/dialogs.ts"
+  ],
+  "Mouse and touch": [
+    "src/app/dialogs.ts"
+  ],
+  "Rotate view": [
+    "src/app/dialogs.ts"
+  ],
+  "Middle drag, right drag or left drag on the model": [
+    "src/app/dialogs.ts"
+  ],
+  "Pan": [
+    "src/app/dialogs.ts"
+  ],
+  "Ctrl + middle drag, Shift + right drag": [
+    "src/app/dialogs.ts"
+  ],
+  "Zoom at cursor": [
+    "src/app/dialogs.ts"
+  ],
+  "Wheel, Shift + middle drag, pinch": [
+    "src/app/dialogs.ts"
+  ],
+  "Pan and zoom on touch": [
+    "src/app/dialogs.ts"
+  ],
+  "Two fingers": [
+    "src/app/dialogs.ts"
+  ],
+  "Right click or long press": [
+    "src/app/dialogs.ts"
+  ],
+  "Commands": [
+    "src/app/dialogs.ts",
+    "src/app/shell.ts"
+  ],
+  "Rotate 15 degrees": [
+    "src/app/dialogs.ts"
+  ],
+  "Arrow keys": [
+    "src/app/dialogs.ts"
+  ],
+  "Rotate 90 degrees": [
+    "src/app/dialogs.ts"
+  ],
+  "Roll": [
+    "src/app/dialogs.ts"
+  ],
+  "Cancel or clear selection": [
+    "src/app/dialogs.ts"
+  ],
+  "Esc": [
+    "src/app/dialogs.ts"
+  ],
+  "Keyboard navigation": [
+    "src/app/dialogs.ts"
+  ],
+  "Next or previous area (menu bar, CommandManager, design tree, graphics area, task pane, status bar, notifications)": [
+    "src/app/dialogs.ts"
+  ],
+  "F6, Shift + F6": [
+    "src/app/dialogs.ts"
+  ],
+  "Rename the feature in the design tree": [
+    "src/app/dialogs.ts"
+  ],
+  "Context menu of the feature in the design tree": [
+    "src/app/dialogs.ts"
+  ],
+  "Parametric is an open-source, browser-based 3D CAD application for feature-based part modeling: constrained sketches, extrudes, revolves, fillets, shells, patterns and more, on the OpenCascade geometry kernel.": [
+    "src/app/dialogs.ts"
+  ],
+  "This is an early alpha. Please do not rely on it for production designs yet, and keep copies of important parts.": [
+    "src/app/dialogs.ts"
+  ],
+  "Source code on GitHub": [
+    "src/app/dialogs.ts",
+    "src/app/shell.ts",
+    "src/app/start.ts"
+  ],
+  "Third-party notices": [
+    "src/app/dialogs.ts"
+  ],
+  "Entities": [
+    "src/app/dialogs.ts"
+  ],
+  "Select one or two faces, edges, vertices or planes": [
+    "src/app/dialogs.ts"
+  ],
+  "Selections": [
+    "src/app/dialogs.ts"
+  ],
+  "Edge length": [
+    "src/app/dialogs.ts"
+  ],
+  "Radius": [
+    "src/app/dialogs.ts",
+    "src/app/panels.ts",
+    "src/assistant/tools.ts",
+    "src/model/features.ts"
+  ],
+  "Diameter": [
+    "src/app/dialogs.ts",
+    "src/app/panels.ts",
+    "src/assistant/tools.ts",
+    "src/model/features.ts"
+  ],
+  "Center": [
+    "src/app/dialogs.ts"
+  ],
+  "Face area": [
+    "src/app/dialogs.ts"
+  ],
+  "Angle": [
+    "src/app/dialogs.ts",
+    "src/app/panels.ts",
+    "src/model/features.ts"
+  ],
+  "Normal distance": [
+    "src/app/dialogs.ts"
+  ],
+  "Distance": [
+    "src/app/dialogs.ts",
+    "src/app/panels.ts",
+    "src/assistant/tools.ts",
+    "src/model/features.ts"
+  ],
+  "dX, dY, dZ": [
+    "src/app/dialogs.ts"
+  ],
+  "Select entities to measure.": [
+    "src/app/dialogs.ts"
+  ],
+  "Current": [
+    "src/app/dialogs.ts"
+  ],
+  "Selected": [
+    "src/app/dialogs.ts"
+  ],
+  "Offset": [
+    "src/app/dialogs.ts",
+    "src/model/features.ts"
+  ],
+  "Section plane": [
+    "src/app/dialogs.ts"
+  ],
+  "Section Plane": [
+    "src/app/dialogs.ts"
+  ],
+  "Flip side": [
+    "src/app/dialogs.ts"
+  ],
+  "Select a plane or planar face before starting to cut along it. Press OK to keep the section active; run Section View again to turn it off.": [
+    "src/app/dialogs.ts"
+  ],
+  "Select a chain of sketch curves before starting, then set the distance.": [
+    "src/app/dialogs.ts"
+  ],
+  "Parameters": [
+    "src/app/dialogs.ts",
+    "src/app/panels.ts"
+  ],
+  "Offset distance": [
+    "src/app/dialogs.ts",
+    "src/app/panels.ts"
+  ],
+  "Reverse (inward)": [
+    "src/app/dialogs.ts"
+  ],
+  "Select sketch curves to offset first.": [
+    "src/app/dialogs.ts"
+  ],
+  "Offset entities": [
+    "src/app/dialogs.ts"
+  ],
+  "Nothing could be offset with that distance.": [
+    "src/app/dialogs.ts"
+  ],
+  "Select the entities to mirror and a line (ideally a centerline) to mirror about.": [
+    "src/app/dialogs.ts"
+  ],
+  "Choose a mirror axis with distinct endpoints.": [
+    "src/app/dialogs.ts"
+  ],
+  "Mirror entities": [
+    "src/app/dialogs.ts"
+  ],
+  "Drawing sheet": [
+    "src/app/drawing.ts"
+  ],
+  "Drawing. Drag views to move them, use the wheel to zoom. Arrow keys move the selected view and Delete removes it.": [
+    "src/app/drawing.ts"
+  ],
+  "There is no solid to draw yet. Build the part in the Model tab first.": [
+    "src/app/drawing.ts"
+  ],
+  "Create drawing": [
+    "src/app/drawing.ts"
+  ],
+  "Arrange views": [
+    "src/app/drawing.ts"
+  ],
+  "Edit drawing": [
+    "src/app/drawing.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Could not project the views": [
+    "src/app/drawing.ts"
+  ],
+  "Delete view": [
+    "src/app/drawing.ts"
+  ],
+  "Add view": [
+    "src/app/drawing.ts"
+  ],
+  "Sheet size": [
+    "src/app/drawing.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Scale": [
+    "src/app/drawing.ts"
+  ],
+  "Sheet scale": [
+    "src/app/drawing.ts"
+  ],
+  "View to add": [
+    "src/app/drawing.ts"
+  ],
+  "Sheet": [
+    "src/app/drawing.ts"
+  ],
+  "Landscape": [
+    "src/app/drawing.ts"
+  ],
+  "Sheet orientation": [
+    "src/app/drawing.ts"
+  ],
+  "Arrange standard views": [
+    "src/app/drawing.ts"
+  ],
+  "Views": [
+    "src/app/drawing.ts"
+  ],
+  "Title Block": [
+    "src/app/drawing.ts"
+  ],
+  "Title": [
+    "src/app/drawing.ts"
+  ],
+  "Drawn by": [
+    "src/app/drawing.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Notes": [
+    "src/app/drawing.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Export": [
+    "src/app/drawing.ts"
+  ],
+  "Select the view; arrow keys then move it": [
+    "src/app/drawing.ts"
+  ],
+  "Hidden lines": [
+    "src/app/drawing.ts"
+  ],
+  "Hidden": [
+    "src/app/drawing.ts"
+  ],
+  "Overall dimensions": [
+    "src/app/drawing.ts"
+  ],
+  "Dims": [
+    "src/app/drawing.ts"
+  ],
+  "Mounting Bracket": [
+    "src/app/examples.ts"
+  ],
+  "Sketch1": [
+    "src/app/examples.ts"
+  ],
+  "Extrude1": [
+    "src/app/examples.ts"
+  ],
+  "Sketch2": [
+    "src/app/examples.ts"
+  ],
+  "Hole1": [
+    "src/app/examples.ts"
+  ],
+  "Fillet1": [
+    "src/app/examples.ts"
+  ],
+  "Aluminum 6061": [
+    "src/app/examples.ts",
+    "src/model/materials.ts"
+  ],
+  "Pipe Flange": [
+    "src/app/examples.ts"
+  ],
+  "Revolve1": [
+    "src/app/examples.ts"
+  ],
+  "Circular Pattern1": [
+    "src/app/examples.ts"
+  ],
+  "Chamfer1": [
+    "src/app/examples.ts"
+  ],
+  "Stainless Steel (304)": [
+    "src/app/examples.ts",
+    "src/model/materials.ts"
+  ],
+  "Extrude, counterbored holes and a fillet": [
+    "src/app/examples.ts"
+  ],
+  "Revolve, hole, circular pattern and chamfer": [
+    "src/app/examples.ts"
+  ],
+  "Saving here replaces that version.": [
+    "src/app/fileops.ts"
+  ],
+  "Reopen it to see those changes.": [
+    "src/app/fileops.ts"
+  ],
+  "Reopen": [
+    "src/app/fileops.ts"
+  ],
+  "Rename part": [
+    "src/app/fileops.ts",
+    "src/app/shell.ts"
+  ],
+  "Folders cannot be opened. Open a part inside the folder instead.": [
+    "src/app/fileops.ts"
+  ],
+  "Could not open the file": [
+    "src/app/fileops.ts"
+  ],
+  "Save changes?": [
+    "src/app/fileops.ts"
+  ],
+  "\"{0}\" has unsaved changes{1}. Save them before you {2}?": [
+    "src/app/fileops.ts"
+  ],
+  " (including {0}, which is still open)": [
+    "src/app/fileops.ts"
+  ],
+  "Don't save": [
+    "src/app/fileops.ts"
+  ],
+  "More changes were made while saving. They are still open and unsaved.": [
+    "src/app/fileops.ts"
+  ],
+  "start a new part": [
+    "src/app/fileops.ts",
+    "src/app/start.ts"
+  ],
+  "Replace the saved part?": [
+    "src/app/fileops.ts"
+  ],
+  "Replace": [
+    "src/app/fileops.ts"
+  ],
+  "Could not save": [
+    "src/app/fileops.ts"
+  ],
+  "Download a copy": [
+    "src/app/fileops.ts"
+  ],
+  "Save As": [
+    "src/app/fileops.ts"
+  ],
+  "Enter a name": [
+    "src/app/fileops.ts"
+  ],
+  "Could not open the part": [
+    "src/app/fileops.ts"
+  ],
+  "The part": [
+    "src/app/fileops.ts"
+  ],
+  "open another part": [
+    "src/app/fileops.ts"
+  ],
+  "Loading your parts...": [
+    "src/app/fileops.ts"
+  ],
+  "No parts saved in this browser.": [
+    "src/app/fileops.ts",
+    "src/app/taskpane.ts"
+  ],
+  "No saved parts yet.": [
+    "src/app/fileops.ts",
+    "src/app/taskpane.ts"
+  ],
+  "No parts saved in this browser yet. Sign in to Puter to keep parts in your cloud storage.": [
+    "src/app/fileops.ts"
+  ],
+  "Delete part": [
+    "src/app/fileops.ts"
+  ],
+  "It will be moved to your Puter Trash.": [
+    "src/app/fileops.ts"
+  ],
+  "This cannot be undone.": [
+    "src/app/fileops.ts"
+  ],
+  "Could not delete the part": [
+    "src/app/fileops.ts"
+  ],
+  "Loading...": [
+    "src/app/fileops.ts",
+    "src/app/taskpane.ts"
+  ],
+  "Shared with me": [
+    "src/app/fileops.ts"
+  ],
+  "Nothing has been shared with you yet.": [
+    "src/app/fileops.ts"
+  ],
+  "View only": [
+    "src/app/fileops.ts"
+  ],
+  "Can edit": [
+    "src/app/fileops.ts",
+    "src/app/share.ts"
+  ],
+  "From device...": [
+    "src/app/fileops.ts"
+  ],
+  "Browse Puter...": [
+    "src/app/fileops.ts"
+  ],
+  "Open": [
+    "src/app/fileops.ts",
+    "src/app/start.ts",
+    "src/app/taskpane.ts"
+  ],
+  "Could not open the SolidWorks part": [
+    "src/app/fileops.ts"
+  ],
+  "Could not open the STEP file": [
+    "src/app/fileops.ts"
+  ],
+  "Could not open the SolidWorks file": [
+    "src/app/fileops.ts"
+  ],
+  "Import failed": [
+    "src/app/fileops.ts"
+  ],
+  "There is no geometry to export yet.": [
+    "src/app/fileops.ts"
+  ],
+  "Export failed": [
+    "src/app/fileops.ts"
+  ],
+  "Recover unsaved work?": [
+    "src/app/fileops.ts"
+  ],
+  "Discard": [
+    "src/app/fileops.ts"
+  ],
+  "Restore": [
+    "src/app/fileops.ts"
+  ],
+  "close Parametric": [
+    "src/app/fileops.ts"
+  ],
+  "This STEP file is too large to import (60 MB limit).": [
+    "src/app/fileops.ts"
+  ],
+  "This SolidWorks file is too large to open (200 MB limit).": [
+    "src/app/fileops.ts"
+  ],
+  "This file is too large to open as a part (200 MB limit).": [
+    "src/app/fileops.ts"
+  ],
+  "Saved in this browser only. Sign in to Puter to keep your parts in the cloud and open them anywhere.": [
+    "src/app/fileops.ts"
+  ],
+  "Sign in": [
+    "src/app/fileops.ts",
+    "src/app/share.ts"
+  ],
+  "Select a sketch in the design tree": [
+    "src/app/panels.ts"
+  ],
+  "Profile sketch": [
+    "src/app/panels.ts"
+  ],
+  "Blind": [
+    "src/app/panels.ts"
+  ],
+  "Through All": [
+    "src/app/panels.ts"
+  ],
+  "Mid Plane": [
+    "src/app/panels.ts"
+  ],
+  "Depth": [
+    "src/app/panels.ts",
+    "src/assistant/tools.ts",
+    "src/model/features.ts"
+  ],
+  "Draft angle": [
+    "src/app/panels.ts",
+    "src/model/features.ts"
+  ],
+  "Draft outward": [
+    "src/app/panels.ts"
+  ],
+  "Direction 1": [
+    "src/app/panels.ts"
+  ],
+  "Reverse direction": [
+    "src/app/panels.ts"
+  ],
+  "End condition": [
+    "src/app/panels.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Direction 2": [
+    "src/app/panels.ts"
+  ],
+  "Profile": [
+    "src/app/panels.ts"
+  ],
+  "Select a sketch to extrude": [
+    "src/app/panels.ts"
+  ],
+  "Axis of revolution": [
+    "src/app/panels.ts"
+  ],
+  "Uses the sketch centerline (or pick an edge)": [
+    "src/app/panels.ts"
+  ],
+  "Axis": [
+    "src/app/panels.ts"
+  ],
+  "Type": [
+    "src/app/panels.ts"
+  ],
+  "Select a sketch to revolve": [
+    "src/app/panels.ts"
+  ],
+  "Select edges or faces": [
+    "src/app/panels.ts",
+    "src/kernel/build.ts"
+  ],
+  "Items to fillet": [
+    "src/app/panels.ts"
+  ],
+  "Fillet Parameters": [
+    "src/app/panels.ts"
+  ],
+  "Select edges or faces to fillet": [
+    "src/app/panels.ts"
+  ],
+  "Items to chamfer": [
+    "src/app/panels.ts"
+  ],
+  "Distance 2": [
+    "src/app/panels.ts",
+    "src/model/features.ts"
+  ],
+  "Flip direction": [
+    "src/app/panels.ts"
+  ],
+  "Chamfer Parameters": [
+    "src/app/panels.ts"
+  ],
+  "Chamfer type": [
+    "src/app/panels.ts"
+  ],
+  "Equal distance": [
+    "src/app/panels.ts"
+  ],
+  "Distance distance": [
+    "src/app/panels.ts"
+  ],
+  "Angle distance": [
+    "src/app/panels.ts"
+  ],
+  "Select edges or faces to chamfer": [
+    "src/app/panels.ts"
+  ],
+  "Faces to remove": [
+    "src/app/panels.ts"
+  ],
+  "Select faces to open (optional)": [
+    "src/app/panels.ts"
+  ],
+  "Thickness": [
+    "src/app/panels.ts",
+    "src/model/features.ts"
+  ],
+  "Shell outward": [
+    "src/app/panels.ts"
+  ],
+  "Neutral plane": [
+    "src/app/panels.ts"
+  ],
+  "Faces to draft": [
+    "src/app/panels.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Reverse pull direction": [
+    "src/app/panels.ts"
+  ],
+  "Select a neutral plane": [
+    "src/app/panels.ts"
+  ],
+  "Select faces to draft": [
+    "src/app/panels.ts",
+    "src/kernel/build.ts"
+  ],
+  "Click a planar face to place holes. Each click adds a hole. Edit the positions sketch afterwards to dimension them.": [
+    "src/app/panels.ts"
+  ],
+  "Simple": [
+    "src/app/panels.ts"
+  ],
+  "Counterbore": [
+    "src/app/panels.ts"
+  ],
+  "Countersink": [
+    "src/app/panels.ts"
+  ],
+  "Counterbore diameter": [
+    "src/app/panels.ts",
+    "src/assistant/tools.ts",
+    "src/model/features.ts"
+  ],
+  "Counterbore depth": [
+    "src/app/panels.ts",
+    "src/assistant/tools.ts",
+    "src/model/features.ts"
+  ],
+  "Countersink diameter": [
+    "src/app/panels.ts",
+    "src/model/features.ts"
+  ],
+  "Countersink angle": [
+    "src/app/panels.ts",
+    "src/model/features.ts"
+  ],
+  "Positions": [
+    "src/app/panels.ts"
+  ],
+  "Click a planar face to place a hole": [
+    "src/app/panels.ts"
+  ],
+  "Hole Type": [
+    "src/app/panels.ts"
+  ],
+  "End Condition": [
+    "src/app/panels.ts"
+  ],
+  "Add hole position": [
+    "src/app/panels.ts"
+  ],
+  "Remove hole positions": [
+    "src/app/panels.ts"
+  ],
+  "Click a planar face to place at least one hole": [
+    "src/app/panels.ts"
+  ],
+  "Features to pattern": [
+    "src/app/panels.ts"
+  ],
+  "Select features in the tree or a face of the feature": [
+    "src/app/panels.ts"
+  ],
+  "Direction": [
+    "src/app/panels.ts"
+  ],
+  "Select an edge, face or plane": [
+    "src/app/panels.ts"
+  ],
+  "Spacing": [
+    "src/app/panels.ts",
+    "src/assistant/tools.ts",
+    "src/model/features.ts"
+  ],
+  "Number of instances": [
+    "src/app/panels.ts"
+  ],
+  "Select a direction": [
+    "src/app/panels.ts"
+  ],
+  "Select features to pattern": [
+    "src/app/panels.ts",
+    "src/kernel/build.ts"
+  ],
+  "Pattern axis": [
+    "src/app/panels.ts"
+  ],
+  "Select a circular edge, cylindrical face or axis": [
+    "src/app/panels.ts"
+  ],
+  "Equal spacing": [
+    "src/app/panels.ts"
+  ],
+  "Select a pattern axis": [
+    "src/app/panels.ts"
+  ],
+  "Mirror plane": [
+    "src/app/panels.ts"
+  ],
+  "Features to mirror": [
+    "src/app/panels.ts"
+  ],
+  "Mirror Face/Plane": [
+    "src/app/panels.ts"
+  ],
+  "Features to Mirror": [
+    "src/app/panels.ts"
+  ],
+  "Leave empty to mirror the whole body.": [
+    "src/app/panels.ts"
+  ],
+  "Select a mirror plane": [
+    "src/app/panels.ts"
+  ],
+  "First reference": [
+    "src/app/panels.ts"
+  ],
+  "First Reference": [
+    "src/app/panels.ts"
+  ],
+  "Flip offset": [
+    "src/app/panels.ts"
+  ],
+  "Select a plane or planar face": [
+    "src/app/panels.ts",
+    "src/kernel/build.ts"
+  ],
+  "Profiles": [
+    "src/app/panels.ts"
+  ],
+  "Select two or more sketches in order": [
+    "src/app/panels.ts"
+  ],
+  "Ruled (straight) sections": [
+    "src/app/panels.ts"
+  ],
+  "Select at least two profile sketches": [
+    "src/app/panels.ts"
+  ],
+  "Path": [
+    "src/app/panels.ts"
+  ],
+  "Select the path sketch": [
+    "src/app/panels.ts"
+  ],
+  "Profile and Path": [
+    "src/app/panels.ts"
+  ],
+  "Select a profile and a path": [
+    "src/app/panels.ts",
+    "src/kernel/build.ts"
+  ],
+  "Value": [
+    "src/app/pm.ts",
+    "src/app/sketch/panel.ts"
+  ],
+  "not a valid value": [
+    "src/app/pm.ts"
+  ],
+  "Select in the graphics area": [
+    "src/app/pm.ts"
+  ],
+  "Can view": [
+    "src/app/share.ts"
+  ],
+  "Sharing needs Puter, which could not be loaded. Check your connection and reload.": [
+    "src/app/share.ts"
+  ],
+  "Share": [
+    "src/app/share.ts"
+  ],
+  "Sign in to Puter to save this part to your cloud and share it with others.": [
+    "src/app/share.ts"
+  ],
+  "This part is saved in this browser. Save a copy to your Puter cloud, then share it.": [
+    "src/app/share.ts"
+  ],
+  "Save the part to your Puter cloud first, then share it.": [
+    "src/app/share.ts"
+  ],
+  "Puter username or email": [
+    "src/app/share.ts"
+  ],
+  "Person to share with": [
+    "src/app/share.ts"
+  ],
+  "Access": [
+    "src/app/share.ts"
+  ],
+  "Can edit and share": [
+    "src/app/share.ts"
+  ],
+  "Remove access": [
+    "src/app/share.ts"
+  ],
+  " (invited)": [
+    "src/app/share.ts"
+  ],
+  "Not shared with anyone yet.": [
+    "src/app/share.ts"
+  ],
+  "Person": [
+    "src/app/share.ts"
+  ],
+  "Actions": [
+    "src/app/share.ts"
+  ],
+  "Sharing...": [
+    "src/app/share.ts"
+  ],
+  "You already own this part.": [
+    "src/app/share.ts"
+  ],
+  "People you share with open the part in their own Parametric. With edit access, their saves update this file, so agree on who is editing: two people saving at the same time overwrite each other.": [
+    "src/app/share.ts"
+  ],
+  "People with access": [
+    "src/app/share.ts"
+  ],
+  "Main menu": [
+    "src/app/shell.ts"
+  ],
+  "Menu": [
+    "src/app/shell.ts",
+    "src/ui/menu.ts"
+  ],
+  "Quick access": [
+    "src/app/shell.ts"
+  ],
+  "Search commands": [
+    "src/app/shell.ts"
+  ],
+  "Account": [
+    "src/app/shell.ts",
+    "src/app/start.ts"
+  ],
+  "Parametric": [
+    "src/app/shell.ts",
+    "src/app/start.ts"
+  ],
+  "Early alpha": [
+    "src/app/shell.ts"
+  ],
+  "Alpha": [
+    "src/app/shell.ts"
+  ],
+  "Command groups": [
+    "src/app/shell.ts"
+  ],
+  "CommandManager": [
+    "src/app/shell.ts"
+  ],
+  "Design tree and properties": [
+    "src/app/shell.ts"
+  ],
+  "Resize panel": [
+    "src/app/shell.ts"
+  ],
+  "Graphics area": [
+    "src/app/shell.ts"
+  ],
+  "Task pane": [
+    "src/app/shell.ts"
+  ],
+  "Show design tree": [
+    "src/app/shell.ts"
+  ],
+  "Tree": [
+    "src/app/shell.ts"
+  ],
+  "Time of the last rebuild": [
+    "src/app/shell.ts"
+  ],
+  "Make a point lie on another point, or on a line, arc, circle or spline. Pick two points, or a point and a curve. Model edges and vertices work too.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Make lines horizontal, or line up points horizontally. Pick a line, or two points.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Make lines vertical, or line up points vertically. Pick a line, or two points.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Make two lines parallel. Pick two lines.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Make two lines perpendicular. Pick two lines.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Make a curve touch another without crossing it. Pick a line and an arc or circle, or two arcs or circles.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Give two lines the same length, or two arcs or circles the same radius. Pick two of them.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Give arcs and circles the same centre. Pick two arcs or circles, or a point and an arc or circle.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Put a point at the middle of a line. Pick a point and a line.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Put two lines on the same infinite line. Pick two lines.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Mirror two points, lines, arcs or circles about a line. Pick the two, then the line.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Hold sketch geometry where it is. Pick the geometry to fix.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Convert entities": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Click model edges, faces or vertices to project them into the sketch. Projected geometry stays linked to the model. Esc to finish.": [
+    "src/app/sketch/constrain.ts"
+  ],
+  "Under Defined": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Fully Defined": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Over Defined": [
+    "src/app/sketch/editor.ts"
+  ],
+  "This geometry is fully defined, so it cannot be dragged.": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Select sketch entities, drag them, or pick a sketch tool.": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Drag sketch geometry": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Drag": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Sketch constraints": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Construction geometry": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Add dimension": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Make dimension driven": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Driven dimension": [
+    "src/app/sketch/editor.ts"
+  ],
+  "This dimension would over-define the sketch, so it was added as a driven (reference) dimension.": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Make dimension driving": [
+    "src/app/sketch/editor.ts"
+  ],
+  "This is a driven (reference) dimension. Make it driving from its context menu to edit its value.": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Value must be greater than zero": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Change dimension": [
+    "src/app/sketch/editor.ts",
+    "src/app/sketch/panel.ts"
+  ],
+  "Apply value": [
+    "src/app/sketch/editor.ts"
+  ],
+  "Arc": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Fully defined.": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Model edge": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Model vertex": [
+    "src/app/sketch/panel.ts"
+  ],
+  " (projected)": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Selected Entities": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Projected: model edge not found": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Projected from a model vertex": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Projected from a model edge": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Keep this geometry where it is, no longer linked to the model": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Unlink": [
+    "src/app/sketch/panel.ts"
+  ],
+  "No constraints": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Not in the sketch yet: adding a constraint projects it, linked to the model.": [
+    "src/app/sketch/panel.ts"
+  ],
+  " (conflict)": [
+    "src/app/sketch/panel.ts"
+  ],
+  " (redundant)": [
+    "src/app/sketch/panel.ts",
+    "src/assistant/sketch.ts"
+  ],
+  "Existing Constraints": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Add Constraints": [
+    "src/app/sketch/panel.ts"
+  ],
+  "For construction": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Driven (reference) dimension": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Driven (reference only)": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Empty sketch": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Pick a constraint in the Constrain group of the Sketch tab, then click the geometry it applies to. Or select geometry first (Shift-click to add model edges and vertices) to see the constraints that fit. Drag geometry to see how it is constrained. Double-click a dimension to change it.": [
+    "src/app/sketch/panel.ts"
+  ],
+  "{0} model item(s) selected. Use Convert Entities to project them into this sketch, linked to the model.": [
+    "src/app/sketch/panel.ts"
+  ],
+  "{0} projected entities (red) lost their model edge and stay where they were. Delete or unlink them, or project the edge again.": [
+    "src/app/sketch/panel.ts"
+  ],
+  "Add centerline": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add line": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click to start a line, click again to add segments. Double-click or press Esc to finish.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add center rectangle": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add rectangle": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click the centre, then a corner.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click one corner, then the opposite corner.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add circle": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click the centre, then a point on the circle.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click three points on the circle.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click the centre, then the start point, then the end point.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add arc": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click the start and end points, then a point on the arc.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click the end point of a line or arc, then where the arc should end.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Start the tangent arc on the end point of a line or arc.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add tangent arc": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click the centre, then a vertex. Set the number of sides in the panel.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add polygon": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Number of sides": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click the two arc centres, then set the width.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add slot": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add spline": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click points along the curve. Double-click or press Enter to finish.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click to place sketch points (used to position holes).": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Add point": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click a corner where two lines meet to round it.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click the corner point shared by two lines.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Sketch fillet": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Fillet radius": [
+    "src/app/sketch/tools.ts",
+    "src/assistant/tools.ts"
+  ],
+  "Click the part of a curve to remove (up to its nearest intersections).": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Trim": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Nothing trimmed. Click between intersections on a line, arc, or circle.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click near the end of a line to extend it to the next curve.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Extend": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Nothing to extend to in that direction.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Click one or two entities, then click where to place the dimension.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "These entities cannot be dimensioned together. Select one or two lines, points, circles or arcs.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Nothing to dimension": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Lines: drag the label sideways for horizontal or vertical distance. Two lines give an angle, parallel lines a distance. Circles are dimensioned by diameter, arcs by radius. Type \"=\" followed by a variable name to link a value.": [
+    "src/app/sketch/tools.ts"
+  ],
+  "Units for the new part": [
+    "src/app/start.ts"
+  ],
+  "open an example": [
+    "src/app/start.ts"
+  ],
+  "Feature-based 3D part modeling in your browser.": [
+    "src/app/start.ts"
+  ],
+  "New part": [
+    "src/app/start.ts"
+  ],
+  "Start from a blank part": [
+    "src/app/start.ts"
+  ],
+  "Open a part from your Puter cloud or this browser": [
+    "src/app/start.ts"
+  ],
+  "Open a part saved in this browser": [
+    "src/app/start.ts"
+  ],
+  "Open from device": [
+    "src/app/start.ts"
+  ],
+  "Open a part file, or a STEP or SolidWorks file": [
+    "src/app/start.ts"
+  ],
+  "Units for new parts": [
+    "src/app/start.ts"
+  ],
+  "Examples": [
+    "src/app/start.ts"
+  ],
+  "Sign in to save to the cloud": [
+    "src/app/start.ts"
+  ],
+  "You can use Parametric without an account; parts are then saved in this browser.": [
+    "src/app/start.ts"
+  ],
+  "Open source on GitHub": [
+    "src/app/start.ts"
+  ],
+  "Sign-in failed": [
+    "src/app/start.ts"
+  ],
+  "Signed in. Your parts will now be saved to your Puter cloud.": [
+    "src/app/start.ts"
+  ],
+  "Account: not signed in": [
+    "src/app/start.ts"
+  ],
+  "Sign in with Puter": [
+    "src/app/start.ts"
+  ],
+  "Cloud storage is unavailable offline": [
+    "src/app/start.ts"
+  ],
+  "Sign out": [
+    "src/app/start.ts"
+  ],
+  "Signed out. New parts will be saved in this browser.": [
+    "src/app/start.ts"
+  ],
+  "Parts": [
+    "src/app/taskpane.ts"
+  ],
+  "Appearance": [
+    "src/app/taskpane.ts"
+  ],
+  "Getting started": [
+    "src/app/taskpane.ts"
+  ],
+  "Close task pane": [
+    "src/app/taskpane.ts"
+  ],
+  "Your parts": [
+    "src/app/taskpane.ts"
+  ],
+  "Parts in this browser": [
+    "src/app/taskpane.ts"
+  ],
+  "Part colour": [
+    "src/app/taskpane.ts"
+  ],
+  "Custom colour": [
+    "src/app/taskpane.ts"
+  ],
+  "1. Sketch": [
+    "src/app/taskpane.ts"
+  ],
+  "Select a plane (Front, Top or Right) or a flat face and click Sketch. The view turns to face the plane.": [
+    "src/app/taskpane.ts"
+  ],
+  "2. Draw": [
+    "src/app/taskpane.ts"
+  ],
+  "Use Line (L), Rectangle (R), Circle (C) and the other tools. Geometry snaps to points, midpoints and horizontal or vertical directions and adds matching constraints.": [
+    "src/app/taskpane.ts"
+  ],
+  "3. Constrain": [
+    "src/app/taskpane.ts"
+  ],
+  "Use Smart Dimension (D) to set sizes, and the Constrain group of the Sketch tab (Coincident, Parallel, Tangent...) to fix how geometry relates. Convert Entities projects model edges into the sketch, linked to the model. Blue geometry can still move; black is fully defined; red conflicts.": [
+    "src/app/taskpane.ts"
+  ],
+  "4. Build": [
+    "src/app/taskpane.ts"
+  ],
+  "Exit the sketch and use Extruded Boss, Revolved Boss or a Cut. Then add fillets, chamfers, holes, shells and patterns.": [
+    "src/app/taskpane.ts"
+  ],
+  "5. Change": [
+    "src/app/taskpane.ts"
+  ],
+  "Double-click a feature in the design tree or a face in the model to edit it. Everything after it rebuilds.": [
+    "src/app/taskpane.ts"
+  ],
+  "6. Save and share": [
+    "src/app/taskpane.ts"
+  ],
+  "Save to your Puter cloud (or this browser), or export STEP and STL files.": [
+    "src/app/taskpane.ts"
+  ],
+  "Navigate: middle or right drag to rotate, Ctrl + middle or Shift + right drag to pan, wheel to zoom, F to fit. Press F1 for all shortcuts.": [
+    "src/app/taskpane.ts"
+  ],
+  "No recent parts": [
+    "src/app/taskpane.ts"
+  ],
+  "Filter": [
+    "src/app/tree.ts"
+  ],
+  "Filter the design tree": [
+    "src/app/tree.ts"
+  ],
+  "Error": [
+    "src/app/tree.ts"
+  ],
+  "Rollback bar. Drag up or down, or press Shift with the arrow keys, to roll the model back.": [
+    "src/app/tree.ts"
+  ],
+  "Feature name": [
+    "src/app/tree.ts"
+  ],
+  "3D view. Use arrow keys to rotate, Ctrl and arrow keys to pan, F to fit, plus and minus to zoom.": [
+    "src/app/viewport.ts"
+  ],
+  "Orientation triad. Click an axis to look along it.": [
+    "src/app/viewport.ts"
+  ],
+  "I have nothing to add.": [
+    "src/assistant/agent.ts"
+  ],
+  "Not run: the user stopped the assistant.": [
+    "src/assistant/agent.ts"
+  ],
+  "Not run: an earlier change in this reply failed.": [
+    "src/assistant/agent.ts"
+  ],
+  "The reply hit its length limit while writing this step.": [
+    "src/assistant/agent.ts"
+  ],
+  "Error: not run. Your reply reached the output limit while writing this call, so its arguments were cut off. Split the work into smaller calls.": [
+    "src/assistant/agent.ts"
+  ],
+  "The arguments could not be read.": [
+    "src/assistant/agent.ts"
+  ],
+  "Error: the arguments could not be read as JSON.": [
+    "src/assistant/agent.ts"
+  ],
+  "The screenshot from capture_view:": [
+    "src/assistant/agent.ts"
+  ],
+  "The assistant is still answering": [
+    "src/assistant/agent.ts"
+  ],
+  "This file": [
+    "src/assistant/attach.ts"
+  ],
+  "decode timed out": [
+    "src/assistant/attachments.ts"
+  ],
+  "decode failed": [
+    "src/assistant/attachments.ts"
+  ],
+  "Pasted image": [
+    "src/assistant/attachments.ts",
+    "src/assistant/panel.ts"
+  ],
+  "thin: thin (wall) features are not supported. Sketch the wall as a closed profile (e.g. an offset of the outline), or build the solid and use add_shell.": [
+    "src/assistant/features.ts"
+  ],
+  "regions: a list of points inside the profile regions to use": [
+    "src/assistant/features.ts"
+  ],
+  "depth is required unless end is through_all": [
+    "src/assistant/features.ts"
+  ],
+  "direction2.depth is required for a blind second direction": [
+    "src/assistant/features.ts"
+  ],
+  "angle: at most 360 (a full revolve)": [
+    "src/assistant/features.ts"
+  ],
+  "give edges and/or faces (every edge of a face is filleted)": [
+    "src/assistant/features.ts"
+  ],
+  "give edges and/or faces (every edge of a face is chamfered)": [
+    "src/assistant/features.ts"
+  ],
+  "direction2.direction is required": [
+    "src/assistant/features.ts"
+  ],
+  "profiles: at least two sketches, in order": [
+    "src/assistant/features.ts"
+  ],
+  "rolled back (not built)": [
+    "src/assistant/inspect.ts"
+  ],
+  "not built yet": [
+    "src/assistant/inspect.ts"
+  ],
+  "suppressed (it depends on a suppressed feature)": [
+    "src/assistant/inspect.ts"
+  ],
+  "no plane": [
+    "src/assistant/inspect.ts"
+  ],
+  "Global variables: none.": [
+    "src/assistant/inspect.ts"
+  ],
+  "Body: none yet (nothing solid has been built).": [
+    "src/assistant/inspect.ts"
+  ],
+  "not set": [
+    "src/assistant/inspect.ts"
+  ],
+  "Features: none (empty part).": [
+    "src/assistant/inspect.ts"
+  ],
+  "full circle": [
+    "src/assistant/inspect.ts"
+  ],
+  "Selection: nothing.": [
+    "src/assistant/inspect.ts"
+  ],
+  "the origin": [
+    "src/assistant/inspect.ts"
+  ],
+  "Extruded cut": [
+    "src/assistant/panel.ts"
+  ],
+  "Extrude": [
+    "src/assistant/panel.ts"
+  ],
+  "Revolved cut": [
+    "src/assistant/panel.ts"
+  ],
+  "Revolve": [
+    "src/assistant/panel.ts"
+  ],
+  "Linear pattern": [
+    "src/assistant/panel.ts"
+  ],
+  "Circular pattern": [
+    "src/assistant/panel.ts"
+  ],
+  "Reference plane": [
+    "src/assistant/panel.ts"
+  ],
+  "Lofted cut": [
+    "src/assistant/panel.ts"
+  ],
+  "Loft": [
+    "src/assistant/panel.ts"
+  ],
+  "Swept cut": [
+    "src/assistant/panel.ts"
+  ],
+  "Sweep": [
+    "src/assistant/panel.ts"
+  ],
+  "Read the part": [
+    "src/assistant/panel.ts"
+  ],
+  "Read a sketch": [
+    "src/assistant/panel.ts"
+  ],
+  "Mass properties": [
+    "src/assistant/panel.ts"
+  ],
+  "Calculate": [
+    "src/assistant/panel.ts"
+  ],
+  "Create a sketch": [
+    "src/assistant/panel.ts"
+  ],
+  "Edit a sketch": [
+    "src/assistant/panel.ts"
+  ],
+  "Edit a feature": [
+    "src/assistant/panel.ts"
+  ],
+  "Delete features": [
+    "src/assistant/panel.ts"
+  ],
+  "Move the rollback bar": [
+    "src/assistant/panel.ts"
+  ],
+  "Set variables": [
+    "src/assistant/panel.ts"
+  ],
+  "Change the view": [
+    "src/assistant/panel.ts"
+  ],
+  "Run a command": [
+    "src/assistant/panel.ts"
+  ],
+  "Files sent with this message": [
+    "src/assistant/panel.ts"
+  ],
+  "New chat": [
+    "src/assistant/panel.ts"
+  ],
+  "Conversation": [
+    "src/assistant/panel.ts"
+  ],
+  "Message the assistant": [
+    "src/assistant/panel.ts"
+  ],
+  "Send": [
+    "src/assistant/panel.ts"
+  ],
+  "Attach files": [
+    "src/assistant/panel.ts"
+  ],
+  "Attached files": [
+    "src/assistant/panel.ts"
+  ],
+  "Sends your messages and a description of the part to Puter AI. Check designs before relying on them.": [
+    "src/assistant/panel.ts"
+  ],
+  "Stopped: another part was opened.": [
+    "src/assistant/panel.ts"
+  ],
+  "Explain how this part is built": [
+    "src/assistant/panel.ts"
+  ],
+  "Round all the outer edges with 1 mm fillets": [
+    "src/assistant/panel.ts"
+  ],
+  "Make the main sizes parametric with global variables": [
+    "src/assistant/panel.ts"
+  ],
+  "What does it weigh in aluminium?": [
+    "src/assistant/panel.ts"
+  ],
+  "A flanged bushing: 40 mm flange, 20 mm shaft, 10 mm bore": [
+    "src/assistant/panel.ts"
+  ],
+  "A spur-gear-like disc: 60 mm across with 12 teeth and a 8 mm bore": [
+    "src/assistant/panel.ts"
+  ],
+  "Change or ask about this part": [
+    "src/assistant/panel.ts"
+  ],
+  "Describe a part to design": [
+    "src/assistant/panel.ts"
+  ],
+  "The assistant sketches, adds features, edits dimensions, measures and checks its work in the model. Everything it changes in one message is a single undo step.": [
+    "src/assistant/panel.ts"
+  ],
+  "Stopped.": [
+    "src/assistant/panel.ts"
+  ],
+  "The assistant needs Puter, which is not available right now. Check your connection and reload the page.": [
+    "src/assistant/panel.ts"
+  ],
+  "Folders cannot be attached. Attach the files inside instead.": [
+    "src/assistant/panel.ts"
+  ],
+  "Up to {0} files can go with one message, so {1} left out.": [
+    "src/assistant/panel.ts"
+  ],
+  "Remove": [
+    "src/assistant/panel.ts"
+  ],
+  "Steps": [
+    "src/assistant/panel.ts"
+  ],
+  "Try again": [
+    "src/assistant/panel.ts"
+  ],
+  "Undo changes": [
+    "src/assistant/panel.ts"
+  ],
+  "Changes undone.": [
+    "src/assistant/panel.ts"
+  ],
+  "What the assistant saw": [
+    "src/assistant/panel.ts"
+  ],
+  "the drawing sheet is shown": [
+    "src/assistant/prompt.ts"
+  ],
+  "viewing the model": [
+    "src/assistant/prompt.ts"
+  ],
+  "none yet": [
+    "src/assistant/refs.ts"
+  ],
+  "takes one circle or arc": [
+    "src/assistant/sketch.ts"
+  ],
+  "takes one line (angle from horizontal) or two lines": [
+    "src/assistant/sketch.ts"
+  ],
+  "of one entity takes a line (its length)": [
+    "src/assistant/sketch.ts"
+  ],
+  "cannot measure a spline": [
+    "src/assistant/sketch.ts"
+  ],
+  "takes a line or two points (circle and arc centres count as points)": [
+    "src/assistant/sketch.ts"
+  ],
+  " (driven, reference only)": [
+    "src/assistant/sketch.ts"
+  ],
+  "fully defined": [
+    "src/assistant/sketch.ts"
+  ],
+  "OVER-DEFINED": [
+    "src/assistant/sketch.ts"
+  ],
+  " (the solver did not converge)": [
+    "src/assistant/sketch.ts"
+  ],
+  " (conflicting)": [
+    "src/assistant/sketch.ts"
+  ],
+  "Closed profiles: none.": [
+    "src/assistant/sketch.ts"
+  ],
+  "Sketch id": [
+    "src/assistant/tools.ts"
+  ],
+  "Line entity id": [
+    "src/assistant/tools.ts"
+  ],
+  "Shape type": [
+    "src/assistant/tools.ts"
+  ],
+  "Optional id (letters, digits, _ or -)": [
+    "src/assistant/tools.ts"
+  ],
+  "Construction geometry (not part of profiles)": [
+    "src/assistant/tools.ts"
+  ],
+  "Points in order": [
+    "src/assistant/tools.ts"
+  ],
+  "Close the polyline": [
+    "src/assistant/tools.ts"
+  ],
+  "Width": [
+    "src/assistant/tools.ts"
+  ],
+  "Height": [
+    "src/assistant/tools.ts"
+  ],
+  "Slot length between arc centres": [
+    "src/assistant/tools.ts"
+  ],
+  "Arc end angle in degrees": [
+    "src/assistant/tools.ts"
+  ],
+  "Polygon sides": [
+    "src/assistant/tools.ts"
+  ],
+  "Polygon radius goes to the vertices (true) or the flats (false)": [
+    "src/assistant/tools.ts"
+  ],
+  "Rotation in degrees": [
+    "src/assistant/tools.ts"
+  ],
+  "Relation": [
+    "src/assistant/tools.ts"
+  ],
+  "Optional; inferred from refs when omitted": [
+    "src/assistant/tools.ts"
+  ],
+  "Value to drive the geometry to; omit to lock the current size": [
+    "src/assistant/tools.ts"
+  ],
+  "Reference dimension that only reports its value": [
+    "src/assistant/tools.ts"
+  ],
+  "Shapes to add": [
+    "src/assistant/tools.ts"
+  ],
+  "Geometric relations to add (after the shapes)": [
+    "src/assistant/tools.ts"
+  ],
+  "Driving dimensions to add (after the relations)": [
+    "src/assistant/tools.ts"
+  ],
+  "Add horizontal/vertical relations to axis-aligned lines and coincident-with-origin to points at (0,0) (default true)": [
+    "src/assistant/tools.ts"
+  ],
+  "Optional points inside the closed regions to use (sketch coordinates); by default every region is used, nested ones alternating material/holes": [
+    "src/assistant/tools.ts"
+  ],
+  "The part as it is now: units, material, global variables, every feature in build order with its arguments and rebuild status, the body's size, and the selection. Pass feature ids to get just those features in full: their arguments (exactly what edit_feature takes) and faces.": [
+    "src/assistant/tools.ts"
+  ],
+  "Feature ids or names to describe in full (then the rest of the part is left out)": [
+    "src/assistant/tools.ts"
+  ],
+  "Everything in one sketch: its plane and how sketch coordinates map to world space, every entity with ids and coordinates, relations and dimensions, definition status (degrees of freedom, conflicts) and the closed profiles it forms.": [
+    "src/assistant/tools.ts"
+  ],
+  "Sketch id or name": [
+    "src/assistant/tools.ts"
+  ],
+  "Long sketches: start the entity and relation lists at this index (the answer says where the rest starts)": [
+    "src/assistant/tools.ts"
+  ],
+  "List faces or edges of the current body with their names (what fillet, chamfer, shell, sketch planes, axes and measure take), types, positions, normals, radii, lengths and areas. Filter to find exactly the ones you need.": [
+    "src/assistant/tools.ts"
+  ],
+  "What to list": [
+    "src/assistant/tools.ts"
+  ],
+  "Only faces created by this feature id (edges: edges bordering such faces)": [
+    "src/assistant/tools.ts"
+  ],
+  "Edges: only straight edges along this direction or circular edges around this axis": [
+    "src/assistant/tools.ts"
+  ],
+  "Edges: only the edges bounding this face": [
+    "src/assistant/tools.ts"
+  ],
+  "Only names containing this text": [
+    "src/assistant/tools.ts"
+  ],
+  "At most this many (default 60, at most 400)": [
+    "src/assistant/tools.ts"
+  ],
+  "Minimum distance between two faces, edges or world points, with the closest points. Also reports the angle between two planar faces or two straight edges.": [
+    "src/assistant/tools.ts"
+  ],
+  "Volume, surface area, mass (from the material density), centre of mass and principal moments of the body.": [
+    "src/assistant/tools.ts"
+  ],
+  "Expressions to evaluate": [
+    "src/assistant/tools.ts"
+  ],
+  "Look at the model: a screenshot of the graphics area, optionally from a standard orientation (the user's view is restored afterwards). Use it to check shapes, proportions and that features look right.": [
+    "src/assistant/tools.ts"
+  ],
+  "Orientation to look from (default: the current view)": [
+    "src/assistant/tools.ts"
+  ],
+  "Display style for the picture": [
+    "src/assistant/tools.ts"
+  ],
+  "Create a sketch on a plane or planar face with shapes, relations and dimensions in one step. Returns the entity ids with coordinates, the definition status and the closed profiles. The sketch is added at the end of the tree (before the rollback bar).": [
+    "src/assistant/tools.ts"
+  ],
+  "Optional sketch name": [
+    "src/assistant/tools.ts"
+  ],
+  "Change an existing sketch. Operations run in this order: delete, shapes, project_edges, move_points, set_radius, construction, fillets, offsets, mirrors, relations, dimensions, set_dimensions; then the sketch is solved and the model rebuilt.": [
+    "src/assistant/tools.ts"
+  ],
+  "Rename the sketch": [
+    "src/assistant/tools.ts"
+  ],
+  "Entity, relation or dimension ids to delete (deleting a point deletes curves using it)": [
+    "src/assistant/tools.ts"
+  ],
+  "Model edge names to project into the sketch as fixed curves (Convert Entities)": [
+    "src/assistant/tools.ts"
+  ],
+  "Point id": [
+    "src/assistant/tools.ts"
+  ],
+  "Move points before solving": [
+    "src/assistant/tools.ts"
+  ],
+  "Circle id": [
+    "src/assistant/tools.ts"
+  ],
+  "New radius": [
+    "src/assistant/tools.ts"
+  ],
+  "Resize circles (an existing radius/diameter dimension wins; change it with set_dimensions instead)": [
+    "src/assistant/tools.ts"
+  ],
+  "Entity ids to make construction geometry": [
+    "src/assistant/tools.ts"
+  ],
+  "Entity ids to make normal (not construction) geometry": [
+    "src/assistant/tools.ts"
+  ],
+  "Corner point id where exactly two lines meet": [
+    "src/assistant/tools.ts"
+  ],
+  "Round sketch corners": [
+    "src/assistant/tools.ts"
+  ],
+  "Line, arc or circle ids (a connected chain offsets as one)": [
+    "src/assistant/tools.ts"
+  ],
+  "Distance; closed chains grow for positive, shrink for negative": [
+    "src/assistant/tools.ts"
+  ],
+  "Offset curves": [
+    "src/assistant/tools.ts"
+  ],
+  "Entity ids to mirror": [
+    "src/assistant/tools.ts"
+  ],
+  "Line id to mirror about": [
+    "src/assistant/tools.ts"
+  ],
+  "Mirror entities about a line": [
+    "src/assistant/tools.ts"
+  ],
+  "Dimension id or name": [
+    "src/assistant/tools.ts"
+  ],
+  "New value": [
+    "src/assistant/tools.ts"
+  ],
+  "Make it a reference (true) or driving (false) dimension": [
+    "src/assistant/tools.ts"
+  ],
+  "Change dimension values": [
+    "src/assistant/tools.ts"
+  ],
+  "Extrude a sketch's closed profiles into a boss (adds material) or a cut. Bosses go along the sketch normal, cuts against it (into the face a sketch sits on); reverse flips that.": [
+    "src/assistant/tools.ts"
+  ],
+  "Profile sketch id": [
+    "src/assistant/tools.ts"
+  ],
+  "Remove material instead of adding it": [
+    "src/assistant/tools.ts"
+  ],
+  "End condition (default blind; a cut given no depth goes through_all)": [
+    "src/assistant/tools.ts"
+  ],
+  "Depth (blind), or total depth (mid_plane, half each side)": [
+    "src/assistant/tools.ts"
+  ],
+  "Extrude the other way": [
+    "src/assistant/tools.ts"
+  ],
+  "Also extrude the opposite way": [
+    "src/assistant/tools.ts"
+  ],
+  "Draft angle in degrees (tapers the side walls inward)": [
+    "src/assistant/tools.ts"
+  ],
+  "Taper outward instead": [
+    "src/assistant/tools.ts"
+  ],
+  "Revolve a sketch's closed profiles around an axis into a boss or cut. The profile must lie on one side of the axis.": [
+    "src/assistant/tools.ts"
+  ],
+  "Angle in degrees (360 for a full revolve)": [
+    "src/assistant/tools.ts"
+  ],
+  "One direction or symmetric about the sketch plane": [
+    "src/assistant/tools.ts"
+  ],
+  "Revolve the other way": [
+    "src/assistant/tools.ts"
+  ],
+  "Remove material": [
+    "src/assistant/tools.ts"
+  ],
+  "Round edges with a constant radius. Faces round every edge of each face.": [
+    "src/assistant/tools.ts"
+  ],
+  "Edge names": [
+    "src/assistant/tools.ts"
+  ],
+  "Face names": [
+    "src/assistant/tools.ts"
+  ],
+  "Bevel edges. Faces chamfer every edge of each face.": [
+    "src/assistant/tools.ts"
+  ],
+  "Chamfer type (default distance: equal distances)": [
+    "src/assistant/tools.ts"
+  ],
+  "Second distance (two_distances)": [
+    "src/assistant/tools.ts"
+  ],
+  "Angle in degrees (distance_angle)": [
+    "src/assistant/tools.ts"
+  ],
+  "Swap which face the first distance is measured on": [
+    "src/assistant/tools.ts"
+  ],
+  "Hollow the body to a wall thickness, opening the removed faces.": [
+    "src/assistant/tools.ts"
+  ],
+  "Faces to open (empty: a closed hollow body)": [
+    "src/assistant/tools.ts"
+  ],
+  "Wall thickness": [
+    "src/assistant/tools.ts"
+  ],
+  "Add the wall outside the current surfaces instead of inside": [
+    "src/assistant/tools.ts"
+  ],
+  "Existing sketch whose stand-alone points are the hole centres": [
+    "src/assistant/tools.ts"
+  ],
+  "Hole type (default simple)": [
+    "src/assistant/tools.ts"
+  ],
+  "Hole diameter": [
+    "src/assistant/tools.ts"
+  ],
+  "Depth type (default through_all, or blind when depth is given)": [
+    "src/assistant/tools.ts"
+  ],
+  "Depth for blind holes": [
+    "src/assistant/tools.ts"
+  ],
+  "Countersink diameter at the surface": [
+    "src/assistant/tools.ts"
+  ],
+  "Countersink included angle (e.g. 90 or 82)": [
+    "src/assistant/tools.ts"
+  ],
+  "Drill along the sketch normal instead": [
+    "src/assistant/tools.ts"
+  ],
+  "Copy features (extrudes, revolves, holes, lofts, sweeps, patterns) in a line or a grid. count includes the original.": [
+    "src/assistant/tools.ts"
+  ],
+  "Seed feature ids": [
+    "src/assistant/tools.ts"
+  ],
+  "Distance between instances": [
+    "src/assistant/tools.ts"
+  ],
+  "Number of instances including the original": [
+    "src/assistant/tools.ts"
+  ],
+  "Go the other way": [
+    "src/assistant/tools.ts"
+  ],
+  "Instances": [
+    "src/assistant/tools.ts",
+    "src/model/features.ts"
+  ],
+  "Other way": [
+    "src/assistant/tools.ts"
+  ],
+  "Second direction (grid)": [
+    "src/assistant/tools.ts"
+  ],
+  "Copy features around an axis. count includes the original.": [
+    "src/assistant/tools.ts"
+  ],
+  "Total angle in degrees (default 360)": [
+    "src/assistant/tools.ts"
+  ],
+  "Spread instances over the angle (default true); false: angle is the step between instances": [
+    "src/assistant/tools.ts"
+  ],
+  "Mirror features (or the whole body when features is empty) about a plane.": [
+    "src/assistant/tools.ts"
+  ],
+  "Feature ids to mirror; empty or omitted mirrors the whole body": [
+    "src/assistant/tools.ts"
+  ],
+  "Add a reference plane parallel to a plane or planar face at an offset (along its normal). Use it to sketch at a height or as a mirror plane.": [
+    "src/assistant/tools.ts"
+  ],
+  "Offset distance along the normal": [
+    "src/assistant/tools.ts"
+  ],
+  "Offset the other way": [
+    "src/assistant/tools.ts"
+  ],
+  "Loft through two or more closed profile sketches (on different parallel or angled planes) in order.": [
+    "src/assistant/tools.ts"
+  ],
+  "Profile sketch ids in order": [
+    "src/assistant/tools.ts"
+  ],
+  "Straight sections between profiles": [
+    "src/assistant/tools.ts"
+  ],
+  "Sweep a closed profile along a path sketch (open or closed curves). The profile should sit at the start of the path, roughly perpendicular to it.": [
+    "src/assistant/tools.ts"
+  ],
+  "Path sketch id": [
+    "src/assistant/tools.ts"
+  ],
+  "Tilt faces by an angle about a neutral plane (for moulded parts).": [
+    "src/assistant/tools.ts"
+  ],
+  "Draft angle in degrees": [
+    "src/assistant/tools.ts"
+  ],
+  "Tilt the other way": [
+    "src/assistant/tools.ts"
+  ],
+  "Change a feature: any arguments of its add_ tool (only those given change), its name, suppression or visibility. Sketch contents change with edit_sketch.": [
+    "src/assistant/tools.ts"
+  ],
+  "Feature id or name": [
+    "src/assistant/tools.ts"
+  ],
+  "Arguments to change, as the feature's add_ tool takes them": [
+    "src/assistant/tools.ts"
+  ],
+  "New display name": [
+    "src/assistant/tools.ts"
+  ],
+  "Suppress (skip in the rebuild) or unsuppress": [
+    "src/assistant/tools.ts"
+  ],
+  "Hide or show (sketches, planes)": [
+    "src/assistant/tools.ts"
+  ],
+  "Delete features. Sketches used only by deleted features go with them. Features that depend on deleted ones must be included or with_dependents set.": [
+    "src/assistant/tools.ts"
+  ],
+  "Feature ids or names": [
+    "src/assistant/tools.ts"
+  ],
+  "Also delete every feature that depends on them": [
+    "src/assistant/tools.ts"
+  ],
+  "Move the rollback bar: features from this one on are not built (new features are inserted at the bar). null rolls to the end.": [
+    "src/assistant/tools.ts"
+  ],
+  "Feature id or name the bar goes before, or null for the end": [
+    "src/assistant/tools.ts"
+  ],
+  "Variable name (letters, digits, _)": [
+    "src/assistant/tools.ts"
+  ],
+  "Variables to create or change": [
+    "src/assistant/tools.ts"
+  ],
+  "Variable names to delete": [
+    "src/assistant/tools.ts"
+  ],
+  "Part properties: name, unit system (stored geometry keeps its size), decimals shown, material (for mass) and colour.": [
+    "src/assistant/tools.ts"
+  ],
+  "Decimal places shown for lengths (0-8)": [
+    "src/assistant/tools.ts"
+  ],
+  "Colour as #rrggbb": [
+    "src/assistant/tools.ts"
+  ],
+  "Change what the user sees: orientation, look normal to a plane or face, zoom to fit, display style, and highlight (select) faces, edges or features to point them out.": [
+    "src/assistant/tools.ts"
+  ],
+  "Standard orientation": [
+    "src/assistant/tools.ts"
+  ],
+  "Zoom to fit": [
+    "src/assistant/tools.ts"
+  ],
+  "Display style": [
+    "src/assistant/tools.ts"
+  ],
+  "Face names, edge names or feature ids to select": [
+    "src/assistant/tools.ts"
+  ],
+  "The part's 2D drawing sheet: show or hide it, lay out standard views, add views, and set sheet size, orientation, scale and title block.": [
+    "src/assistant/tools.ts"
+  ],
+  "Show (true) or leave (false) the drawing sheet": [
+    "src/assistant/tools.ts"
+  ],
+  "Lay out front, top, right and isometric views at a fitting scale": [
+    "src/assistant/tools.ts"
+  ],
+  "Views to add": [
+    "src/assistant/tools.ts"
+  ],
+  "Landscape (true) or portrait": [
+    "src/assistant/tools.ts"
+  ],
+  "Model to paper scale, e.g. 0.5 for 1:2": [
+    "src/assistant/tools.ts"
+  ],
+  "Title block title": [
+    "src/assistant/tools.ts"
+  ],
+  "Run an app command the user would otherwise click: save the part, or export it (opens a save dialog for the user).": [
+    "src/assistant/tools.ts"
+  ],
+  "Command": [
+    "src/assistant/tools.ts"
+  ],
+  "Nothing changed.": [
+    "src/assistant/tools.ts"
+  ],
+  "- none": [
+    "src/assistant/tools.ts"
+  ],
+  "normal: faces only; for edges use direction (straight edges along it, circular edges around it)": [
+    "src/assistant/tools.ts"
+  ],
+  "direction: edges only; for faces use normal": [
+    "src/assistant/tools.ts"
+  ],
+  "of_face: edges only (the edges bounding that face)": [
+    "src/assistant/tools.ts"
+  ],
+  "The part has no body yet.": [
+    "src/assistant/tools.ts"
+  ],
+  "Mass properties are not available for this body.": [
+    "src/assistant/tools.ts"
+  ],
+  "Mass: set a material (set_part) to get the mass.": [
+    "src/assistant/tools.ts"
+  ],
+  "expressions: give at least one": [
+    "src/assistant/tools.ts"
+  ],
+  "Error: there is no view to capture here.": [
+    "src/assistant/tools.ts"
+  ],
+  "Error: the view could not be captured.": [
+    "src/assistant/tools.ts"
+  ],
+  "it would be over-defined": [
+    "src/assistant/tools.ts"
+  ],
+  "the constraints conflict": [
+    "src/assistant/tools.ts"
+  ],
+  "plane: that plane is not available in the current model (is it rolled back or failing?)": [
+    "src/assistant/tools.ts"
+  ],
+  "the sketch plane is not resolved (the sketch may be rolled back or failing)": [
+    "src/assistant/tools.ts"
+  ],
+  "on: that plane is not available in the current model": [
+    "src/assistant/tools.ts"
+  ],
+  "points: give at least one hole centre": [
+    "src/assistant/tools.ts"
+  ],
+  "sketch contents change with edit_sketch": [
+    "src/assistant/tools.ts"
+  ],
+  "imported bodies have no parameters to change": [
+    "src/assistant/tools.ts"
+  ],
+  "features: give at least one": [
+    "src/assistant/tools.ts"
+  ],
+  "Rolled to the end": [
+    "src/assistant/tools.ts"
+  ],
+  "name: cannot be empty": [
+    "src/assistant/tools.ts"
+  ],
+  "units: MMGS, CGS, MKS or IPS": [
+    "src/assistant/tools.ts"
+  ],
+  "decimals: 0 to 8": [
+    "src/assistant/tools.ts"
+  ],
+  "color: #rrggbb": [
+    "src/assistant/tools.ts"
+  ],
+  "Nothing to change.": [
+    "src/assistant/tools.ts"
+  ],
+  " From now on, lengths in tool arguments and results use the new unit.": [
+    "src/assistant/tools.ts"
+  ],
+  "there is no view here": [
+    "src/assistant/tools.ts"
+  ],
+  "normal_to: that plane is not available": [
+    "src/assistant/tools.ts"
+  ],
+  "normal to the plane": [
+    "src/assistant/tools.ts"
+  ],
+  "zoomed to fit": [
+    "src/assistant/tools.ts"
+  ],
+  "drawings need the app's interface": [
+    "src/assistant/tools.ts"
+  ],
+  "there is no solid to draw yet": [
+    "src/assistant/tools.ts"
+  ],
+  "showing the drawing": [
+    "src/assistant/tools.ts"
+  ],
+  "standard views arranged": [
+    "src/assistant/tools.ts"
+  ],
+  "sheet: A4, A3, A2, A1, Letter or Tabloid": [
+    "src/assistant/tools.ts"
+  ],
+  "scale: a positive ratio such as 0.5 for 1:2": [
+    "src/assistant/tools.ts"
+  ],
+  "there is no drawing yet; set show: true first": [
+    "src/assistant/tools.ts"
+  ],
+  "back to the model": [
+    "src/assistant/tools.ts"
+  ],
+  "no change": [
+    "src/assistant/tools.ts"
+  ],
+  "commands need the app's interface": [
+    "src/assistant/tools.ts"
+  ],
+  " (show the drawing first)": [
+    "src/assistant/tools.ts"
+  ],
+  " (there is no solid)": [
+    "src/assistant/tools.ts"
+  ],
+  "A4 (297 x 210 mm)": [
+    "src/drawing/sheet.ts"
+  ],
+  "A3 (420 x 297 mm)": [
+    "src/drawing/sheet.ts"
+  ],
+  "A2 (594 x 420 mm)": [
+    "src/drawing/sheet.ts"
+  ],
+  "A1 (841 x 594 mm)": [
+    "src/drawing/sheet.ts"
+  ],
+  "Letter (11 x 8.5 in)": [
+    "src/drawing/sheet.ts"
+  ],
+  "Tabloid (17 x 11 in)": [
+    "src/drawing/sheet.ts"
+  ],
+  "TITLE": [
+    "src/drawing/sheet.ts"
+  ],
+  "SCALE": [
+    "src/drawing/sheet.ts"
+  ],
+  "MATERIAL": [
+    "src/drawing/sheet.ts"
+  ],
+  "UNITS": [
+    "src/drawing/sheet.ts"
+  ],
+  "DATE": [
+    "src/drawing/sheet.ts"
+  ],
+  "DRAWN BY": [
+    "src/drawing/sheet.ts"
+  ],
+  "SHEET": [
+    "src/drawing/sheet.ts"
+  ],
+  " portrait": [
+    "src/drawing/sheet.ts"
+  ],
+  "NOTES": [
+    "src/drawing/sheet.ts"
+  ],
+  "Thin features are not supported yet. Sketch the wall as two offset contours instead.": [
+    "src/kernel/build.ts"
+  ],
+  "A parameter has an invalid value": [
+    "src/kernel/build.ts"
+  ],
+  "A projected sketch entity lost its model edge and stays where it was. Delete it or project the edge again.": [
+    "src/kernel/build.ts"
+  ],
+  "The reference plane is missing or failed to build": [
+    "src/kernel/build.ts"
+  ],
+  "The selected face is not planar": [
+    "src/kernel/build.ts"
+  ],
+  "A referenced face no longer exists": [
+    "src/kernel/build.ts"
+  ],
+  "A referenced edge no longer exists": [
+    "src/kernel/build.ts"
+  ],
+  "Select a direction or axis": [
+    "src/kernel/build.ts"
+  ],
+  "The selected edge is not straight or circular": [
+    "src/kernel/build.ts"
+  ],
+  "Select a planar or cylindrical face": [
+    "src/kernel/build.ts"
+  ],
+  "The axis sketch is missing": [
+    "src/kernel/build.ts"
+  ],
+  "The axis line is missing": [
+    "src/kernel/build.ts"
+  ],
+  "There is no material to cut": [
+    "src/kernel/build.ts"
+  ],
+  "The cut removes all material": [
+    "src/kernel/build.ts"
+  ],
+  "The cut does not remove any material. Check its direction.": [
+    "src/kernel/build.ts"
+  ],
+  "The profile sketch is missing or failed to build": [
+    "src/kernel/build.ts"
+  ],
+  "The selected regions are no longer in the sketch. Edit the feature and select them again.": [
+    "src/kernel/build.ts"
+  ],
+  "The sketch has open contours. Close the profile to use it.": [
+    "src/kernel/build.ts"
+  ],
+  "The sketch has no closed profile": [
+    "src/kernel/build.ts"
+  ],
+  "A selected region is no longer in the sketch and was left out. Edit the feature and select the regions again.": [
+    "src/kernel/build.ts"
+  ],
+  "Open contours in the sketch were ignored": [
+    "src/kernel/build.ts"
+  ],
+  "Contours that cross each other were combined. Trim them where they cross, or select the regions to use.": [
+    "src/kernel/build.ts"
+  ],
+  "Through All needs a body to extrude through. Use Blind.": [
+    "src/kernel/build.ts"
+  ],
+  "There is no body to extrude through in this direction. Reverse the direction or use Blind.": [
+    "src/kernel/build.ts"
+  ],
+  "Depth must be greater than zero": [
+    "src/kernel/build.ts"
+  ],
+  "Direction 2 depth must be greater than zero": [
+    "src/kernel/build.ts"
+  ],
+  "The draft angle cannot be negative. Use Draft outward to taper the other way.": [
+    "src/kernel/build.ts"
+  ],
+  "The draft closes the profile before the end of the extrusion. Use a smaller draft angle or depth.": [
+    "src/kernel/build.ts"
+  ],
+  "Draft could not be applied to the profile": [
+    "src/kernel/build.ts"
+  ],
+  "Select an axis of revolution (or add a centerline to the sketch)": [
+    "src/kernel/build.ts"
+  ],
+  "Angle must be greater than zero": [
+    "src/kernel/build.ts"
+  ],
+  "The profile crosses the axis of revolution. Keep it on one side of the axis.": [
+    "src/kernel/build.ts"
+  ],
+  "There is no body to fillet": [
+    "src/kernel/build.ts"
+  ],
+  "Radius must be greater than zero": [
+    "src/kernel/build.ts"
+  ],
+  "The fillet could not be created. Try a smaller radius or fewer edges.": [
+    "src/kernel/build.ts"
+  ],
+  "The fillet could not be created. Try a smaller radius.": [
+    "src/kernel/build.ts"
+  ],
+  "There is no body to chamfer": [
+    "src/kernel/build.ts"
+  ],
+  "Distance must be greater than zero": [
+    "src/kernel/build.ts"
+  ],
+  "Distance 2 must be greater than zero": [
+    "src/kernel/build.ts"
+  ],
+  "The chamfer angle must be between 0 and 90 degrees": [
+    "src/kernel/build.ts"
+  ],
+  "The chamfer could not be created. Try a smaller distance.": [
+    "src/kernel/build.ts"
+  ],
+  "There is no body to shell": [
+    "src/kernel/build.ts"
+  ],
+  "Thickness must be greater than zero": [
+    "src/kernel/build.ts"
+  ],
+  "The hole position sketch is missing": [
+    "src/kernel/build.ts"
+  ],
+  "Add sketch points to place holes": [
+    "src/kernel/build.ts"
+  ],
+  "Diameter must be greater than zero": [
+    "src/kernel/build.ts"
+  ],
+  "The counterbore diameter must be larger than the hole": [
+    "src/kernel/build.ts"
+  ],
+  "Counterbore depth must be greater than zero": [
+    "src/kernel/build.ts"
+  ],
+  "The hole depth must be greater than the counterbore depth": [
+    "src/kernel/build.ts"
+  ],
+  "The countersink diameter must be larger than the hole": [
+    "src/kernel/build.ts"
+  ],
+  "The countersink angle must be between 0 and 180 degrees": [
+    "src/kernel/build.ts"
+  ],
+  "The hole depth must be greater than the countersink depth": [
+    "src/kernel/build.ts"
+  ],
+  "A seed feature no longer exists": [
+    "src/kernel/build.ts"
+  ],
+  "A seed feature comes after this feature in the tree": [
+    "src/kernel/build.ts"
+  ],
+  "A seed feature failed to build": [
+    "src/kernel/build.ts"
+  ],
+  "A seed feature cannot be patterned (only extrudes, revolves, holes, lofts, sweeps and patterns)": [
+    "src/kernel/build.ts"
+  ],
+  "The pattern has no instances": [
+    "src/kernel/build.ts"
+  ],
+  "The copies of a cut do not remove any material. Check the direction and spacing.": [
+    "src/kernel/build.ts"
+  ],
+  "The pattern removed all material": [
+    "src/kernel/build.ts"
+  ],
+  "Instance count must be between 1 and 1000": [
+    "src/kernel/build.ts"
+  ],
+  "Direction 1 spacing must not be zero": [
+    "src/kernel/build.ts"
+  ],
+  "Direction 2 spacing must not be zero": [
+    "src/kernel/build.ts"
+  ],
+  "Too many instances (maximum 2000)": [
+    "src/kernel/build.ts"
+  ],
+  "Instance count must be between 2 and 1000": [
+    "src/kernel/build.ts"
+  ],
+  "Pattern instances fall on top of each other. Check the angle.": [
+    "src/kernel/build.ts"
+  ],
+  "There is no body to mirror": [
+    "src/kernel/build.ts"
+  ],
+  "Only the first closed contour of each profile was used; the other contours were ignored": [
+    "src/kernel/build.ts"
+  ],
+  "Select at least two profiles": [
+    "src/kernel/build.ts"
+  ],
+  "The loft could not be created from these profiles": [
+    "src/kernel/build.ts"
+  ],
+  "The path sketch is missing": [
+    "src/kernel/build.ts"
+  ],
+  "The path sketch is empty": [
+    "src/kernel/build.ts"
+  ],
+  "There is no body to draft": [
+    "src/kernel/build.ts"
+  ],
+  "Draft cannot be applied to one of the faces": [
+    "src/kernel/build.ts"
+  ],
+  "The draft could not be created": [
+    "src/kernel/build.ts"
+  ],
+  "The imported file data is missing": [
+    "src/kernel/build.ts"
+  ],
+  "Distance could not be computed": [
+    "src/kernel/build.ts"
+  ],
+  "There is no geometry to export": [
+    "src/kernel/build.ts"
+  ],
+  "The STEP file could not be read": [
+    "src/kernel/build.ts"
+  ],
+  "The STEP file contains no geometry": [
+    "src/kernel/build.ts"
+  ],
+  "The feature could not be built": [
+    "src/kernel/build.ts"
+  ],
+  "The geometry kernel could not build this feature": [
+    "src/kernel/build.ts"
+  ],
+  "A closed path must be a single curve": [
+    "src/kernel/build.ts"
+  ],
+  "The path must be one connected chain of curves": [
+    "src/kernel/build.ts"
+  ],
+  "The shell could not be created. Make it thinner than the radius of the fillets and rounded faces.": [
+    "src/kernel/build.ts"
+  ],
+  "The shell could not be created. Try a smaller thickness.": [
+    "src/kernel/build.ts"
+  ],
+  "The sweep could not be created. The profile should start at the path and be roughly perpendicular to it.": [
+    "src/kernel/build.ts"
+  ],
+  "the OpenCascade kernel failed": [
+    "src/kernel/client.ts"
+  ],
+  "one of its replies could not be read": [
+    "src/kernel/client.ts"
+  ],
+  "Geometry kernel is not loaded": [
+    "src/kernel/occ.ts"
+  ],
+  "The geometry kernel failed": [
+    "src/kernel/worker.ts"
+  ],
+  "Parametric could not start": [
+    "src/main.ts"
+  ],
+  "This file is not a valid part file.": [
+    "src/model/document.ts"
+  ],
+  "This file is not a part created with Parametric.": [
+    "src/model/document.ts"
+  ],
+  "This part was created with a newer version of Parametric.": [
+    "src/model/document.ts"
+  ],
+  "The part file is damaged (unknown version).": [
+    "src/model/document.ts"
+  ],
+  "The part file is damaged (no feature list).": [
+    "src/model/document.ts"
+  ],
+  "The part file is damaged (invalid feature).": [
+    "src/model/document.ts"
+  ],
+  "The part file is damaged (invalid feature identifiers).": [
+    "src/model/document.ts"
+  ],
+  "The part file is damaged (invalid sketch).": [
+    "src/model/document.ts"
+  ],
+  "The part file is damaged (invalid feature references).": [
+    "src/model/document.ts"
+  ],
+  "The part file is damaged (invalid drawing).": [
+    "src/model/document.ts"
+  ],
+  "Unexpected \"{0}\"": [
+    "src/model/expr.ts"
+  ],
+  "Unclosed quote": [
+    "src/model/expr.ts"
+  ],
+  "Expected \"{0}\"": [
+    "src/model/expr.ts"
+  ],
+  "A unit (\"{0}\") cannot be used here; give a plain number": [
+    "src/model/expr.ts"
+  ],
+  "Unknown function \"{0}\"": [
+    "src/model/expr.ts"
+  ],
+  "{0}() takes {1}": [
+    "src/model/expr.ts"
+  ],
+  "one or more values": [
+    "src/model/expr.ts"
+  ],
+  "one value": [
+    "src/model/expr.ts"
+  ],
+  "Unknown name \"{0}\"": [
+    "src/model/expr.ts"
+  ],
+  "Unexpected end of expression": [
+    "src/model/expr.ts"
+  ],
+  "Division by zero": [
+    "src/model/expr.ts"
+  ],
+  "Enter a value": [
+    "src/model/expr.ts"
+  ],
+  "Unexpected text after expression": [
+    "src/model/expr.ts"
+  ],
+  "Result is not a finite number": [
+    "src/model/expr.ts"
+  ],
+  "\"{0}\" has an error": [
+    "src/model/expr.ts"
+  ],
+  "Depth (Direction 2)": [
+    "src/model/features.ts"
+  ],
+  "Spacing (Direction 2)": [
+    "src/model/features.ts"
+  ],
+  "Instances (Direction 2)": [
+    "src/model/features.ts"
+  ],
+  "Plain Carbon Steel": [
+    "src/model/materials.ts"
+  ],
+  "Alloy Steel": [
+    "src/model/materials.ts"
+  ],
+  "Cast Iron": [
+    "src/model/materials.ts"
+  ],
+  "Aluminum 7075": [
+    "src/model/materials.ts"
+  ],
+  "Brass": [
+    "src/model/materials.ts"
+  ],
+  "Copper": [
+    "src/model/materials.ts"
+  ],
+  "Titanium (Ti-6Al-4V)": [
+    "src/model/materials.ts"
+  ],
+  "Nylon 6/6": [
+    "src/model/materials.ts"
+  ],
+  "Acrylic (PMMA)": [
+    "src/model/materials.ts"
+  ],
+  "Polycarbonate": [
+    "src/model/materials.ts"
+  ],
+  "Oak": [
+    "src/model/materials.ts"
+  ],
+  "Pine": [
+    "src/model/materials.ts"
+  ],
+  "Glass": [
+    "src/model/materials.ts"
+  ],
+  "The AI service did not answer": [
+    "src/platform/ai.ts"
+  ],
+  "all ai providers failed": [
+    "src/platform/ai.ts"
+  ],
+  "The assistant needs Puter, which is not available right now. Check your connection and reload.": [
+    "src/platform/ai.ts"
+  ],
+  "Your Puter account ran out of AI credits, so the reply stopped.": [
+    "src/platform/ai.ts"
+  ],
+  "This browser cannot store parts locally. Download the part or sign in to save it to your Puter cloud.": [
+    "src/platform/files.ts"
+  ],
+  "Browser storage is not available.": [
+    "src/platform/files.ts"
+  ],
+  "Puter storage is not available.": [
+    "src/platform/files.ts"
+  ],
+  "Sign in to Puter to save this part to your cloud, or use Save As to keep it in this browser.": [
+    "src/platform/files.ts"
+  ],
+  "Puter is not available right now. Check your connection and try again.": [
+    "src/platform/files.ts",
+    "src/platform/puter.ts"
+  ],
+  "Sign in to Puter to open parts saved in your cloud.": [
+    "src/platform/files.ts"
+  ],
+  "Sign in to Puter to rename parts saved in your cloud.": [
+    "src/platform/files.ts"
+  ],
+  "The sign-in window was blocked. Allow pop-ups for this site and try again.": [
+    "src/platform/puter.ts"
+  ],
+  "Your Puter storage is full. Free up space or upgrade your plan, then save again.": [
+    "src/platform/puter.ts"
+  ],
+  "Too many requests right now. Wait a moment and try again.": [
+    "src/platform/puter.ts"
+  ],
+  "Puter could not be reached. Check your connection and try again.": [
+    "src/platform/puter.ts"
+  ],
+  "This browser has run out of storage space for parts. Delete parts you no longer need, download this one, or sign in to save it to your Puter cloud.": [
+    "src/platform/puter.ts"
+  ],
+  "Something went wrong while talking to Puter.": [
+    "src/platform/puter.ts"
+  ],
+  "WebGL 2 is not available in this browser": [
+    "src/render/renderer.ts"
+  ],
+  "Projected geometry follows its model edge, so it cannot be trimmed, extended or filleted. Unlink it in the PropertyManager first.": [
+    "src/sketch/ops.ts"
+  ],
+  "These lines are in line with each other, so there is no distance to dimension. Use a Collinear constraint to keep them that way.": [
+    "src/sketch/ops.ts"
+  ],
+  "That point is an end of the line, so its distance to the line is always zero. Pick another point or line to dimension to.": [
+    "src/sketch/ops.ts"
+  ],
+  "That point lies on the line, so there is no distance to dimension. Use a Coincident constraint to keep it on the line.": [
+    "src/sketch/ops.ts"
+  ],
+  "These centres are at the same place, so there is no distance to dimension. Use a Concentric or Coincident constraint to keep them together.": [
+    "src/sketch/ops.ts"
+  ],
+  "These points are at the same place, so there is no distance to dimension. Use a Coincident constraint to keep them together.": [
+    "src/sketch/ops.ts"
+  ],
+  "Select a corner where exactly two lines meet": [
+    "src/sketch/ops.ts"
+  ],
+  "The lines are parallel": [
+    "src/sketch/ops.ts"
+  ],
+  "The fillet radius is too large for these lines": [
+    "src/sketch/ops.ts"
+  ],
+  "Several centerlines are selected. Deselect all but the one to mirror about.": [
+    "src/sketch/ops.ts"
+  ],
+  "Notifications": [
+    "src/ui/overlay.ts"
+  ],
+  "Dismiss notification": [
+    "src/ui/overlay.ts"
+  ]
+}

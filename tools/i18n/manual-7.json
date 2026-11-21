@@ -1,0 +1,15 @@
+{
+  " <not specified>": " <未指定>",
+  "Front Plane": "前视基准面",
+  "Top Plane": "上视基准面",
+  "Right Plane": "右视基准面",
+  "Front": "前视",
+  "Back": "后视",
+  "Left": "左视",
+  "Right": "右视",
+  "Top": "上视",
+  "Bottom": "下视",
+  "Isometric": "等轴测",
+  "Dimetric": "二等轴测",
+  "Trimetric": "三等轴测"
+}

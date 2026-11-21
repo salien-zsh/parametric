@@ -1,0 +1,153 @@
+001|1 was
+002|A closed path must be a single curve
+003|A flanged bushing: 40 mm flange, 20 mm shaft, 10 mm bore
+004|A parameter has an invalid value
+005|A projected sketch entity lost its model edge and stays where it was. Delete it or project the edge again.
+006|A referenced edge no longer exists
+007|A referenced face no longer exists
+008|A seed feature cannot be patterned (only extrudes, revolves, holes, lofts, sweeps and patterns)
+009|A seed feature comes after this feature in the tree
+010|A seed feature failed to build
+011|A seed feature no longer exists
+012|A selected region is no longer in the sketch and was left out. Edit the feature and select the regions again.
+013|A spur-gear-like disc: 60 mm across with 12 teeth and a 8 mm bore
+014|Account: not signed in
+015|Add sketch points to place holes
+016|Angle must be greater than zero
+017|Browser storage is not available.
+018|Calculate
+019|Change or ask about this part
+020|Cloud storage is unavailable offline
+021|Contours that cross each other were combined. Trim them where they cross, or select the regions to use.
+022|Conversation
+023|Counterbore depth must be greater than zero
+024|Depth must be greater than zero
+025|Describe a part to design
+026|Diameter must be greater than zero
+027|Direction 1 spacing must not be zero
+028|Direction 2 depth must be greater than zero
+029|Direction 2 spacing must not be zero
+030|Distance 2 must be greater than zero
+031|Distance could not be computed
+032|Distance must be greater than zero
+033|Draft cannot be applied to one of the faces
+034|Draft could not be applied to the profile
+035|EXT_color_buffer_float
+036|Explain how this part is built
+037|Geometry kernel is not loaded
+038|Instance count must be between 1 and 1000
+039|Instance count must be between 2 and 1000
+040|It is
+041|Make the main sizes parametric with global variables
+042|Only the first closed contour of each profile was used; the other contours were ignored
+043|Open contours in the sketch were ignored
+044|Orientation triad. Click an axis to look along it.
+045|Pasted image
+046|Pattern instances fall on top of each other. Check the angle.
+047|Projected geometry follows its model edge, so it cannot be trimmed, extended or filleted. Unlink it in the PropertyManager first.
+048|Puter could not be reached. Check your connection and try again.
+049|Puter is not available right now. Check your connection and try again.
+050|Puter storage is not available.
+051|Radius must be greater than zero
+052|Read a sketch
+053|Round all the outer edges with 1 mm fillets
+054|Run a command
+055|Select a corner where exactly two lines meet
+056|Select a planar or cylindrical face
+057|Select an axis of revolution (or add a centerline to the sketch)
+058|Select at least two profiles
+059|Send
+060|Sign in to Puter to open parts saved in your cloud.
+061|Sign in to Puter to rename parts saved in your cloud.
+062|Sign in to Puter to save this part to your cloud, or use Save As to keep it in this browser.
+063|Something went wrong while talking to Puter.
+064|Stopped.
+065|Stopped: another part was opened.
+066|That point is an end of the line, so its distance to the line is always zero. Pick another point or line to dimension to.
+067|That point lies on the line, so there is no distance to dimension. Use a Coincident constraint to keep it on the line.
+068|The STEP file contains no geometry
+069|The STEP file could not be read
+070|The assistant needs Puter, which is not available right now. Check your connection and reload the page.
+071|The assistant needs Puter, which is not available right now. Check your connection and reload.
+072|The assistant sketches, adds features, edits dimensions, measures and checks its work in the model. Everything it changes in one message is a single undo step.
+073|The axis line is missing
+074|The axis sketch is missing
+075|The chamfer angle must be between 0 and 90 degrees
+076|The chamfer could not be created. Try a smaller distance.
+077|The copies of a cut do not remove any material. Check the direction and spacing.
+078|The counterbore diameter must be larger than the hole
+079|The countersink angle must be between 0 and 180 degrees
+080|The countersink diameter must be larger than the hole
+081|The cut does not remove any material. Check its direction.
+082|The cut removes all material
+083|The draft angle cannot be negative. Use Draft outward to taper the other way.
+084|The draft closes the profile before the end of the extrusion. Use a smaller draft angle or depth.
+085|The draft could not be created
+086|The feature could not be built
+087|The fillet could not be created. Try a smaller radius or fewer edges.
+088|The fillet could not be created. Try a smaller radius.
+089|The fillet radius is too large for these lines
+090|The geometry kernel could not build this feature
+091|The geometry kernel failed
+092|The hole depth must be greater than the counterbore depth
+093|The hole depth must be greater than the countersink depth
+094|The hole position sketch is missing
+095|The imported file data is missing
+096|The lines are parallel
+097|The loft could not be created from these profiles
+098|The part file is damaged (invalid drawing).
+099|The part file is damaged (invalid feature identifiers).
+100|The part file is damaged (invalid feature references).
+101|The part file is damaged (invalid feature).
+102|The part file is damaged (invalid sketch).
+103|The part file is damaged (no feature list).
+104|The part file is damaged (unknown version).
+105|The path must be one connected chain of curves
+106|The path sketch is empty
+107|The path sketch is missing
+108|The pattern has no instances
+109|The pattern removed all material
+110|The profile crosses the axis of revolution. Keep it on one side of the axis.
+111|The profile sketch is missing or failed to build
+112|The reference plane is missing or failed to build
+113|The selected edge is not straight or circular
+114|The selected face is not planar
+115|The selected regions are no longer in the sketch. Edit the feature and select them again.
+116|The shell could not be created. Make it thinner than the radius of the fillets and rounded faces.
+117|The shell could not be created. Try a smaller thickness.
+118|The sign-in window was blocked. Allow pop-ups for this site and try again.
+119|The sketch has no closed profile
+120|The sketch has open contours. Close the profile to use it.
+121|The sweep could not be created. The profile should start at the path and be roughly perpendicular to it.
+122|There is no body to chamfer
+123|There is no body to draft
+124|There is no body to extrude through in this direction. Reverse the direction or use Blind.
+125|There is no body to fillet
+126|There is no body to mirror
+127|There is no body to shell
+128|There is no geometry to export
+129|There is no material to cut
+130|These centres are at the same place, so there is no distance to dimension. Use a Concentric or Coincident constraint to keep them together.
+131|These lines are in line with each other, so there is no distance to dimension. Use a Collinear constraint to keep them that way.
+132|These points are at the same place, so there is no distance to dimension. Use a Coincident constraint to keep them together.
+133|They are
+134|Thickness must be greater than zero
+135|Thin features are not supported yet. Sketch the wall as two offset contours instead.
+136|This browser cannot store parts locally. Download the part or sign in to save it to your Puter cloud.
+137|This browser has run out of storage space for parts. Delete parts you no longer need, download this one, or sign in to save it to your Puter cloud.
+138|This file
+139|This file is not a part created with Parametric.
+140|This file is not a valid part file.
+141|This part was created with a newer version of Parametric.
+142|Through All needs a body to extrude through. Use Blind.
+143|Too many instances (maximum 2000)
+144|Too many requests right now. Wait a moment and try again.
+145|WebGL 2 is not available in this browser
+146|What does it weigh in aluminium?
+147|Your Puter account ran out of AI credits, so the reply stopped.
+148|Your Puter storage is full. Free up space or upgrade your plan, then save again.
+149|all ai providers failed
+150|clipboard-read; clipboard-write
+151|one of its replies could not be read
+152|the OpenCascade kernel failed
+153|tr:last-child input
