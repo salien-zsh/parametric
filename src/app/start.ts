@@ -52,9 +52,7 @@ export class StartScreen {
       h('div', { class: 'sub' }, tr("Feature-based 3D part modeling in your browser.")),
       h('div', { class: 'start-actions' },
         action('new', tr("New part"), tr("Start from a blank part"), async () => {
-          if (!(await this.files.confirmDiscard(tr("start a new part")))) return;
-          this.hide();
-          app.newDocument(tr("Part1"));
+          if (await this.files.newPart()) this.hide();
         }),
         action('part', tr("New Assembly"), tr("Place multiple parts, position them, then create an assembly drawing"), async () => {
           if (!(await this.files.confirmDiscard(tr("start a new assembly")))) return;

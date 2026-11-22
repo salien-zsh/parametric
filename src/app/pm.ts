@@ -226,7 +226,22 @@ export function numberField(o: NumberFieldOptions): HTMLElement {
     value: paramText(o.value, o.kind, o.ctx),
   }) as HTMLInputElement;
   let current: Param = o.value;
-  const mark = () => input.classList.toggle('expr', typeof current === 'string');
+  const fx = h('select', {
+    class: 'input', 'aria-label': tr("Use fx parameter for {0}", [o.label]), title: tr("Link this value to an fx parameter"),
+    style: { width: '74px', flex: '0 0 74px' },
+  }) as HTMLSelectElement;
+  const parameterOptions = () => {
+    const names = [...o.ctx.variables().keys()].sort((a, b) => a.localeCompare(b));
+    fx.textContent = '';
+    fx.append(h('option', { value: '' }, 'fx'), ...names.map((name) => h('option', { value: name }, name)));
+    fx.hidden = o.allowExpr === false || !names.length;
+  };
+  const mark = () => {
+    input.classList.toggle('expr', typeof current === 'string');
+    const match = typeof current === 'string' ? /^=\s*([A-Za-z_][A-Za-z0-9_]*)\s*$/.exec(current) : null;
+    fx.value = match?.[1] ?? '';
+  };
+  parameterOptions();
   mark();
   let composing = false;
   let retired = false;
@@ -310,6 +325,13 @@ export function numberField(o: NumberFieldOptions): HTMLElement {
       if (current !== atFocus) { current = atFocus; mark(); o.onChange(atFocus); }
     }
   });
+  fx.addEventListener('change', () => {
+    if (!fx.value) return;
+    input.value = `=${fx.value}`;
+    cancelPending();
+    commit();
+    input.focus();
+  });
   const spin = h('div', { class: 'spin' }, input, h('div', { class: 'spin-btns' },
     h('button', { type: 'button', tabindex: '-1', 'aria-label': `Increase ${o.label}`, onclick: () => step(1) }, icon('chevronUp', 12)),
     h('button', { type: 'button', tabindex: '-1', 'aria-label': `Decrease ${o.label}`, onclick: () => step(-1) }, icon('chevronDown', 12))));
@@ -320,7 +342,7 @@ export function numberField(o: NumberFieldOptions): HTMLElement {
     attachTooltip(ic, o.label);
     row.append(ic);
   }
-  row.append(spin);
+  row.append(spin, fx);
   const suffix = unitSuffix(o.kind, o.ctx);
   const wrap = h('div', {}, o.icon ? null : h('div', { class: 'field-label', 'aria-hidden': 'true' }, `${o.label}${suffix ? ` (${suffix})` : ''}`), row);
   return wrap;

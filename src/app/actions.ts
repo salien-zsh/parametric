@@ -132,7 +132,7 @@ export function registerCommands(app: App, files: FileOps) {
 
   c.register(
     // ---- file ----
-    { id: 'new', label: tr("New"), icon: 'new', shortcut: 'Control+N', description: tr("Start a new part."), run: () => files.newPart() },
+    { id: 'new', label: tr("New"), icon: 'new', shortcut: 'Control+N', description: tr("Start a new part."), run: () => { void files.newPart(); } },
     {
       id: 'newAssembly', label: tr("New Assembly"), icon: 'part',
       description: tr("Start an assembly with multiple placed parts."),

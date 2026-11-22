@@ -7,9 +7,9 @@ import { evaluateVariables } from '../model/expr';
 import type { FileEntry } from '../platform/files';
 import { deletePart, listParts } from '../platform/files';
 import {
-  assignPartToProject, chooseLocalProjectFolder, createLocalProject, deleteLocalProject, deleteResource,
+  activeProjectId, assignPartToProject, chooseLocalProjectFolder, createLocalProject, deleteLocalProject, deleteResource,
   listProjectParts, localPartKey, localProjects, projectForPart, projectPartCounts, publishResource,
-  readResource, renameLocalProject, resourceEntries, setLocalProjectPath,
+  readResource, renameLocalProject, resourceEntries, setActiveProject, setLocalProjectAutoSave, setLocalProjectPath,
   type PublishResourceInput,
 } from '../platform/workspace-library';
 import { h } from '../ui/dom';
@@ -158,13 +158,22 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
   const draw = () => {
     const projects = localProjects();
     const counts = projectPartCounts();
+    const currentProjectId = activeProjectId();
     const unassigned = entries.filter((p) => { const key = localPartKey(p.location); return !!key && !projectForPart(key); }).length;
     projectList.textContent = '';
     const item = (id: string, label: string, count: number) => {
-      const b = h('button', { class: 'file-item', type: 'button', 'aria-pressed': String(selectedProject === id) },
-        icon('files', 16), h('span', { class: 'txt' }, h('span', { class: 'n' }, label), h('span', { class: 'meta' }, tr("{0} part(s)", [count]))));
+      const current = id === currentProjectId;
+      const b = h('button', { class: 'file-item', type: 'button', 'aria-pressed': String(selectedProject === id), title: id.startsWith('__') ? '' : tr("Double-click to make this the current project") },
+        icon('files', 16), h('span', { class: 'txt' }, h('span', { class: 'n' }, current ? `${label} · ${tr("Current")}` : label), h('span', { class: 'meta' }, tr("{0} part(s)", [count]))));
       b.addEventListener('click', () => { selectedProject = id; void reload(); });
+      b.addEventListener('dblclick', () => {
+        if (id.startsWith('__')) return;
+        setActiveProject(id);
+        selectedProject = id;
+        void reload();
+      });
       if (selectedProject === id) b.style.borderColor = 'var(--accent)';
+      if (current) b.style.background = 'var(--accent-weak)';
       return b;
     };
     projectList.append(
@@ -205,6 +214,12 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
           }
         },
       }, icon('open', 14), project.path ? tr("Change Folder") : tr("Choose Folder")) : null,
+      project ? h('label', { class: 'check' },
+        h('input', {
+          type: 'checkbox', checked: project.autoSave === true,
+          onchange: (e: Event) => { setLocalProjectAutoSave(project.id, (e.target as HTMLInputElement).checked); draw(); },
+        }),
+        h('span', {}, tr("Auto-save changes"))) : null,
       project ? h('button', {
         class: 'btn danger small', type: 'button', onclick: async () => {
           if (!(await confirmDialog(tr("Delete Project"), tr("Delete project \"{0}\"? Its parts remain in this browser.", [project.name]), tr("Delete"), true, app.documentSignal))) return;
@@ -217,6 +232,7 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
       h('th', {}, tr("Part")), h('th', {}, tr("Project")), h('th', {}, tr("Modified")), h('th', {}, tr("Actions")),
     )));
     const body = h('tbody');
+    if (project) partHost.append(h('div', { class: 'field-label' }, project.id === activeProjectId() ? tr("Current project") : tr("Double-click the project to make it current")));
     if (project?.path) partHost.append(h('div', { class: 'field-label' }, tr("Project folder: {0}", [project.path])));
     for (const entry of visible) {
       const key = localPartKey(entry.location);

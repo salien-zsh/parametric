@@ -10,6 +10,8 @@ import {
   onRenamedElsewhere, onSavedElsewhere, sameLocation,
 } from '../platform/files';
 import { type PuterFSItem, cloudAvailable, env, isMissing, puter, signIn, storageError } from '../platform/puter';
+import { desktopAPI } from '../platform/desktop-api';
+import { activeProject } from '../platform/workspace-library';
 import { h } from '../ui/dom';
 import { icon } from '../ui/icons';
 import { confirmDialog, dialogOpen, promptDialog, showDialog, toast } from '../ui/overlay';
@@ -34,6 +36,7 @@ export class FileOps {
   private savedElsewhere: Location | null = null;
   /** The Puter drive file being opened (a launch and a drop of the same file open it once). */
   private openingDrivePath: string | null = null;
+  private autoSaveTimer = 0;
 
   constructor(private app: App) {
     app.onDocumentChanged = (reason) => {
@@ -44,6 +47,7 @@ export class FileOps {
       }
       if (reason !== 'saved') this.revision++;
       this.scheduleRecovery();
+      if (reason !== 'load' && reason !== 'saved') this.scheduleProjectAutoSave();
     };
     // A hidden tab can be closed without notice (phones discard background tabs).
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.flushRecovery(); });
@@ -221,13 +225,49 @@ export class FileOps {
   }
 
   async newPart() {
-    if (!(await this.confirmDiscard(tr("start a new part")))) return;
+    if (!(await this.confirmDiscard(tr("start a new part")))) return false;
     this.app.newDocument(nextUntitled());
+    const project = activeProject();
+    if (project?.path) {
+      const loc = await this.projectLocation(this.app.store.doc.name);
+      if (loc) this.app.location = loc;
+    }
     await this.clearRecoveryCopies();
+    if (project?.autoSave && this.app.location) await this.save(true);
+    return true;
+  }
+
+  private async projectLocation(name: string): Promise<Location | null> {
+    const project = activeProject();
+    const bridge = desktopAPI()?.projects;
+    if (!project?.path || !bridge) return null;
+    try {
+      const files = await bridge.list(project.path);
+      const existing = new Set(files.map((f) => f.name.toLowerCase()));
+      const base = safeName(name);
+      let file = `${base}${EXT}`;
+      let n = 1;
+      while (existing.has(file.slice(0, -EXT.length).toLowerCase())) file = `${base} (${++n})${EXT}`;
+      const sep = project.path.includes('\\') ? '\\' : '/';
+      return { type: 'filesystem', root: project.path, path: `${project.path.replace(/[\\/]+$/, '')}${sep}${file}` };
+    } catch {
+      return null;
+    }
+  }
+
+  private scheduleProjectAutoSave() {
+    clearTimeout(this.autoSaveTimer);
+    const project = activeProject();
+    if (!project?.autoSave || this.app.location?.type !== 'filesystem') return;
+    if (this.app.location.root !== project.path) return;
+    this.autoSaveTimer = window.setTimeout(() => {
+      this.autoSaveTimer = 0;
+      if (this.app.store.dirty) void this.save(true);
+    }, 900);
   }
 
   /** Save to the current location, or ask where for a new document. */
-  async save(): Promise<boolean> {
+  async save(silent = false): Promise<boolean> {
     const app = this.app;
     if (app.sketchEditor) app.exitSketch(true);
     const documentVersion = this.documentVersion;
@@ -236,7 +276,7 @@ export class FileOps {
       if (this.queuedSave?.result === result) this.queuedSave = null;
       if (documentVersion !== this.documentVersion) return false;
       let loc = app.location;
-      if (!loc) loc = await newLocation(app.store.doc.name);
+      if (!loc) loc = await this.projectLocation(app.store.doc.name) ?? await newLocation(app.store.doc.name);
       if (documentVersion !== this.documentVersion) return false;
       if (sameLocation(loc, this.savedElsewhere)) {
         const replace = await confirmDialog(tr("Replace the saved part?"), `"${app.store.doc.name}" was saved in another tab after you opened it here. Saving replaces that version with this one.`, tr("Replace"), true, app.documentSignal);
@@ -252,7 +292,7 @@ export class FileOps {
       app.location = saved;
       if (sameLocation(loc, this.savedElsewhere)) this.savedElsewhere = null;
       this.markSaved(revision);
-      toast({ kind: 'success', message: `Saved to ${locationLabel(app.location)}`, timeout: 2500 });
+      if (!silent) toast({ kind: 'success', message: `Saved to ${locationLabel(app.location)}`, timeout: 2500 });
       if (app.location.type === 'local' && !cloudAvailable()) {
         maybeNudgeSignIn();
       }

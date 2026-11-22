@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { newDocument } from '../src/model/document';
 import {
-  assignPartToProject, createLocalProject, deleteLocalProject, deleteResource, localProjects, projectForPart,
-  listProjectParts, publishResource, readResource, renameLocalProject, resourceEntries,
+  activeProject, assignPartToProject, createLocalProject, deleteLocalProject, deleteResource, localProjects, projectForPart,
+  listProjectParts, publishResource, readResource, renameLocalProject, resourceEntries, setActiveProject, setLocalProjectAutoSave,
 } from '../src/platform/workspace-library';
 
 function fakeLocalStorage() {
@@ -33,6 +33,13 @@ describe('local projects and resource center', () => {
     deleteLocalProject(project.id);
     expect(localProjects()).toEqual([]);
     expect(projectForPart('local:part-1')).toBeNull();
+  });
+
+  it('remembers the current project and its auto-save setting', () => {
+    const project = createLocalProject('Widgets', 'C:\\Projects\\Widgets');
+    setActiveProject(project.id);
+    setLocalProjectAutoSave(project.id, true);
+    expect(activeProject()).toMatchObject({ id: project.id, path: 'C:\\Projects\\Widgets', autoSave: true });
   });
 
   it('publishes and reads a parameterized part snapshot', async () => {

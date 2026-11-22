@@ -1532,5 +1532,11 @@
   "Local project folders are only available in the desktop app.": "Local project folders are only available in the desktop app.",
   "No local folder selected": "No local folder selected",
   "Project Folder": "Project Folder",
-  "Project folder: {0}": "Project folder: {0}"
+  "Project folder: {0}": "Project folder: {0}",
+  "Auto-save changes": "Auto-save changes",
+  "Current project": "Current project",
+  "Double-click the project to make it current": "Double-click the project to make it current",
+  "Double-click to make this the current project": "Double-click to make this the current project",
+  "Link this value to an fx parameter": "Link this value to an fx parameter",
+  "Use fx parameter for {0}": "Use fx parameter for {0}"
 }

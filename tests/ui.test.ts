@@ -206,6 +206,19 @@ describe('PropertyManager number fields', () => {
     expect(input.classList.contains('expr')).toBe(true);
   });
 
+  it('links a numeric field to an fx parameter from its dropdown', () => {
+    const onChange = vi.fn();
+    const el = numberField({ label: 'Depth', value: 10, kind: 'length', ctx: ctx(), onChange });
+    document.body.append(el);
+    const input = el.querySelector('input')!;
+    const parameters = el.querySelector('select')!;
+    expect(parameters.getAttribute('aria-label')).toBe('Use fx parameter for Depth');
+    parameters.value = 'Len';
+    parameters.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(input.value).toBe('=Len');
+    expect(onChange).toHaveBeenLastCalledWith('=Len');
+  });
+
   it.each(['retired', 'removed'])('ignores delayed edits and change events from a %s numeric field', (state) => {
     vi.useFakeTimers();
     try {

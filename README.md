@@ -26,6 +26,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 
 **Features**
 - Extruded boss and cut (blind, through all, mid plane, two directions, draft).
+- Feature value fields can be linked directly to an fx parameter from their dropdown; the stored value becomes an expression such as `=Width`.
 - Revolved boss and cut (full or partial, mid plane).
 - Swept and lofted boss and cut.
 - Fillet, chamfer (equal distance, two distances, distance and angle), shell, draft.
@@ -36,7 +37,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - References to faces and edges are stored by name, so fillets and sketches on faces survive dimension changes.
 
 **Data and reusable parts**
-- Local Project Manager: organise browser-saved parts into named projects and, in the desktop app, bind a project to a real local folder. Folder contents are listed in the manager, opened directly, and saved back to the same files.
+- Local Project Manager: organise browser-saved parts into named projects and, in the desktop app, bind a project to a real local folder. Double-click a project folder to make it current; new parts then get a destination in that folder, with manual Save or optional automatic saving.
 - Parameter configurations: define named overrides for any fx parameter with values or expressions, then switch the active configuration to rebuild the part at another size.
 - Part Resource Center: publish parameterized parts with their fx parameters and configurations, browse by category or parameter, and open independent copies from the library.
 

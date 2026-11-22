@@ -1292,5 +1292,11 @@
   "Local project folders are only available in the desktop app.": "本地项目文件夹仅在桌面版中可用。",
   "No local folder selected": "尚未选择本地文件夹",
   "Project Folder": "项目文件夹",
-  "Project folder: {0}": "项目文件夹：{0}"
+  "Project folder: {0}": "项目文件夹：{0}",
+  "Auto-save changes": "自动保存更改",
+  "Current project": "当前项目",
+  "Double-click the project to make it current": "双击项目将其设为当前项目",
+  "Double-click to make this the current project": "双击设为当前项目",
+  "Link this value to an fx parameter": "将此值关联到参数",
+  "Use fx parameter for {0}": "{0} 使用参数"
 }

@@ -11,6 +11,7 @@ import { tr } from '../i18n';
 
 const PROJECT_KEY = 'parametric:projects';
 const ASSIGNMENT_KEY = 'parametric:project-parts';
+const ACTIVE_PROJECT_KEY = 'parametric:active-project';
 const LIBRARY_KEY = 'parametric:resource-center';
 const LIBRARY_DIR = 'parametric-resource-center';
 const LIBRARY_FALLBACK = 'parametric:resource-doc:';
@@ -20,6 +21,7 @@ export interface LocalProject {
   name: string;
   /** Desktop filesystem root selected for this project. */
   path?: string;
+  autoSave?: boolean;
   created: number;
   modified: number;
 }
@@ -73,6 +75,7 @@ export function localProjects(): LocalProject[] {
       id: p.id,
       name: p.name.trim().slice(0, 100),
       path: typeof p.path === 'string' && p.path ? p.path : undefined,
+      autoSave: p.autoSave === true,
       created: time(p.created),
       modified: time(p.modified),
     }];
@@ -97,6 +100,33 @@ export function createLocalProject(name: string, path?: string): LocalProject {
 export function setLocalProjectPath(id: string, path: string | null) {
   writeJson(PROJECT_KEY, localProjects().map((p) => p.id === id ? { ...p, path: path || undefined, modified: Date.now() } : p));
   changed(projectListeners);
+}
+
+export function setLocalProjectAutoSave(id: string, autoSave: boolean) {
+  writeJson(PROJECT_KEY, localProjects().map((p) => p.id === id ? { ...p, autoSave, modified: Date.now() } : p));
+  changed(projectListeners);
+}
+
+export function activeProjectId(): string | null {
+  try {
+    const id = localStorage.getItem(ACTIVE_PROJECT_KEY);
+    return id && localProjects().some((p) => p.id === id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setActiveProject(id: string | null) {
+  try {
+    if (id && localProjects().some((p) => p.id === id)) localStorage.setItem(ACTIVE_PROJECT_KEY, id);
+    else localStorage.removeItem(ACTIVE_PROJECT_KEY);
+  } catch { /* storage unavailable */ }
+  changed(projectListeners);
+}
+
+export function activeProject(): LocalProject | null {
+  const id = activeProjectId();
+  return id ? localProjects().find((p) => p.id === id) ?? null : null;
 }
 
 export async function chooseLocalProjectFolder(): Promise<{ path: string; name: string } | null> {
@@ -126,6 +156,7 @@ export function renameLocalProject(id: string, name: string) {
 }
 
 export function deleteLocalProject(id: string) {
+  if (activeProjectId() === id) setActiveProject(null);
   writeJson(PROJECT_KEY, localProjects().filter((p) => p.id !== id));
   const assignments = projectAssignments();
   for (const key of Object.keys(assignments)) if (assignments[key] === id) delete assignments[key];
