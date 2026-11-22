@@ -19,6 +19,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - Inference while drawing: snapping to points, midpoints, curves and the origin, horizontal and vertical directions, and alignment guides. Matching relations are added automatically.
 - Geometric constraints (relations): coincident, horizontal, vertical, parallel, perpendicular, tangent, equal, concentric, midpoint, collinear, symmetric and fix. Pick one in the Constrain group of the Sketch tab and click the geometry it applies to, or select geometry first and choose from the constraints that fit.
 - Smart Dimension: distances (aligned, horizontal, vertical), point to line, parallel lines, angles, radius and diameter, chosen from what you select and where you place the label. Driven (reference) dimensions.
+- The dimension edit box can bind a driving dimension directly to an fx parameter; choosing a parameter writes `=Name`, and switching part configurations re-solves the sketch at each configured value.
 - A constraint solver with live dragging and definition status: blue geometry can still move, black is fully defined, red conflicts. The status bar shows the remaining degrees of freedom.
 - Sketch fillet, trim, extend, offset, mirror, construction geometry.
 - External geometry: Convert Entities projects model edges, faces and vertices into the sketch, and a sketch point or curve can be constrained to a model edge or vertex directly. Projected geometry stays linked to the model: when an earlier feature changes, it moves with the model and the sketch geometry constrained to it follows.
@@ -35,7 +36,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - References to faces and edges are stored by name, so fillets and sketches on faces survive dimension changes.
 
 **Data and reusable parts**
-- Local Project Manager: organise browser-saved parts into named projects, search and open project contents, and reassign parts without moving or rewriting their files.
+- Local Project Manager: organise browser-saved parts into named projects and, in the desktop app, bind a project to a real local folder. Folder contents are listed in the manager, opened directly, and saved back to the same files.
 - Parameter configurations: define named overrides for any fx parameter with values or expressions, then switch the active configuration to rebuild the part at another size.
 - Part Resource Center: publish parameterized parts with their fx parameters and configurations, browse by category or parameter, and open independent copies from the library.
 

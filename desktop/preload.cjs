@@ -95,6 +95,13 @@ contextBridge.exposeInMainWorld('puter', puter);
 contextBridge.exposeInMainWorld('desktopAPI', {
   info: () => call('app:info'),
   openExternal: (url) => call('app:openExternal', url),
+  projects: {
+    chooseFolder: () => call('project:chooseFolder'),
+    list: (root) => call('project:list', root),
+    read: async (root, file) => asBlob(await call('project:read', root, file)),
+    write: async (root, file, data) => call('project:write', root, file, await toBytes(data)),
+    delete: (root, file) => call('project:delete', root, file),
+  },
   updates: {
     check: () => call('update:check'),
     state: () => call('update:state'),

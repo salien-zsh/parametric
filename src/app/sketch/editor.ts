@@ -751,6 +751,7 @@ export class SketchEditor implements ViewportTool {
     const initial = typeof d.value === 'string' ? d.value : formatEditable(d.value / scale);
     const input = h('input', { class: 'input', value: initial, 'aria-label': `Value of ${d.name}`, spellcheck: 'false', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off' }) as HTMLInputElement;
     const err = h('div', { class: 'err', role: 'alert' });
+    const parameter = h('select', { class: 'input', 'aria-label': tr("Link dimension to parameter") }) as HTMLSelectElement;
     let original = d.value;
     // Live previews move geometry without an undo step. Every preview starts
     // from the geometry as it was, and cancel or apply restore it first, so the
@@ -792,6 +793,35 @@ export class SketchEditor implements ViewportTool {
         return { ok: false, e: (e as Error).message };
       }
     };
+    const refreshParameter = () => {
+      const current = /^=\s*([A-Za-z_][A-Za-z0-9_]*)\s*$/.exec(input.value)?.[1] ?? '';
+      const values = this.app.variables();
+      parameter.textContent = '';
+      parameter.append(h('option', { value: '' }, tr("Driven by value")));
+      for (const variable of variables) {
+        const value = values.get(variable.name);
+        parameter.append(h('option', { value: variable.name }, value === undefined ? variable.name : `${variable.name} = ${formatNumber(value, 3)}`));
+      }
+      parameter.value = current;
+    };
+    parameter.addEventListener('change', () => {
+      if (parameter.value) {
+        input.value = `=${parameter.value}`;
+      } else {
+        try {
+          const value = evaluate(input.value.replace(/^=/, ''), {
+            kind: d.type === 'angle' ? 'angle' : 'length',
+            bareScale: scale,
+            lookup: (name) => this.app.variables().get(name),
+          });
+          input.value = formatEditable(value / scale);
+        } catch {
+          input.value = String(typeof d.value === 'number' ? formatEditable(d.value / scale) : d.value);
+        }
+      }
+      apply(true);
+      refreshParameter();
+    });
     const apply = (live: boolean) => {
       if (this.modify !== box || !ownsDimension()) return false;
       const r = evalText(input.value);
@@ -829,8 +859,8 @@ export class SketchEditor implements ViewportTool {
       this.closeModify();
     };
     // TS 7 的 lib.dom 将 'input' 事件回调参数推断为 Event；输入法组合态需断言为 InputEvent。
-    input.addEventListener('input', (e) => { if (!(e as InputEvent).isComposing) apply(true); });
-    input.addEventListener('compositionend', () => apply(true));
+    input.addEventListener('input', (e) => { if (!(e as InputEvent).isComposing) { apply(true); refreshParameter(); } });
+    input.addEventListener('compositionend', () => { apply(true); refreshParameter(); });
     input.addEventListener('keydown', (e) => {
       if (e.isComposing || e.keyCode === 229) return;
       e.stopPropagation();
@@ -842,7 +872,9 @@ export class SketchEditor implements ViewportTool {
         h('button', { class: 'icon-btn', 'aria-label': tr("Apply value"), style: { color: 'var(--success)' }, onclick: ok }, icon('check', 16)),
         h('button', { class: 'icon-btn', 'aria-label': tr("Cancel"), style: { color: 'var(--danger)' }, onclick: cancel }, icon('close', 16)),
         h('span', { class: 'grow' }, `${d.name}@${this.sketch.name}`)),
+      h('div', { class: 'row' }, h('span', { class: 'field-label' }, tr("Parameter")), parameter),
       input, err);
+    refreshParameter();
     this.app.viewport.root.append(box);
     this.modify = box;
     this.modifyValid = ownsDimension;
@@ -863,6 +895,7 @@ export class SketchEditor implements ViewportTool {
         }
       }
       variables = structuredClone(doc.variables);
+      refreshParameter();
     };
     const [sx, sy] = this.toScreen(d.at);
     const rootW = this.app.viewport.root.clientWidth;

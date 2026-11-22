@@ -6,6 +6,7 @@
 // Files never go into the key-value store.
 
 import { cloudAvailable, isMissing, puter, toMs } from './puter';
+import { desktopAPI } from './desktop-api';
 import { tr } from '../i18n';
 
 export const EXT = '.parametric';
@@ -18,7 +19,10 @@ const LOCAL_DIR = 'parametric-parts';
 const LOCAL_INDEX = 'parametric:local-parts';
 const RECENT_KEY = 'parametric:recent';
 
-export type Location = { type: 'cloud'; path: string } | { type: 'local'; id: string };
+export type Location =
+  | { type: 'cloud'; path: string }
+  | { type: 'local'; id: string }
+  | { type: 'filesystem'; root: string; path: string };
 
 export interface FileEntry {
   name: string;
@@ -170,6 +174,15 @@ export async function saveText(location: Location, name: string, text: string): 
     announceSaved(loc);
     return loc;
   }
+  if (location.type === 'filesystem') {
+    const bridge = desktopAPI()?.projects;
+    if (!bridge) throw new Error(tr("Local project folders are only available in the desktop app."));
+    const item = await bridge.write(location.root, location.path, new TextEncoder().encode(text));
+    const loc: Location = { type: 'filesystem', root: location.root, path: item.path };
+    rememberRecent({ location: loc, name });
+    announceSaved(loc);
+    return loc;
+  }
   await localWrite(location.id, name, text);
   rememberRecent({ location, name });
   announceSaved(location);
@@ -209,7 +222,8 @@ export function announceSaved(location: Location) {
 const messageLocation = (loc: unknown): Location | null =>
   !record(loc) ? null
     : loc.type === 'cloud' && nonempty(loc.path) ? { type: 'cloud', path: loc.path }
-      : loc.type === 'local' && nonempty(loc.id) ? { type: 'local', id: loc.id } : null;
+      : loc.type === 'local' && nonempty(loc.id) ? { type: 'local', id: loc.id }
+        : loc.type === 'filesystem' && nonempty(loc.root) && nonempty(loc.path) ? { type: 'filesystem', root: loc.root, path: loc.path } : null;
 
 /** Calls `fn` when another tab of this browser saves a part. */
 export function onSavedElsewhere(fn: (location: Location) => void) {
@@ -229,12 +243,22 @@ export function onRenamedElsewhere(fn: (from: Location, to: Location, name: stri
 }
 
 export async function loadText(location: Location): Promise<string> {
-  return location.type === 'cloud' ? cloudRead(location.path) : localRead(location.id);
+  if (location.type === 'cloud') return cloudRead(location.path);
+  if (location.type === 'filesystem') {
+    const bridge = desktopAPI()?.projects;
+    if (!bridge) throw new Error(tr("Local project folders are only available in the desktop app."));
+    return (await bridge.read(location.root, location.path)).text();
+  }
+  return localRead(location.id);
 }
 
 export async function deletePart(location: Location) {
   if (location.type === 'cloud') await puter()!.fs.delete(location.path);
-  else await localDelete(location.id);
+  else if (location.type === 'filesystem') {
+    const bridge = desktopAPI()?.projects;
+    if (!bridge) throw new Error(tr("Local project folders are only available in the desktop app."));
+    await bridge.delete(location.root, location.path);
+  } else await localDelete(location.id);
   forgetRecent(location);
   partsChanged();
 }
@@ -277,7 +301,11 @@ export async function listParts(onCloudError?: (err: unknown) => void): Promise<
 }
 
 export const sameLocation = (a?: Location | null, b?: Location | null) =>
-  !!a && !!b && a.type === b.type && (a.type === 'cloud' ? a.path === (b as { path: string }).path : a.id === (b as { id: string }).id);
+  !!a && !!b && (
+    a.type === 'cloud' ? b.type === 'cloud' && a.path === b.path
+      : a.type === 'filesystem' ? b.type === 'filesystem' && a.root === b.root && a.path === b.path
+        : b.type === 'local' && a.id === b.id
+  );
 
 export function recentParts(): { location: Location; name: string; opened: number }[] {
   try {
@@ -287,7 +315,8 @@ export function recentParts(): { location: Location; name: string; opened: numbe
       if (!record(p) || typeof p.name !== 'string' || !record(p.location)) continue;
       const loc = p.location;
       const location: Location | null = loc.type === 'cloud' && nonempty(loc.path) ? { type: 'cloud', path: loc.path }
-        : loc.type === 'local' && nonempty(loc.id) ? { type: 'local', id: loc.id } : null;
+        : loc.type === 'local' && nonempty(loc.id) ? { type: 'local', id: loc.id }
+          : loc.type === 'filesystem' && nonempty(loc.root) && nonempty(loc.path) ? { type: 'filesystem', root: loc.root, path: loc.path } : null;
       if (location) rows.push({ location, name: p.name, opened: finiteNumber(p.opened) });
     }
     return rows;
@@ -315,7 +344,10 @@ export function forgetRecent(location: Location) {
 }
 
 export const locationLabel = (loc?: Location | null) =>
-  !loc ? 'Not saved' : loc.type === 'cloud' ? loc.path.replace(/^.*\/AppData\/[^/]+\//, '') : 'This browser';
+  !loc ? 'Not saved'
+    : loc.type === 'cloud' ? loc.path.replace(/^.*\/AppData\/[^/]+\//, '')
+      : loc.type === 'filesystem' ? loc.path
+        : 'This browser';
 
 /** Opens a file chosen from Puter storage: a part, or a STEP or SolidWorks file to import. */
 export async function pickCloudFile(): Promise<{ blob: Blob; fileName: string; location: Location; name: string } | null> {

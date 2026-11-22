@@ -22,6 +22,7 @@ const DIST = path.join(ROOT, 'dist');
 const USER = app.getPath('userData');
 const PARTS = path.join(USER, 'parts');
 const KV_FILE = path.join(USER, 'kv.json');
+const projectRoots = new Set();
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -248,6 +249,66 @@ async function kvWrite(obj) {
 }
 
 function registerIpc() {
+  const projectRoot = async (root) => {
+    const resolved = await fsp.realpath(String(root || ''));
+    const st = await fsp.stat(resolved);
+    if (!st.isDirectory()) throw new Error('项目路径不是文件夹');
+    projectRoots.add(resolved);
+    return resolved;
+  };
+  const projectPath = async (root, target) => {
+    const base = await projectRoot(root);
+    const resolved = await fsp.realpath(String(target || ''));
+    const rel = path.relative(base, resolved);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) throw new Error('文件不在当前项目文件夹中');
+    return resolved;
+  };
+
+  ipcMain.handle('project:chooseFolder', async () => {
+    const r = await dialog.showOpenDialog(win, {
+      title: '选择项目文件夹',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (r.canceled || !r.filePaths.length) return null;
+    const root = await projectRoot(r.filePaths[0]);
+    return { path: root, name: path.basename(root) };
+  });
+  ipcMain.handle('project:list', async (_e, root) => {
+    const base = await projectRoot(root);
+    const items = await fsp.readdir(base, { withFileTypes: true });
+    const out = [];
+    for (const item of items) {
+      if (!item.isFile() || !item.name.toLowerCase().endsWith('.parametric')) continue;
+      const full = path.join(base, item.name);
+      const st = await fsp.stat(full);
+      out.push({
+        name: item.name.slice(0, -'.parametric'.length),
+        path: full,
+        size: st.size,
+        modified: st.mtimeMs,
+      });
+    }
+    return out.sort((a, b) => b.modified - a.modified);
+  });
+  ipcMain.handle('project:read', async (_e, root, target) => fsp.readFile(await projectPath(root, target)));
+  ipcMain.handle('project:write', async (_e, root, target, bytes) => {
+    const base = await projectRoot(root);
+    let full;
+    try { full = await projectPath(root, target); }
+    catch {
+      const next = path.resolve(base, path.basename(String(target || '')));
+      const rel = path.relative(base, next);
+      if (rel.startsWith('..') || path.isAbsolute(rel)) throw new Error('文件不在当前项目文件夹中');
+      full = next;
+    }
+    await fsp.writeFile(full, asBytes(bytes));
+    const st = await fsp.stat(full);
+    return { name: path.basename(full), path: full, size: st.size, modified: st.mtimeMs };
+  });
+  ipcMain.handle('project:delete', async (_e, root, target) => {
+    await fsp.unlink(await projectPath(root, target));
+  });
+
   ipcMain.handle('fs:write', async (_e, p, bytes, opts = {}) => {
     const full = userPath(p);
     await fsp.mkdir(path.dirname(full), { recursive: true });

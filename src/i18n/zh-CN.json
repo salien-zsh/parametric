@@ -1281,5 +1281,16 @@
   "Unassigned": "未分配",
   "Untitled Project": "未命名项目",
   "Update parameter configurations": "更新参数配置",
-  "Value of {0} in {1}": "{1} 中 {0} 的值"
+  "Value of {0} in {1}": "{1} 中 {0} 的值",
+  "{0} local part(s). Projects organise browser parts and can also open a desktop project folder.": "本地零件 {0} 个。项目可管理浏览器零件，也可打开桌面项目文件夹。",
+  "Change Folder": "更改文件夹",
+  "Choose Folder": "选择文件夹",
+  "Choose Local Folder": "选择本地文件夹",
+  "Choosing a local project folder requires the desktop app.": "选择本地项目文件夹需要使用桌面版。",
+  "Driven by value": "由数值驱动",
+  "Link dimension to parameter": "将尺寸关联到参数",
+  "Local project folders are only available in the desktop app.": "本地项目文件夹仅在桌面版中可用。",
+  "No local folder selected": "尚未选择本地文件夹",
+  "Project Folder": "项目文件夹",
+  "Project folder: {0}": "项目文件夹：{0}"
 }

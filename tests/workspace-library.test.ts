@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { newDocument } from '../src/model/document';
 import {
   assignPartToProject, createLocalProject, deleteLocalProject, deleteResource, localProjects, projectForPart,
-  publishResource, readResource, renameLocalProject, resourceEntries,
+  listProjectParts, publishResource, readResource, renameLocalProject, resourceEntries,
 } from '../src/platform/workspace-library';
 
 function fakeLocalStorage() {
@@ -17,7 +17,10 @@ function fakeLocalStorage() {
   };
 }
 
-beforeEach(fakeLocalStorage);
+beforeEach(() => {
+  fakeLocalStorage();
+  delete (globalThis as { window?: unknown }).window;
+});
 
 describe('local projects and resource center', () => {
   it('creates, renames and assigns local projects', () => {
@@ -52,5 +55,20 @@ describe('local projects and resource center', () => {
   it('refuses to publish a static part', async () => {
     await expect(publishResource(newDocument('Static'), { name: 'Static', category: 'General', description: '' }))
       .rejects.toThrow(/parameters or a configuration/);
+  });
+
+  it('lists parametric files from a selected desktop project folder', async () => {
+    const bridge = {
+      chooseFolder: async () => ({ path: 'C:\\Projects\\Brackets', name: 'Brackets' }),
+      list: async () => [{ name: 'Small bracket', path: 'C:\\Projects\\Brackets\\Small bracket.parametric', size: 12, modified: 5 }],
+      read: async () => new Blob(),
+      write: async () => { throw new Error('not used'); },
+      delete: async () => {},
+    };
+    (globalThis as unknown as { window: { desktopAPI: { projects: typeof bridge } } }).window = { desktopAPI: { projects: bridge } };
+    const project = createLocalProject('Brackets', 'C:\\Projects\\Brackets');
+    const parts = await listProjectParts(project);
+    expect(parts[0].name).toBe('Small bracket');
+    expect(parts[0].location).toEqual({ type: 'filesystem', root: 'C:\\Projects\\Brackets', path: 'C:\\Projects\\Brackets\\Small bracket.parametric' });
   });
 });

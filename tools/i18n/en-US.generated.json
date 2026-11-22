@@ -1521,5 +1521,16 @@
   "Unassigned": "Unassigned",
   "Untitled Project": "Untitled Project",
   "Update parameter configurations": "Update parameter configurations",
-  "Value of {0} in {1}": "Value of {0} in {1}"
+  "Value of {0} in {1}": "Value of {0} in {1}",
+  "{0} local part(s). Projects organise browser parts and can also open a desktop project folder.": "{0} local part(s). Projects organise browser parts and can also open a desktop project folder.",
+  "Change Folder": "Change Folder",
+  "Choose Folder": "Choose Folder",
+  "Choose Local Folder": "Choose Local Folder",
+  "Choosing a local project folder requires the desktop app.": "Choosing a local project folder requires the desktop app.",
+  "Driven by value": "Driven by value",
+  "Link dimension to parameter": "Link dimension to parameter",
+  "Local project folders are only available in the desktop app.": "Local project folders are only available in the desktop app.",
+  "No local folder selected": "No local folder selected",
+  "Project Folder": "Project Folder",
+  "Project folder: {0}": "Project folder: {0}"
 }

@@ -5,6 +5,8 @@
 import { parseDocument, serializeDocument } from '../model/document';
 import { uniqueId } from '../model/ids';
 import type { PartDocument } from '../model/types';
+import { desktopAPI } from './desktop-api';
+import type { FileEntry } from './files';
 import { tr } from '../i18n';
 
 const PROJECT_KEY = 'parametric:projects';
@@ -16,6 +18,8 @@ const LIBRARY_FALLBACK = 'parametric:resource-doc:';
 export interface LocalProject {
   id: string;
   name: string;
+  /** Desktop filesystem root selected for this project. */
+  path?: string;
   created: number;
   modified: number;
 }
@@ -65,22 +69,53 @@ export function localProjects(): LocalProject[] {
   const raw = readJson<unknown[]>(PROJECT_KEY, []);
   return (Array.isArray(raw) ? raw : []).flatMap((p): LocalProject[] => {
     if (!isRecord(p) || typeof p.id !== 'string' || !p.id || typeof p.name !== 'string' || !p.name.trim()) return [];
-    return [{ id: p.id, name: p.name.trim().slice(0, 100), created: time(p.created), modified: time(p.modified) }];
+    return [{
+      id: p.id,
+      name: p.name.trim().slice(0, 100),
+      path: typeof p.path === 'string' && p.path ? p.path : undefined,
+      created: time(p.created),
+      modified: time(p.modified),
+    }];
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function createLocalProject(name: string): LocalProject {
+export function createLocalProject(name: string, path?: string): LocalProject {
   const projects = localProjects();
   const used = new Set(projects.map((p) => p.id));
   const project: LocalProject = {
     id: uniqueId('project-', used),
     name: name.trim().slice(0, 100) || tr("Untitled Project"),
+    path: path || undefined,
     created: Date.now(),
     modified: Date.now(),
   };
   writeJson(PROJECT_KEY, [...projects, project]);
   changed(projectListeners);
   return project;
+}
+
+export function setLocalProjectPath(id: string, path: string | null) {
+  writeJson(PROJECT_KEY, localProjects().map((p) => p.id === id ? { ...p, path: path || undefined, modified: Date.now() } : p));
+  changed(projectListeners);
+}
+
+export async function chooseLocalProjectFolder(): Promise<{ path: string; name: string } | null> {
+  const projects = desktopAPI()?.projects;
+  if (!projects) throw new Error(tr("Choosing a local project folder requires the desktop app."));
+  return projects.chooseFolder();
+}
+
+export async function listProjectParts(project: LocalProject | null): Promise<FileEntry[]> {
+  if (!project?.path) return [];
+  const bridge = desktopAPI()?.projects;
+  if (!bridge) throw new Error(tr("Local project folders are only available in the desktop app."));
+  const files = await bridge.list(project.path);
+  return files.map((file) => ({
+    name: file.name,
+    location: { type: 'filesystem' as const, root: project.path!, path: file.path },
+    modified: file.modified,
+    size: file.size,
+  }));
 }
 
 export function renameLocalProject(id: string, name: string) {

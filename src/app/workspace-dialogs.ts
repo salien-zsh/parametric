@@ -7,8 +7,9 @@ import { evaluateVariables } from '../model/expr';
 import type { FileEntry } from '../platform/files';
 import { deletePart, listParts } from '../platform/files';
 import {
-  assignPartToProject, createLocalProject, deleteLocalProject, deleteResource, localPartKey, localProjects,
-  projectForPart, projectPartCounts, publishResource, readResource, renameLocalProject, resourceEntries,
+  assignPartToProject, chooseLocalProjectFolder, createLocalProject, deleteLocalProject, deleteResource,
+  listProjectParts, localPartKey, localProjects, projectForPart, projectPartCounts, publishResource,
+  readResource, renameLocalProject, resourceEntries, setLocalProjectPath,
   type PublishResourceInput,
 } from '../platform/workspace-library';
 import { h } from '../ui/dom';
@@ -142,8 +143,11 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
   const projectList = h('div', { class: 'file-list', style: { minWidth: '220px' } });
   const partHost = h('div', { class: 'grow', style: { minWidth: '0' } });
   const name = h('input', { class: 'input', placeholder: tr("New project name"), 'aria-label': tr("New project name") }) as HTMLInputElement;
+  const folderPath = h('div', { class: 'field-label', style: { flex: '1', minWidth: '180px' } }, tr("No local folder selected"));
   const status = h('div', { class: 'field-label', role: 'status' });
   let entries: FileEntry[] = [];
+  let folderEntries: FileEntry[] = [];
+  let newProjectPath: string | null = null;
 
   const openPart = async (entry: FileEntry) => {
     closeDialog?.(null);
@@ -159,7 +163,7 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
     const item = (id: string, label: string, count: number) => {
       const b = h('button', { class: 'file-item', type: 'button', 'aria-pressed': String(selectedProject === id) },
         icon('files', 16), h('span', { class: 'txt' }, h('span', { class: 'n' }, label), h('span', { class: 'meta' }, tr("{0} part(s)", [count]))));
-      b.addEventListener('click', () => { selectedProject = id; draw(); });
+      b.addEventListener('click', () => { selectedProject = id; void reload(); });
       if (selectedProject === id) b.style.borderColor = 'var(--accent)';
       return b;
     };
@@ -169,7 +173,7 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
       ...projects.map((p) => item(p.id, p.name, counts[p.id] ?? 0)),
     );
 
-    const visible = entries.filter((entry) => {
+    const browserVisible = entries.filter((entry) => {
       const key = localPartKey(entry.location);
       if (!key) return false;
       const project = projectForPart(key);
@@ -178,6 +182,7 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
       return project === selectedProject;
     });
     const project = projects.find((p) => p.id === selectedProject);
+    const visible = selectedProject === project?.id && project.path ? [...browserVisible, ...folderEntries] : browserVisible;
     partHost.textContent = '';
     partHost.append(h('div', { class: 'row' }, h('h3', { class: 'grow', style: { margin: '0' } }, project?.name ?? (selectedProject === '__unassigned' ? tr("Unassigned") : tr("All Local Parts"))),
       project ? h('button', {
@@ -186,6 +191,20 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
           if (next?.trim()) { renameLocalProject(project.id, next); draw(); }
         },
       }, icon('edit', 14), tr("Rename")) : null,
+      project ? h('button', {
+        class: 'btn small', type: 'button', onclick: async () => {
+          try {
+            const folder = await chooseLocalProjectFolder();
+            if (folder) {
+              setLocalProjectPath(project.id, folder.path);
+              folderEntries = await listProjectParts({ ...project, path: folder.path });
+              draw();
+            }
+          } catch (e) {
+            toast({ kind: 'error', message: (e as Error).message });
+          }
+        },
+      }, icon('open', 14), project.path ? tr("Change Folder") : tr("Choose Folder")) : null,
       project ? h('button', {
         class: 'btn danger small', type: 'button', onclick: async () => {
           if (!(await confirmDialog(tr("Delete Project"), tr("Delete project \"{0}\"? Its parts remain in this browser.", [project.name]), tr("Delete"), true, app.documentSignal))) return;
@@ -198,12 +217,18 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
       h('th', {}, tr("Part")), h('th', {}, tr("Project")), h('th', {}, tr("Modified")), h('th', {}, tr("Actions")),
     )));
     const body = h('tbody');
+    if (project?.path) partHost.append(h('div', { class: 'field-label' }, tr("Project folder: {0}", [project.path])));
     for (const entry of visible) {
-      const key = localPartKey(entry.location)!;
+      const key = localPartKey(entry.location);
       const select = h('select', { class: 'input', 'aria-label': tr("Project for {0}", [entry.name]) }) as HTMLSelectElement;
-      select.append(h('option', { value: '' }, tr("Unassigned")), ...projects.map((p) => h('option', { value: p.id }, p.name)));
-      select.value = projectForPart(key) ?? '';
-      select.addEventListener('change', () => { assignPartToProject(key, select.value || null); draw(); });
+      if (key) {
+        select.append(h('option', { value: '' }, tr("Unassigned")), ...projects.map((p) => h('option', { value: p.id }, p.name)));
+        select.value = projectForPart(key) ?? '';
+        select.addEventListener('change', () => { assignPartToProject(key, select.value || null); draw(); });
+      } else {
+        select.append(h('option', {}, tr("Project Folder")));
+        select.disabled = true;
+      }
       const open = h('button', { class: 'btn small', type: 'button' }, icon('open', 14), tr("Open"));
       open.addEventListener('click', () => void openPart(entry));
       const del = h('button', { class: 'btn danger small', type: 'button' }, icon('trash', 14), tr("Delete"));
@@ -211,6 +236,7 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
         if (!(await confirmDialog(tr("Delete Part"), tr("Delete \"{0}\" from this browser? This cannot be undone.", [entry.name]), tr("Delete"), true, app.documentSignal))) return;
         await deletePart(entry.location);
         entries = entries.filter((p) => p !== entry);
+        folderEntries = folderEntries.filter((p) => p !== entry);
         draw();
       });
       body.append(h('tr', {}, h('td', {}, entry.name), h('td', {}, select), h('td', {}, formatDate(entry.modified)), h('td', {}, open, ' ', del)));
@@ -218,29 +244,51 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
     if (!visible.length) body.append(h('tr', {}, h('td', { colspan: '4' }, tr("No parts in this project."))));
     table.append(body);
     partHost.append(table);
-    status.textContent = tr("{0} local part(s). Projects organise files without moving or changing them.", [entries.length]);
+    status.textContent = tr("{0} local part(s). Projects organise browser parts and can also open a desktop project folder.", [entries.length + folderEntries.length]);
   };
 
   const add = h('button', { class: 'btn small', type: 'button' }, icon('plus', 14), tr("Create Project"));
   add.addEventListener('click', () => {
-    const project = createLocalProject(name.value || tr("Untitled Project"));
+    const project = createLocalProject(name.value || tr("Untitled Project"), newProjectPath ?? undefined);
     name.value = '';
+    newProjectPath = null;
+    folderPath.textContent = tr("No local folder selected");
     selectedProject = project.id;
-    draw();
+    void reload();
   });
-  const refresh = h('button', { class: 'btn small', type: 'button' }, icon('files', 14), tr("Refresh"));
-  refresh.addEventListener('click', async () => {
+  const chooseFolder = h('button', { class: 'btn small', type: 'button' }, icon('open', 14), tr("Choose Local Folder"));
+  chooseFolder.addEventListener('click', async () => {
+    try {
+      const folder = await chooseLocalProjectFolder();
+      if (!folder) return;
+      newProjectPath = folder.path;
+      folderPath.textContent = folder.path;
+      if (!name.value.trim()) name.value = folder.name;
+    } catch (e) {
+      toast({ kind: 'error', message: (e as Error).message });
+    }
+  });
+  const reload = async () => {
     entries = localOnly(await listParts());
+    const project = localProjects().find((p) => p.id === selectedProject);
+    try {
+      folderEntries = project?.path ? await listProjectParts(project) : [];
+    } catch (e) {
+      folderEntries = [];
+      toast({ kind: 'warning', message: (e as Error).message });
+    }
     draw();
-  });
-  entries = localOnly(await listParts());
-  draw();
+  };
+  const refresh = h('button', { class: 'btn small', type: 'button' }, icon('files', 14), tr("Refresh"));
+  refresh.addEventListener('click', () => void reload());
+  await reload();
   await showDialog({
     title: tr("Local Project Manager"),
     wide: true,
     signal: app.documentSignal,
     body: [
-      h('div', { class: 'row' }, name, add, refresh),
+      h('div', { class: 'row' }, name, chooseFolder, folderPath, add),
+      h('div', { class: 'row' }, refresh),
       h('div', { class: 'row', style: { alignItems: 'stretch' } }, projectList, partHost),
       status,
     ],
