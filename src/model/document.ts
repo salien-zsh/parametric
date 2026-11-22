@@ -5,7 +5,7 @@
 import { convertExpressionUnits, evaluate, evaluateVariables, renameReferences, variableReferenceChanges } from './expr';
 import { FEATURE_LABELS, PARAM_FIELDS, type ParamKind, getPath, setPath } from './features';
 import type {
-  AssemblyComponent, AssemblyJoint, AssemblyMate, ComponentTransform, Feature, Id, Param, PartDocument, SkDimension, SketchFeature, UnitSystem, Variable,
+  AssemblyComponent, AssemblyJoint, AssemblyMate, ComponentTransform, Feature, Id, Param, ParameterConfiguration, PartDocument, SkDimension, SketchFeature, UnitSystem, Variable,
 } from './types';
 import { isDimension } from './types';
 import { UNIT_SYSTEMS } from './units';
@@ -31,6 +31,8 @@ export function newDocument(name = 'Part1', units: UnitSystem = 'MMGS'): PartDoc
     material: null,
     color: '#b8c4d2',
     variables: [],
+    configurations: [],
+    activeConfiguration: null,
     features: [],
     rollback: null,
     blobs: {},
@@ -58,6 +60,16 @@ export function newAssembly(name = 'Assembly1', units: UnitSystem = 'MMGS'): Par
 }
 
 export const isAssembly = (doc: Pick<PartDocument, 'kind'>): boolean => doc.kind === 'assembly';
+
+/** Variables with the active configuration's overrides applied. */
+export function configurationVariables(doc: PartDocument): Variable[] {
+  const config = doc.configurations?.find((c) => c.id === doc.activeConfiguration);
+  if (!config) return doc.variables;
+  return doc.variables.map((v) => {
+    const override = config.overrides[v.id];
+    return override == null ? v : { ...v, expr: override };
+  });
+}
 
 const finiteVec3 = (v: unknown): v is [number, number, number] =>
   Array.isArray(v) && v.length === 3 && v.every((n) => typeof n === 'number' && Number.isFinite(n));
@@ -109,6 +121,20 @@ export function parseDocument(text: string): PartDocument {
   const blobs = isObj(d.blobs) ? d.blobs : {};
   const doc = { ...base, ...d, units, blobs, variables } as PartDocument;
   doc.kind = d.kind === 'assembly' ? 'assembly' : 'part';
+  const configIds = new Set<Id>();
+  doc.configurations = (Array.isArray(d.configurations) ? d.configurations : []).flatMap((raw): ParameterConfiguration[] => {
+    if (!isObj(raw) || typeof raw.name !== 'string' || !raw.name.trim()) return [];
+    let id = typeof raw.id === 'string' && raw.id && !configIds.has(raw.id) ? raw.id : uniqueId('cfg', configIds);
+    configIds.add(id);
+    const overrides: Record<Id, string> = {};
+    if (isObj(raw.overrides)) {
+      for (const [variable, value] of Object.entries(raw.overrides)) {
+        if (typeof value === 'string' || typeof value === 'number') overrides[variable] = String(value);
+      }
+    }
+    return [{ id, name: raw.name.trim().slice(0, 120), overrides }];
+  });
+  doc.activeConfiguration = typeof d.activeConfiguration === 'string' && configIds.has(d.activeConfiguration) ? d.activeConfiguration : null;
   if (typeof doc.name !== 'string') doc.name = base.name;
   if (!Number.isInteger(doc.decimals) || doc.decimals < 0 || doc.decimals > 8) doc.decimals = base.decimals;
   if (doc.rollback != null && !Number.isInteger(doc.rollback)) doc.rollback = null;
@@ -258,6 +284,9 @@ export function allocateId(doc: PartDocument, prefix = 'f', occupiedIds?: Set<Id
  */
 export function mapExpressions(doc: PartDocument, fn: (src: string, kind: ParamKind | 'variable') => string) {
   for (const v of doc.variables) v.expr = fn(v.expr, 'variable');
+  for (const config of doc.configurations ?? []) {
+    for (const [id, value] of Object.entries(config.overrides)) config.overrides[id] = fn(value, 'variable');
+  }
   for (const f of doc.features) {
     for (const fd of PARAM_FIELDS[f.type] ?? []) {
       const v = getPath(f, fd.path);
@@ -300,7 +329,7 @@ function convertUnits(doc: PartDocument, units: UnitSystem, variablesAfter?: Var
   const k = UNIT_SYSTEMS[doc.units].scale / UNIT_SYSTEMS[units].scale;
   const values = (d: PartDocument) => {
     const st = new DocStore(d);
-    const vars = evaluateVariables(d.variables).values;
+    const vars = evaluateVariables(configurationVariables(d)).values;
     const out = new Map<string, number>();
     for (const f of d.features) {
       for (const fd of PARAM_FIELDS[f.type] ?? []) {
@@ -344,7 +373,7 @@ function convertUnits(doc: PartDocument, units: UnitSystem, variablesAfter?: Var
     // re-solved when the part rebuilds, so give it the shape those values make.
     if (sketchUnlinked) {
       const st = new DocStore(doc);
-      const vars = evaluateVariables(doc.variables).values;
+      const vars = evaluateVariables(configurationVariables(doc)).values;
       try {
         solveSketch(f.entities, f.constraints, { value: (d) => st.dimensionValue(d, vars), analyze: false });
       } catch {
@@ -616,7 +645,7 @@ export class DocStore {
   /** Evaluates one parameter. */
   evalParam(p: Param, kind: 'length' | 'angle' | 'count', vars?: Map<string, number>): number {
     if (typeof p === 'number') return p;
-    const values = vars ?? evaluateVariables(this.doc.variables).values;
+    const values = vars ?? evaluateVariables(configurationVariables(this.doc)).values;
     const src = String(p).replace(/^=/, '');
     const v = evaluate(src, {
       kind: kind === 'count' ? 'none' : kind,
@@ -632,7 +661,7 @@ export class DocStore {
 
   /** Features with every parameter evaluated; sketches with expressions re-solved. */
   resolve(): ResolveResult {
-    const { values, errors: variableErrors } = evaluateVariables(this.doc.variables);
+    const { values, errors: variableErrors } = evaluateVariables(configurationVariables(this.doc));
     const errors = new Map<Id, string>();
     const features = this.doc.features.map((f) => {
       const fields = PARAM_FIELDS[f.type];

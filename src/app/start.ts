@@ -15,6 +15,7 @@ import { syncUserMenu, syncUserMenuTheme } from './user-menu';
 import { EXAMPLES } from './examples';
 import type { FileOps } from './fileops';
 import { REPO_URL } from './shell';
+import { projectManagerDialog, resourceCenterDialog } from './workspace-dialogs';
 import { tr } from '../i18n';
 
 export class StartScreen {
@@ -62,6 +63,8 @@ export class StartScreen {
         }),
         action('open', tr("Open"), cloudAvailable() ? tr("Open a part from your Puter cloud or this browser") : tr("Open a part saved in this browser"), () => { this.hide(); void this.files.open(); }),
         action('upload', tr("Open from device"), tr("Open a part file, or a STEP or SolidWorks file"), () => { this.hide(); void this.files.openFromDevice(); }),
+        action('files', tr("Local Project Manager"), tr("Organise locally saved parts into projects"), () => { void projectManagerDialog(app, this.files, () => this.hide()); }),
+        action('part', tr("Part Resource Center"), tr("Browse and insert reusable parameterized parts"), () => { void resourceCenterDialog(app, this.files, () => this.hide()); }),
       ),
       h('div', { class: 'row' }, h('label', { class: 'field-label' }, tr("Units for new parts")), unitSel),
       recents.length ? h('div', { class: 'start-section' }, h('h2', {}, tr("Recent")), h('div', { class: 'file-list' }, recents.map((r) => {

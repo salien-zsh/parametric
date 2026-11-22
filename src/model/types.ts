@@ -450,6 +450,9 @@ export interface PartDocument {
   material: MaterialRef | null;
   color: string;
   variables: Variable[];
+  /** Named parameter sets; missing overrides inherit the base variable expression. */
+  configurations?: ParameterConfiguration[];
+  activeConfiguration?: Id | null;
   features: Feature[];
   /** Features at index >= rollback are rolled back (not built). null = none. */
   rollback: number | null;
@@ -464,6 +467,13 @@ export interface PartDocument {
   nextId: number;
   created: number;
   modified: number;
+}
+
+export interface ParameterConfiguration {
+  id: Id;
+  name: string;
+  /** Variable id -> value or expression for this configuration. */
+  overrides: Record<Id, string>;
 }
 
 // ---- Drawings ----

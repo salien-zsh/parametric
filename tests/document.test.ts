@@ -133,6 +133,28 @@ describe('document store', () => {
     expect(r.errors.get('e1')).toMatch(/Unknown name/);
   });
 
+  it('switches parameter configurations without changing base fx values', () => {
+    const doc = newDocument('Configurable');
+    doc.variables = [{ id: 'v1', name: 'Width', expr: '10' }, { id: 'v2', name: 'Height', expr: 'Width / 2' }];
+    const s = sketch('s1', rect(0, 0, 10, 10));
+    const e: ExtrudeFeature = { ...newExtrude('e1', 'E', 's1', false, 1), depth: '=Height * 2' };
+    doc.features = [s, e];
+    doc.configurations = [
+      { id: 'large', name: 'Large', overrides: { v1: '40', v2: '12' } },
+      { id: 'small', name: 'Small', overrides: { v1: '20' } },
+    ];
+    doc.activeConfiguration = 'large';
+    const large = new DocStore(doc).resolve();
+    expect(large.variables.get('Width')).toBe(40);
+    expect((large.features[1] as ExtrudeFeature).depth).toBe(24);
+    doc.activeConfiguration = 'small';
+    expect((new DocStore(doc).resolve().features[1] as ExtrudeFeature).depth).toBe(20);
+    expect(doc.variables.map((v) => v.expr)).toEqual(['10', 'Width / 2']);
+    const parsed = parseDocument(serializeDocument(doc));
+    expect(parsed.configurations).toHaveLength(2);
+    expect(parsed.activeConfiguration).toBe('small');
+  });
+
   it('round-trips through serialization and validates input', () => {
     const doc = newDocument('Round');
     doc.features = [sketch('s1', rect(0, 0, 1, 1))];

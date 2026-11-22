@@ -4,7 +4,7 @@
 import type { BuildResult, EdgeInfo, FaceInfo, FeatureStatus } from '../kernel/protocol';
 import { KernelClient, KernelRestartError } from '../kernel/client';
 import type { Frame, Vec3 } from '../math/vec';
-import { DocStore, isAssembly, newAssembly as newAssemblyDocument, newDocument } from '../model/document';
+import { DocStore, configurationVariables, isAssembly, newAssembly as newAssemblyDocument, newDocument } from '../model/document';
 import { assemblyTransforms, jointValue, movableJoints } from '../model/assembly';
 import { evaluateVariables } from '../model/expr';
 import { consumedSketches, defaultName, dependencies, newSketch } from '../model/features';
@@ -1825,7 +1825,7 @@ export class App {
   }
 
   variables(): Map<string, number> {
-    return evaluateVariables(this.store.doc.variables).values;
+    return evaluateVariables(configurationVariables(this.store.doc)).values;
   }
 
   /** Faces of the current selection as references. */

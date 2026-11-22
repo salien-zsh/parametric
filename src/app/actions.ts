@@ -32,6 +32,7 @@ import { h } from '../ui/dom';
 import type { PlaneRef } from '../model/types';
 import { RELATION_LABELS } from '../sketch/ops';
 import { CONSTRAINTS, CONSTRAINT_HINTS, runConstraint } from './sketch/constrain';
+import { configurationsDialog, projectManagerDialog, publishCurrentPart, resourceCenterDialog } from './workspace-dialogs';
 import { tr } from '../i18n';
 
 const SKETCH_TOOLS: Record<string, { label: string; shortcut?: string; desc: string; make: (ed: SketchEditor) => SkTool }> = {
@@ -292,6 +293,10 @@ export function registerCommands(app: App, files: FileOps) {
     { id: 'material', label: tr("Edit Material..."), icon: 'material', keywords: tr("density steel aluminum"), enabled: isPart, run: () => materialDialog(app) },
     { id: 'appearance', label: tr("Appearance..."), icon: 'appearance', keywords: tr("color colour"), run: () => app.openTaskPane('appearance') },
     { id: 'equations', label: tr("Equations..."), icon: 'equations', keywords: tr("variables parameters global"), description: tr("Global variables and equations that drive dimensions."), enabled: isPart, run: () => equationsDialog(app) },
+    { id: 'configurations', label: tr("Configurations..."), icon: 'files', keywords: tr("configuration variants parameter table"), description: tr("Create named parameter sets and switch the active part configuration."), enabled: isPart, run: () => configurationsDialog(app) },
+    { id: 'projectManager', label: tr("Local Project Manager..."), icon: 'files', keywords: tr("projects folder organise parts"), description: tr("Organise locally saved parts into projects."), run: () => projectManagerDialog(app, files) },
+    { id: 'resourceCenter', label: tr("Part Resource Center..."), icon: 'part', keywords: tr("library catalogue standard reusable"), description: tr("Browse, open and publish reusable parameterized parts."), run: () => resourceCenterDialog(app, files) },
+    { id: 'publishLibrary', label: tr("Publish to Part Library..."), icon: 'part', keywords: tr("library publish reusable"), description: tr("Publish the current parameterized part to the local resource center."), enabled: isPart, run: () => void publishCurrentPart(app) },
     { id: 'options', label: tr("Options..."), icon: 'settings', keywords: tr("settings preferences theme"), run: () => optionsDialog(app) },
     // ---- sketch ----
     {
@@ -480,7 +485,11 @@ export const RIBBON: RibbonTab[] = [
   },
   {
     id: 'evaluate', label: tr("Evaluate"),
-    groups: [[{ cmd: 'measure' }, { cmd: 'massProperties' }, { cmd: 'sectionView' }], [{ cmd: 'equations' }, { cmd: 'material' }]],
+    groups: [
+      [{ cmd: 'measure' }, { cmd: 'massProperties' }, { cmd: 'sectionView' }],
+      [{ cmd: 'equations' }, { cmd: 'configurations' }, { cmd: 'material' }],
+      [{ cmd: 'projectManager' }, { cmd: 'resourceCenter' }, { cmd: 'publishLibrary' }],
+    ],
   },
   {
     id: 'drawing', label: tr("Drawing"),
@@ -511,6 +520,7 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
     {
       label: tr("File"), items: () => [
         m('new'), m('newAssembly'), m('open'), m('openDevice'), { label: tr("Recent"), icon: 'files', submenu: () => app.recentMenu() }, sep,
+        m('projectManager'), m('resourceCenter'), m('publishLibrary'), sep,
         m('save'), m('saveAs'), m('downloadPart'), sep, m('importStep'), m('insertComponent'), m('exportStep'), m('exportStl'), sep, m('openDrawing'), m('drawing:pdf'), sep, m('share'), m('rename'), m('properties'),
       ],
     },
@@ -548,7 +558,8 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
         { label: tr("Sketch Tools"), icon: 'trim', submenu: () => [m('tool:sketchFillet'), m('tool:trim'), m('tool:extend'), m('offset'), m('mirrorEntities'), m('convertEntities'), m('construction')] },
         { label: tr("Dimensions and Constraints"), icon: 'smartDimension', submenu: () => [m('tool:smartDimension'), sep, ...CONSTRAINTS.map((t) => m(`constraint:${t}`))] },
         { label: tr("Evaluate"), icon: 'measure', submenu: () => [m('measure'), m('massProperties'), m('sectionView')] },
-        sep, m('fixComponent'), m('motionStudy'), m('interference'), m('assemblyDiagnostics'), sep, m('equations'), m('material'), m('options'),
+        sep, m('fixComponent'), m('motionStudy'), m('interference'), m('assemblyDiagnostics'), sep,
+        m('equations'), m('configurations'), m('material'), m('projectManager'), m('resourceCenter'), m('options'),
       ],
     },
     {
