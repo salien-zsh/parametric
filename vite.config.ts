@@ -1,5 +1,21 @@
 import { defineConfig } from 'vitest/config';
-import puterLocalhost from '../../dev/puter-localhost.mjs';
+
+/** Give the dev server a friendly *.localhost address while leaving builds unchanged. */
+function puterLocalhost(name: string) {
+  return {
+    name: 'puter-localhost',
+    apply: 'serve' as const,
+    configureServer(server: { httpServer?: { on: (event: string, listener: () => void) => void }; resolvedUrls?: { local: string[] } | null }) {
+      server.httpServer?.on('listening', () => {
+        const local = server.resolvedUrls?.local[0];
+        if (!local) return;
+        const url = new URL(local);
+        url.hostname = `${name}.puter.localhost`;
+        server.resolvedUrls!.local = [url.href];
+      });
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [puterLocalhost('parametric')],
