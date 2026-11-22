@@ -99,9 +99,9 @@ npm run desktop:build
 
 The installer and update metadata are written to `desktop-release/`:
 
-- `Parametric-Desktop-Setup-0.4.2.exe` — per-user NSIS installer, with install-directory selection and desktop/start-menu shortcuts;
+- `Parametric-Desktop-Setup-0.4.3.exe` — per-user NSIS installer, with install-directory selection and desktop/start-menu shortcuts;
 - `latest.yml` — the update manifest read by `electron-updater`;
-- `Parametric-Desktop-Setup-0.4.2.exe.blockmap` — differential download data.
+- `Parametric-Desktop-Setup-0.4.3.exe.blockmap` — differential download data.
 
 An installed copy checks for updates eight seconds after startup, downloads a newer version in the background and asks whether to restart and install. **Help → Check for updates…** runs the check manually.
 

@@ -55,7 +55,10 @@ jobs:
             if (-not (git tag --list $tag)) { break }
             $patch++
           } while ($true)
-          npm version $version --no-git-tag-version
+          if ($version -ne $current.ToString()) {
+            npm version $version --no-git-tag-version
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
           "APP_VERSION=$version" >> $env:GITHUB_ENV
           Write-Host "Building desktop release $version"
 
