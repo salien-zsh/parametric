@@ -241,7 +241,8 @@ export interface ShellFeature extends FeatureBase {
   outward: boolean;
 }
 
-export type HoleKind = 'simple' | 'counterbore' | 'countersink' | 'spotface' | 'tapped';
+export type HoleKind = 'simple' | 'counterbore' | 'doubleCounterbore' | 'countersink' | 'counterdrill' | 'spotface' | 'tapped';
+export type HoleTip = 'flat' | 'drill';
 
 export interface HoleFeature extends FeatureBase {
   type: 'hole';
@@ -255,6 +256,13 @@ export interface HoleFeature extends FeatureBase {
   cbDepth: Param;
   csDiameter: Param;
   csAngle: Param;
+  /** Second, larger counterbore for a double-counterbored hole. */
+  cb2Diameter?: Param;
+  cb2Depth?: Param;
+  /** Counterdrill cylindrical recess and its tapered transition into the hole. */
+  cdDiameter?: Param;
+  cdDepth?: Param;
+  cdAngle?: Param;
   /** Spotface seat dimensions (older documents do not contain these). */
   sfDiameter?: Param;
   sfDepth?: Param;
@@ -263,6 +271,9 @@ export interface HoleFeature extends FeatureBase {
   threadPitch?: Param;
   threadClass?: string;
   tapDrillDiameter?: Param;
+  /** Blind-hole bottom: flat or a conical drill point beyond the nominal depth. */
+  tip?: HoleTip;
+  tipAngle?: Param;
   flip: boolean;
 }
 

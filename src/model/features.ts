@@ -55,12 +55,18 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
     { path: 'depth', kind: 'length', label: tr("Depth") },
     { path: 'cbDiameter', kind: 'length', label: tr("Counterbore diameter") },
     { path: 'cbDepth', kind: 'length', label: tr("Counterbore depth") },
+    { path: 'cb2Diameter', kind: 'length', label: tr("Second counterbore diameter") },
+    { path: 'cb2Depth', kind: 'length', label: tr("Second counterbore depth") },
     { path: 'csDiameter', kind: 'length', label: tr("Countersink diameter") },
     { path: 'csAngle', kind: 'angle', label: tr("Countersink angle") },
+    { path: 'cdDiameter', kind: 'length', label: tr("Counterdrill diameter") },
+    { path: 'cdDepth', kind: 'length', label: tr("Counterdrill depth") },
+    { path: 'cdAngle', kind: 'angle', label: tr("Counterdrill angle") },
     { path: 'sfDiameter', kind: 'length', label: tr("Spotface diameter") },
     { path: 'sfDepth', kind: 'length', label: tr("Spotface depth") },
     { path: 'threadPitch', kind: 'length', label: tr("Thread pitch") },
     { path: 'tapDrillDiameter', kind: 'length', label: tr("Tap drill diameter") },
+    { path: 'tipAngle', kind: 'angle', label: tr("Drill point angle") },
   ],
   linearPattern: [
     { path: 'dir1.spacing', kind: 'length', label: tr("Spacing") },
@@ -158,7 +164,9 @@ export const newShell = (id: Id, name: string, thickness: number): ShellFeature 
 export const newHole = (id: Id, name: string, sketch: Id, diameter: number): HoleFeature => ({
   id, name, type: 'hole', sketch, kind: 'simple', diameter, end: 'throughAll', depth: diameter * 2, cbDiameter: diameter * 1.8, cbDepth: diameter * 0.6,
   csDiameter: diameter * 2, csAngle: 90, sfDiameter: diameter * 1.8, sfDepth: diameter * 0.4,
-  threadSize: 'Custom', threadPitch: diameter * 0.15, threadClass: '6H', tapDrillDiameter: diameter * 0.85, flip: false,
+  cb2Diameter: diameter * 2.4, cb2Depth: diameter * 0.4, cdDiameter: diameter * 1.8, cdDepth: diameter * 0.5, cdAngle: 90,
+  threadSize: 'Custom', threadPitch: diameter * 0.15, threadClass: '6H', tapDrillDiameter: diameter * 0.85,
+  tip: 'drill', tipAngle: 118, flip: false,
 });
 
 export const newLinearPattern = (id: Id, name: string, seeds: Id[], spacing: number): LinearPatternFeature => ({

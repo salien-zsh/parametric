@@ -1,6 +1,6 @@
 // PropertyManager panels for creating and editing features.
 
-import type { Vec3 } from '../math/vec';
+import type { Frame, Vec3 } from '../math/vec';
 import { dot, sub, toLocal } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
@@ -410,6 +410,10 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
   private confirmPositions: HTMLButtonElement | null = null;
   private parameterSections: HTMLElement[] = [];
   private positionsBox: SelectionBox | null = null;
+  private positionList: HTMLElement | null = null;
+  private addCenterButton: HTMLButtonElement | null = null;
+  private addExactButton: HTMLButtonElement | null = null;
+  private exactPlacement: HTMLElement[] = [];
 
   constructor(app: App, f: HoleFeature, editing: boolean) {
     super(app, f, editing);
@@ -424,7 +428,9 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     const kinds = [
       { value: 'simple' as const, label: tr("Simple") },
       { value: 'counterbore' as const, label: tr("Counterbore") },
+      { value: 'doubleCounterbore' as const, label: tr("Double Counterbore") },
       { value: 'countersink' as const, label: tr("Countersink") },
+      { value: 'counterdrill' as const, label: tr("Counterdrill") },
       { value: 'spotface' as const, label: tr("Spotface") },
       { value: 'tapped' as const, label: tr("Tapped") },
     ];
@@ -432,9 +438,18 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       numberField({ label: tr("Counterbore diameter"), value: f.cbDiameter, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.cbDiameter = v; this.changed(); } }),
       numberField({ label: tr("Counterbore depth"), value: f.cbDepth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.cbDepth = v; this.changed(); } }),
     ];
+    const cb2 = [
+      numberField({ label: tr("Second counterbore diameter"), value: f.cb2Diameter ?? nominal * 2.4, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.cb2Diameter = v; this.changed(); } }),
+      numberField({ label: tr("Second counterbore depth"), value: f.cb2Depth ?? nominal * 0.4, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.cb2Depth = v; this.changed(); } }),
+    ];
     const cs = [
       numberField({ label: tr("Countersink diameter"), value: f.csDiameter, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.csDiameter = v; this.changed(); } }),
       numberField({ label: tr("Countersink angle"), value: f.csAngle, kind: 'angle', ctx, min: 1, onChange: (v) => { f.csAngle = v; this.changed(); } }),
+    ];
+    const cd = [
+      numberField({ label: tr("Counterdrill diameter"), value: f.cdDiameter ?? nominal * 1.8, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.cdDiameter = v; this.changed(); } }),
+      numberField({ label: tr("Counterdrill depth"), value: f.cdDepth ?? nominal * 0.5, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.cdDepth = v; this.changed(); } }),
+      numberField({ label: tr("Counterdrill angle"), value: f.cdAngle ?? 90, kind: 'angle', ctx, min: 1, onChange: (v) => { f.cdAngle = v; this.changed(); } }),
     ];
     const sf = [
       numberField({ label: tr("Spotface diameter"), value: f.sfDiameter ?? nominal * 1.8, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.sfDiameter = v; this.changed(); } }),
@@ -475,9 +490,16 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       input.removeAttribute('aria-invalid');
     };
     const depth = numberField({ label: tr("Depth"), value: f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.depth = v; this.changed(); } });
+    const tip = selectField(tr("Drill point"), f.tip ?? 'flat', [
+      { value: 'flat' as const, label: tr("Flat") },
+      { value: 'drill' as const, label: tr("Drill Point") },
+    ], (v) => { f.tip = v; sync(); this.changed(); }, 'hole');
+    const tipAngle = numberField({ label: tr("Drill point angle"), value: f.tipAngle ?? 118, kind: 'angle', ctx, min: 1, onChange: (v) => { f.tipAngle = v; this.changed(); } });
     const sync = () => {
-      cb.forEach((x) => { x.hidden = f.kind !== 'counterbore'; });
+      cb.forEach((x) => { x.hidden = f.kind !== 'counterbore' && f.kind !== 'doubleCounterbore'; });
+      cb2.forEach((x) => { x.hidden = f.kind !== 'doubleCounterbore'; });
       cs.forEach((x) => { x.hidden = f.kind !== 'countersink'; });
+      cd.forEach((x) => { x.hidden = f.kind !== 'counterdrill'; });
       sf.forEach((x) => { x.hidden = f.kind !== 'spotface'; });
       const tapped = f.kind === 'tapped';
       const customThread = tapped && (f.threadSize ?? 'Custom') === 'Custom';
@@ -487,21 +509,43 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       threadPitch.hidden = !customThread;
       diameter.hidden = customThread ? false : tapped;
       depth.hidden = f.end === 'throughAll';
+      tip.hidden = f.end === 'throughAll';
+      tipAngle.hidden = f.end === 'throughAll' || (f.tip ?? 'flat') !== 'drill';
     };
     sync();
 
-    const positions = new SelectionBox(this, tr("Positions"), { face: true, planarOnly: true, feature: true }, (it) => this.pickPosition(it), (items) => {
+    const positions = new SelectionBox(this, tr("Positions"), { face: true, planarOnly: true, feature: true, edge: true, vertex: true }, (it) => this.pickPosition(it), (items) => {
       if (!items.length) {
         this.f.sketch = '';
         this.positionsReady = false;
       }
       this.syncPlacement();
       this.changed();
-    }, { placeholder: tr("Click a planar face or choose a sketch with points"), icon: 'point', single: true });
+    }, { placeholder: tr("Click a face, edge, vertex, or choose a sketch with points"), icon: 'point', single: true });
     this.positionsBox = positions;
     const sk = f.sketch ? this.app.store.feature<SketchFeature>(f.sketch) : null;
     if (sk) positions.setItems([{ item: null, data: sk.id, label: `${sk.name} (${sk.entities.filter((e) => e.t === 'point').length} points)` }]);
     this.positionsHint = h('p', { class: 'field-label', role: 'status' });
+    this.positionList = h('div', { class: 'hole-position-list' });
+    let exactX = 0;
+    let exactY = 0;
+    const exactXField = numberField({
+      label: tr("Exact X"), value: exactX, kind: 'length', ctx, allowExpr: false,
+      onChange: (v) => { exactX = Number(v) || 0; },
+    });
+    const exactYField = numberField({
+      label: tr("Exact Y"), value: exactY, kind: 'length', ctx, allowExpr: false,
+      onChange: (v) => { exactY = Number(v) || 0; },
+    });
+    this.addCenterButton = h('button', { type: 'button', class: 'btn small' }, tr("Add Face Center")) as HTMLButtonElement;
+    this.addCenterButton.addEventListener('click', () => {
+      const center = this.placementCenterWorld();
+      if (center) this.addHolePointWorld(center);
+    });
+    this.addExactButton = h('button', { type: 'button', class: 'btn small' }, tr("Add Exact Position")) as HTMLButtonElement;
+    this.addExactButton.addEventListener('click', () => this.addHolePointLocal(exactX, exactY));
+    this.exactPlacement = [exactXField, exactYField, this.addExactButton];
+    const precisionHelp = h('p', { class: 'field-label' }, tr("Exact coordinates use the placement face sketch frame. Edges and vertices can be picked to snap a position."));
     this.confirmPositions = h('button', { type: 'button', class: 'btn primary small' }, tr("Confirm Positions")) as HTMLButtonElement;
     this.confirmPositions.addEventListener('click', () => {
       if (this.positionCount() === 0) return;
@@ -509,25 +553,29 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       this.syncPlacement();
       this.changed();
     });
-    const positionsSection = section(tr("Positions"), [positions.el, this.positionsHint, this.confirmPositions]);
+    const positionsSection = section(tr("Positions"), [
+      positions.el, precisionHelp, this.positionList, this.addCenterButton,
+      exactXField, exactYField, this.addExactButton, this.positionsHint, this.confirmPositions,
+    ]);
 
     const typeSection = section(tr("Hole Type"), [
       selectField(tr("Type"), f.kind, kinds, (v) => { f.kind = v; sync(); this.changed(); }, 'hole'),
       diameter,
       threadSize, threadClass, threadPitch, tapDrill,
-      ...cb, ...cs, ...sf,
+      ...cb, ...cb2, ...cs, ...cd, ...sf,
     ]);
     const endSection = section(tr("End Condition"), [
       h('div', { class: 'row' }, flipButton(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); }), h('div', { class: 'grow' },
         selectField(tr("End condition"), f.end, [{ value: 'throughAll' as const, label: tr("Through All") }, { value: 'blind' as const, label: tr("Blind") }], (v) => { f.end = v; sync(); this.changed(); }))),
       depth,
+      tip, tipAngle,
     ]);
     this.parameterSections = [typeSection, endSection];
     this.syncPlacement();
     return [positionsSection, typeSection, endSection];
   }
 
-  /** A face click adds a hole point to the positions sketch. */
+  /** A face click adds a free point; edges and vertices snap to exact model geometry. */
   private pickPosition(it: SelItem): SelBoxItem | null {
     const f = this.f;
     if (it.kind === 'feature') {
@@ -535,49 +583,181 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       if (sk?.type !== 'sketch') return null;
       if (f.sketch !== sk.id) this.positionsReady = false;
       f.sketch = sk.id;
+      this.renderPositionRows();
       this.syncPlacement();
       return { item: it, data: sk.id, label: sk.name };
     }
-    if (it.kind !== 'face') return null;
-    const face = this.app.faces[it.index];
-    if (!face?.frame) return null;
-    const p = this.app.lastPickPoint ?? face.center;
-    const frame = face.frame;
-    const local = toLocal(frame, p);
     const app = this.app;
-    if (!f.sketch) {
-      const id = app.store.nextId('s');
-      const name = defaultName(app.store.doc, 'sketch');
-      const sk = newSketch(id, name, { kind: 'face', face: faceRef(face) });
-      sk.frame = frame;
-      sk.entities.push({ id: 'p1', t: 'point', x: local[0], y: local[1] });
-      app.insertFeature(sk);
-      this.createdSketch = id;
-      f.sketch = id;
+    if (it.kind === 'face') {
+      const face = app.faces[it.index];
+      if (!face?.frame) return null;
+      const clicked = app.lastPickPoint ?? face.center;
+      const world = this.snapToGeometry(face.frame, clicked, face.center);
+      if (!f.sketch) this.ensurePositionSketch(face.frame, face);
+      const frame = this.currentSketchFrame();
+      if (!frame || !this.onFramePlane(frame, world)) return null;
+      const local = toLocal(frame, world);
+      this.addHolePointLocal(local[0], local[1]);
+    } else if (it.kind === 'edge') {
+      const edge = app.edges[it.index];
+      if (!edge) return null;
+      const world = edge.type === 'circle' && edge.center ? edge.center : (app.lastPickPoint ?? edge.mid);
+      if (!this.addHolePointWorld(world)) return null;
+    } else if (it.kind === 'vertex') {
+      if (!this.addHolePointWorld(it.p)) return null;
     } else {
-      app.store.change(tr("Add hole position"), (doc) => {
-        const sk = doc.features.find((x) => x.id === f.sketch) as SketchFeature;
-        let n = sk.entities.length + 1;
-        while (sk.entities.some((e) => e.id === `p${n}`)) n++;
-        // Positions are on the sketch's face plane; convert through its frame.
-        const fr = app.frames[sk.id] ?? sk.frame ?? frame;
-        const q = toLocal(fr, p);
-        sk.entities.push({ id: `p${n}`, t: 'point', x: q[0], y: q[1] });
-      });
+      return null;
     }
     const sk = app.store.feature<SketchFeature>(f.sketch)!;
+    this.renderPositionRows();
     this.syncPlacement();
-    return { item: null, data: sk.id, label: `${sk.name} (${sk.entities.length} points)` };
+    return { item: null, data: sk.id, label: `${sk.name} (${this.positionCount()} points)` };
+  }
+
+  private currentSketch(): SketchFeature | null {
+    if (!this.f.sketch) return null;
+    const sk = this.app.store.feature(this.f.sketch);
+    return sk?.type === 'sketch' ? sk : null;
+  }
+
+  private currentSketchFrame(): Frame | null {
+    const sk = this.currentSketch();
+    return sk ? this.app.frames[sk.id] ?? sk.frame ?? null : null;
+  }
+
+  private ensurePositionSketch(frame: Frame, face: NonNullable<App['faces'][number]>) {
+    if (this.f.sketch) return;
+    const id = this.app.store.nextId('s');
+    const name = defaultName(this.app.store.doc, 'sketch');
+    const sk = newSketch(id, name, { kind: 'face', face: faceRef(face) });
+    sk.frame = frame;
+    this.app.insertFeature(sk);
+    this.createdSketch = id;
+    this.f.sketch = id;
+  }
+
+  private onFramePlane(frame: Frame, p: Vec3): boolean {
+    const tolerance = Math.max(this.app.store.unitScale, this.app.typicalSize() * 1e-5);
+    return Math.abs(dot(sub(p, frame.o), frame.n)) <= tolerance;
+  }
+
+  private addHolePointWorld(p: Vec3): boolean {
+    const frame = this.currentSketchFrame();
+    if (!frame || !this.onFramePlane(frame, p)) return false;
+    const local = toLocal(frame, p);
+    return this.addHolePointLocal(local[0], local[1]);
+  }
+
+  private addHolePointLocal(x: number, y: number): boolean {
+    const sk = this.currentSketch();
+    if (!sk || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    this.app.store.change(tr("Add hole position"), (doc) => {
+      const target = doc.features.find((f) => f.id === sk.id);
+      if (target?.type !== 'sketch') return;
+      let n = target.entities.length + 1;
+      while (target.entities.some((e) => e.id === `p${n}`)) n++;
+      target.entities.push({ id: `p${n}`, t: 'point', x, y });
+    });
+    this.renderPositionRows();
+    this.syncPlacement();
+    return true;
+  }
+
+  private placementCenterWorld(): Vec3 | null {
+    const sk = this.currentSketch();
+    const frame = this.currentSketchFrame();
+    if (!sk || !frame) return null;
+    const plane = sk.plane;
+    if (plane.kind === 'face') {
+      const face = this.app.faces.find((f) => f.name === plane.face.name);
+      if (face) return face.center;
+    }
+    return frame.o;
+  }
+
+  /** Snap a free face pick to nearby vertices, edge ends/midpoints or circular-edge centres. */
+  private snapToGeometry(frame: Frame, clicked: Vec3, faceCenter: Vec3): Vec3 {
+    const tolerance = Math.max(this.app.store.unitScale, this.app.typicalSize() * 0.012);
+    const local = toLocal(frame, clicked);
+    let best = clicked;
+    let bestDistance = tolerance;
+    const consider = (p: Vec3) => {
+      if (!this.onFramePlane(frame, p)) return;
+      const q = toLocal(frame, p);
+      const distance = Math.hypot(q[0] - local[0], q[1] - local[1]);
+      if (distance <= bestDistance) {
+        best = p;
+        bestDistance = distance;
+      }
+    };
+    consider(faceCenter);
+    for (const edge of this.app.edges) {
+      consider(edge.a);
+      consider(edge.b);
+      consider(edge.mid);
+      if (edge.center) consider(edge.center);
+    }
+    return best;
+  }
+
+  private renderPositionRows() {
+    const host = this.positionList;
+    if (!host) return;
+    host.textContent = '';
+    const points = this.positionPoints();
+    if (!points.length) {
+      host.append(h('div', { class: 'empty' }, tr("No exact positions yet. Click the model or add a face-center position.")));
+      return;
+    }
+    points.forEach((p, i) => {
+      const remove = h('button', { type: 'button', class: 'btn ghost small' }, tr("Remove"));
+      remove.addEventListener('click', () => this.removePosition(p.id));
+      const x = numberField({
+        label: tr("X coordinate ({0})", [i + 1]), value: p.x, kind: 'length', ctx: this.ctx(), allowExpr: false,
+        onChange: (v) => this.updatePosition(p.id, 'x', v),
+      });
+      const y = numberField({
+        label: tr("Y coordinate ({0})", [i + 1]), value: p.y, kind: 'length', ctx: this.ctx(), allowExpr: false,
+        onChange: (v) => this.updatePosition(p.id, 'y', v),
+      });
+      host.append(h('div', { class: 'hole-position-row' },
+        h('div', { class: 'row' }, h('span', { class: 'field-label grow' }, `P${i + 1}`), remove), x, y));
+    });
+  }
+
+  private positionPoints(): Extract<SketchFeature['entities'][number], { t: 'point' }>[] {
+    const sk = this.currentSketch();
+    if (!sk) return [];
+    return sk.entities.filter((e): e is Extract<SketchFeature['entities'][number], { t: 'point' }> => e.t === 'point');
+  }
+
+  private updatePosition(id: Id, axis: 'x' | 'y', value: unknown) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return;
+    this.app.store.change(tr("Move hole position"), (doc) => {
+      const sk = doc.features.find((f) => f.id === this.f.sketch);
+      if (sk?.type !== 'sketch') return;
+      const point = sk.entities.find((e) => e.id === id && e.t === 'point');
+      if (point?.t === 'point') point[axis] = value;
+    });
+  }
+
+  private removePosition(id: Id) {
+    this.app.store.change(tr("Remove hole position"), (doc) => {
+      const sk = doc.features.find((f) => f.id === this.f.sketch);
+      if (sk?.type === 'sketch') sk.entities = sk.entities.filter((e) => e.id !== id);
+    });
+    this.renderPositionRows();
+    this.syncPlacement();
   }
 
   private positionCount(): number {
-    if (!this.f.sketch) return 0;
-    const sk = this.app.store.feature<SketchFeature>(this.f.sketch);
-    return sk?.type === 'sketch' ? sk.entities.filter((e) => e.t === 'point').length : 0;
+    return this.positionPoints().length;
   }
 
   private syncPlacement() {
     const count = this.positionCount();
+    if (count === 0) this.positionsReady = false;
+    this.renderPositionRows();
     if (this.positionsHint) {
       this.positionsHint.textContent = this.positionsReady
         ? tr("Positions confirmed. Click more points to add holes, or set the hole type and end condition.")
@@ -589,6 +769,9 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       this.confirmPositions.disabled = count === 0;
       this.confirmPositions.hidden = this.positionsReady;
     }
+    if (this.addCenterButton) this.addCenterButton.disabled = !this.f.sketch;
+    if (this.addExactButton) this.addExactButton.disabled = !this.f.sketch;
+    for (const el of this.exactPlacement) el.hidden = !this.f.sketch;
     for (const s of this.parameterSections) s.hidden = !this.positionsReady;
     if (!this.positionsReady && this.positionsBox) this.activate(this.positionsBox);
   }

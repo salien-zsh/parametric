@@ -267,7 +267,8 @@ describe('assistant tools', () => {
     const hole = h.store.doc.features.at(-1)!.id;
     expect(await h.volume()).toBeCloseTo(40000 - Math.PI * 25 * 4 - Math.PI * 9 * 10, 1);
     await h.call('edit_feature', { feature: hole, params: { depth: 3 } });
-    expect(await h.volume()).toBeCloseTo(40000 - Math.PI * 25 * 4 - Math.PI * 9 * 3, 1);
+    const tipDepth = 3 / Math.tan((118 * Math.PI) / 360);
+    expect(await h.volume()).toBeCloseTo(40000 - Math.PI * 25 * 4 - Math.PI * 9 * (3 + tipDepth / 3), 1);
   });
 
   it('refuses hole centres it would drop, instead of drilling elsewhere and reporting it done', async () => {
@@ -382,6 +383,29 @@ describe('assistant tools', () => {
     expect(tapped).toMatchObject({
       kind: 'tapped', threadSize: 'M6x1', threadPitch: 1, threadClass: '6H', tapDrillDiameter: 5, end: 'blind',
     });
+
+    r = await h.call('add_hole', {
+      on: topFace(h), points: [[-10, -10, 0]], diameter: 4, kind: 'double_counterbore',
+      cb_diameter: 8, cb_depth: 2, cb2_diameter: 11, cb2_depth: 1,
+    });
+    expect(r.ok).toBe(true);
+    const doubleCounterbore = h.store.doc.features.at(-1) as { kind: string; cb2Diameter: number; cb2Depth: number };
+    expect(doubleCounterbore).toMatchObject({ kind: 'doubleCounterbore', cb2Diameter: 11, cb2Depth: 1 });
+
+    r = await h.call('add_hole', {
+      on: topFace(h), points: [[10, -10, 0]], diameter: 4, kind: 'counterdrill',
+      cd_diameter: 8, cd_depth: 1, cd_angle: 90,
+    });
+    expect(r.ok).toBe(true);
+    const counterdrill = h.store.doc.features.at(-1) as { kind: string; cdDiameter: number; cdDepth: number; cdAngle: number };
+    expect(counterdrill).toMatchObject({ kind: 'counterdrill', cdDiameter: 8, cdDepth: 1, cdAngle: 90 });
+
+    r = await h.call('add_hole', {
+      on: topFace(h), points: [[0, -10, 0]], diameter: 4, kind: 'simple', depth: 3, drill_point: 'drill', drill_point_angle: 118,
+    });
+    expect(r.ok).toBe(true);
+    const drilled = h.store.doc.features.at(-1) as { tip: string; tipAngle: number; end: string };
+    expect(drilled).toMatchObject({ tip: 'drill', tipAngle: 118, end: 'blind' });
   });
 
   it('measures the angle between an edge and a face as the edge\'s angle to the face', async () => {

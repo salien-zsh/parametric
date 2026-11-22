@@ -5,7 +5,7 @@ import init from 'replicad-opencascadejs';
 import { ModelBuilder, checkStep, errorText, isFatal } from '../src/kernel/build';
 import * as R from 'replicad';
 import { type Sh, getOc, mirrored, rotated, setOc } from '../src/kernel/occ';
-import type { Feature, FilletFeature, ShellFeature, SkDimension, SketchFeature } from '../src/model/types';
+import type { Feature, FilletFeature, HoleFeature, ShellFeature, SkDimension, SketchFeature } from '../src/model/types';
 import { flangeExample } from '../src/app/examples';
 import { solveSketch } from '../src/sketch/solver';
 import { circle, extrude, polygon, rect, req, revolve, sketch } from './helpers';
@@ -528,6 +528,35 @@ describe('feature regeneration', () => {
     r = await b.build(req([...base, pos, { ...tapped, tapDrillDiameter: 6 }]));
     expect(r.status[3].ok).toBe(false);
     expect(r.status[3].error).toMatch(/tap drill diameter must be smaller/);
+  });
+
+  it('cuts double-counterbored and counterdrilled holes', async () => {
+    const b = new ModelBuilder();
+    const base: Feature[] = [sketch('S1', rect(-20, -20, 20, 20)), extrude('E1', 'S1', 3)];
+    const r0 = await b.build(req(base));
+    const top = r0.faces.find((f) => f.name === 'E1:cap1')!;
+    const pos = sketch('S2', [{ id: 'hp', t: 'point', x: 0, y: 0 }], { kind: 'face', face: { name: top.name, sig: { type: 'plane', c: top.center, n: top.normal, area: top.area } } });
+    const hole = (kind: 'simple' | 'doubleCounterbore' | 'counterdrill', extra: Record<string, number>): HoleFeature => ({
+      id: 'H', name: 'H', type: 'hole', sketch: 'S2', kind, diameter: 4, end: 'throughAll', depth: 3,
+      cbDiameter: 8, cbDepth: 1, csDiameter: 8, csAngle: 90, flip: false, ...extra,
+    });
+
+    let r = await b.build(req([...base, pos, hole('doubleCounterbore', { cb2Diameter: 10, cb2Depth: 0.5 })]));
+    expect(r.status[3].ok).toBe(true);
+    expect(4800 - volume(b)).toBeCloseTo(Math.PI * (25 * 0.5 + 16 * 0.5 + 4 * 2), 3);
+
+    r = await b.build(req([...base, pos, hole('counterdrill', { cdDiameter: 8, cdDepth: 0.5, cdAngle: 90 })]));
+    expect(r.status[3].ok).toBe(true);
+    const frustum = (Math.PI * 2 / 3) * (16 + 8 + 4);
+    expect(4800 - volume(b)).toBeCloseTo(Math.PI * 16 * 0.5 + frustum + Math.PI * 4 * 0.5, 3);
+
+    r = await b.build(req([...base, pos, { ...hole('simple', {}), id: 'H3', name: 'H3', end: 'blind', depth: 2, tip: 'drill', tipAngle: 90 }]));
+    expect(r.status[3].ok).toBe(true);
+    expect(4800 - volume(b)).toBeCloseTo(Math.PI * 4 * 2 + (Math.PI * 7) / 3, 3);
+
+    r = await b.build(req([...base, pos, hole('doubleCounterbore', { cb2Diameter: 7, cb2Depth: 0.5 })]));
+    expect(r.status[3].ok).toBe(false);
+    expect(r.status[3].error).toMatch(/second counterbore diameter/);
   });
 
   it('reports an error instead of a degenerate fillet or shell', async () => {

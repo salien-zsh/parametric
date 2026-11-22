@@ -28,7 +28,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - Revolved boss and cut (full or partial, mid plane).
 - Swept and lofted boss and cut.
 - Fillet, chamfer (equal distance, two distances, distance and angle), shell, draft.
-- Holes: simple, counterbore, countersink, spotface and tapped, with a Fusion-style workflow that confirms positions on a face or sketch before previewing the hole.
+- Holes: simple, counterbore, double counterbore, countersink, counterdrill, spotface and tapped, with a Fusion-style workflow that confirms positions before previewing. The Positions panel supports exact X/Y coordinates, face-centre holes and snapping to edges, vertices and circular-edge centres.
 - Linear patterns (one or two directions), circular patterns and mirroring.
 - Reference planes, STEP import.
 - Open SolidWorks parts (.sldprt, SolidWorks 2003 and later) without SolidWorks: the exact solid is read from the file and becomes an imported body you can keep modeling on. The SolidWorks feature tree is not carried over.

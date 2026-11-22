@@ -1040,6 +1040,10 @@ export class ModelBuilder {
     if (f.kind === 'tapped' && cutDiameter >= nominalDiameter) throw new FeatureError(tr("The tap drill diameter must be smaller than the thread diameter"));
     const depth = f.end === 'throughAll' ? this.throughAllDepth(st, frame.o, scale(frame.n, f.flip ? 1 : -1)) : num(f.depth);
     if (depth <= 0) throw new FeatureError(tr("Depth must be greater than zero"));
+    const tipAngle = num(f.tipAngle ?? 118);
+    const tipHalf = (tipAngle * Math.PI) / 360;
+    if (f.tip === 'drill' && (tipHalf <= 0 || tipHalf >= Math.PI / 2)) throw new FeatureError(tr("The drill point angle must be between 0 and 180 degrees"));
+    const tipDepth = f.tip === 'drill' && f.end === 'blind' ? r / Math.tan(tipHalf) : 0;
     // Profile in (radius, depth) coordinates, revolved around the hole axis.
     const prof: [number, number][] = [];
     if (f.kind === 'counterbore') {
@@ -1050,7 +1054,17 @@ export class ModelBuilder {
       // ring of material in the counterbore.
       if (f.end !== 'throughAll' && depth <= cd) throw new FeatureError(tr("The hole depth must be greater than the counterbore depth"));
       const d = Math.max(depth, cd + 1e-3);
-      prof.push([0, 0], [cr, 0], [cr, cd], [r, cd], [r, d], [0, d]);
+      prof.push([0, 0], [cr, 0], [cr, cd], [r, cd], [r, d], [0, d + tipDepth]);
+    } else if (f.kind === 'doubleCounterbore') {
+      const cr = num(f.cbDiameter) / 2, cd = num(f.cbDepth);
+      const cr2 = num(f.cb2Diameter ?? nominalDiameter * 2.4) / 2, cd2 = num(f.cb2Depth ?? nominalDiameter * 0.4);
+      if (cr <= r) throw new FeatureError(tr("The counterbore diameter must be larger than the hole"));
+      if (cr2 <= cr) throw new FeatureError(tr("The second counterbore diameter must be larger than the first"));
+      if (cd2 <= 0) throw new FeatureError(tr("Second counterbore depth must be greater than zero"));
+      if (cd <= cd2) throw new FeatureError(tr("The first counterbore depth must be greater than the second"));
+      if (f.end !== 'throughAll' && depth <= cd) throw new FeatureError(tr("The hole depth must be greater than the counterbore depth"));
+      const d = Math.max(depth, cd + 1e-3);
+      prof.push([0, 0], [cr2, 0], [cr2, cd2], [cr, cd2], [cr, cd], [r, cd], [r, d], [0, d + tipDepth]);
     } else if (f.kind === 'countersink') {
       const sr = num(f.csDiameter) / 2;
       const half = (num(f.csAngle) * Math.PI) / 360;
@@ -1060,17 +1074,28 @@ export class ModelBuilder {
       // Like a counterbore: a blind hole ending inside its countersink was
       // silently made deeper than asked.
       if (f.end !== 'throughAll' && depth <= sd) throw new FeatureError(tr("The hole depth must be greater than the countersink depth"));
-      prof.push([0, 0], [sr, 0], [r, sd], [r, Math.max(depth, sd + 1e-3)], [0, Math.max(depth, sd + 1e-3)]);
+      const bottom = Math.max(depth, sd + 1e-3);
+      prof.push([0, 0], [sr, 0], [r, sd], [r, bottom], [0, bottom + tipDepth]);
+    } else if (f.kind === 'counterdrill') {
+      const cr = num(f.cdDiameter ?? nominalDiameter * 1.8) / 2, cd = num(f.cdDepth ?? nominalDiameter * 0.5);
+      const half = (num(f.cdAngle ?? 90) * Math.PI) / 360;
+      if (cr <= r) throw new FeatureError(tr("The counterdrill diameter must be larger than the hole"));
+      if (cd <= 0) throw new FeatureError(tr("Counterdrill depth must be greater than zero"));
+      if (half <= 0 || half >= Math.PI / 2) throw new FeatureError(tr("The counterdrill angle must be between 0 and 180 degrees"));
+      const taper = (cr - r) / Math.tan(half);
+      if (f.end !== 'throughAll' && depth <= cd + taper) throw new FeatureError(tr("The hole depth must be greater than the counterdrill depth"));
+      const d = Math.max(depth, cd + taper + 1e-3);
+      prof.push([0, 0], [cr, 0], [cr, cd], [r, cd + taper], [r, d], [0, d + tipDepth]);
     } else if (f.kind === 'spotface') {
       const sr = num(f.sfDiameter ?? nominalDiameter * 1.8) / 2, sd = num(f.sfDepth ?? nominalDiameter * 0.4);
       if (sr <= r) throw new FeatureError(tr("The spotface diameter must be larger than the hole"));
       if (sd <= 0) throw new FeatureError(tr("Spotface depth must be greater than zero"));
       if (f.end !== 'throughAll' && depth <= sd) throw new FeatureError(tr("The hole depth must be greater than the spotface depth"));
       const d = Math.max(depth, sd + 1e-3);
-      prof.push([0, 0], [sr, 0], [sr, sd], [r, sd], [r, d], [0, d]);
+      prof.push([0, 0], [sr, 0], [sr, sd], [r, sd], [r, d], [0, d + tipDepth]);
     } else {
       if (f.kind === 'tapped') this.warning = tr("Tapped holes are shown by their tap drill diameter; the thread form is not modeled.");
-      prof.push([0, 0], [r, 0], [r, depth], [0, depth]);
+      prof.push([0, 0], [r, 0], [r, depth], [0, depth + tipDepth]);
     }
     // Small tip so the top face sits slightly above the surface for a clean cut.
     const dir = scale(frame.n, f.flip ? 1 : -1);

@@ -343,7 +343,7 @@ export function registerCommands(app: App, files: FileOps) {
     feature('fillet', tr("Fillet"), 'fillet', tr("Round selected edges."), { needsBody: true, keywords: tr("round radius blend") }),
     feature('chamfer', tr("Chamfer"), 'chamfer', tr("Bevel selected edges."), { needsBody: true, keywords: 'bevel' }),
     feature('shell', tr("Shell"), 'shell', tr("Hollow out the part, optionally removing faces."), { needsBody: true, keywords: tr("hollow thickness") }),
-  feature('hole', tr("Hole"), 'hole', tr("Simple, counterbored, countersunk, spotfaced or tapped holes on a face."), { needsBody: true, keywords: tr("drill counterbore countersink spotface tap thread") }),
+  feature('hole', tr("Hole"), 'hole', tr("Simple, counterbored, double-counterbored, countersunk, counterdrilled, spotfaced or tapped holes on a face."), { needsBody: true, keywords: tr("drill counterbore countersink counterdrill spotface tap thread") }),
     feature('draft', tr("Draft"), 'draft', tr("Taper faces relative to a neutral plane."), { needsBody: true, keywords: tr("taper mould") }),
     feature('linearPattern', tr("Linear Pattern"), 'linearPattern', tr("Repeat features along one or two directions."), { needsBody: true, keywords: tr("array repeat") }),
     feature('circularPattern', tr("Circular Pattern"), 'circularPattern', tr("Repeat features around an axis."), { needsBody: true, keywords: tr("polar array") }),

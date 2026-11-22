@@ -45,7 +45,11 @@ function choice<T extends string>(v: unknown, options: Record<string, T>, what: 
 const END = { blind: 'blind', through_all: 'throughAll', throughall: 'throughAll', mid_plane: 'midPlane', midplane: 'midPlane', symmetric: 'midPlane' } as const;
 const END2 = { blind: 'blind', through_all: 'throughAll', throughall: 'throughAll' } as const;
 const END_OUT: Record<string, string> = { blind: 'blind', throughAll: 'through_all', midPlane: 'mid_plane' };
-const HOLE_KIND = { simple: 'simple', counterbore: 'counterbore', countersink: 'countersink', spotface: 'spotface', tapped: 'tapped' } as const;
+const HOLE_KIND = {
+  simple: 'simple', counterbore: 'counterbore', double_counterbore: 'doubleCounterbore', countersink: 'countersink',
+  counterdrill: 'counterdrill', spotface: 'spotface', tapped: 'tapped',
+} as const;
+const HOLE_TIP = { flat: 'flat', drill: 'drill', drill_point: 'drill' } as const;
 const CHAMFER_MODE = { distance: 'distance', equal_distance: 'distance', two_distances: 'twoDistance', two_distance: 'twoDistance', distance_angle: 'distanceAngle' } as const;
 const CHAMFER_OUT: Record<string, string> = { distance: 'distance', twoDistance: 'two_distances', distanceAngle: 'distance_angle' };
 
@@ -165,7 +169,9 @@ export class FeatureCodec {
           const d = base ? NaN : u.evalLength(f.diameter);
           if (d > 0) Object.assign(f, {
             depth: d * 2, cbDiameter: d * 1.8, cbDepth: d * 0.6, csDiameter: d * 2,
-            sfDiameter: d * 1.8, sfDepth: d * 0.4, threadPitch: d * 0.15, tapDrillDiameter: d * 0.85,
+            sfDiameter: d * 1.8, sfDepth: d * 0.4, cb2Diameter: d * 2.4, cb2Depth: d * 0.4,
+            cdDiameter: d * 1.8, cdDepth: d * 0.5, cdAngle: 90, threadPitch: d * 0.15, tapDrillDiameter: d * 0.85,
+            tip: 'drill', tipAngle: 118,
           });
         }
         if (has('end')) f.end = choice(a.end, END2, 'end');
@@ -173,14 +179,21 @@ export class FeatureCodec {
         if (has('depth')) f.depth = len('depth');
         if (has('cb_diameter')) f.cbDiameter = len('cb_diameter');
         if (has('cb_depth')) f.cbDepth = len('cb_depth');
+        if (has('cb2_diameter')) f.cb2Diameter = len('cb2_diameter');
+        if (has('cb2_depth')) f.cb2Depth = len('cb2_depth');
         if (has('cs_diameter')) f.csDiameter = len('cs_diameter');
         if (has('cs_angle')) f.csAngle = ang('cs_angle');
+        if (has('cd_diameter')) f.cdDiameter = len('cd_diameter');
+        if (has('cd_depth')) f.cdDepth = len('cd_depth');
+        if (has('cd_angle')) f.cdAngle = ang('cd_angle');
         if (has('sf_diameter')) f.sfDiameter = len('sf_diameter');
         if (has('sf_depth')) f.sfDepth = len('sf_depth');
         if (has('thread_size')) f.threadSize = text(a.thread_size, 'thread_size');
         if (has('thread_pitch')) f.threadPitch = len('thread_pitch');
         if (has('thread_class')) f.threadClass = text(a.thread_class, 'thread_class');
         if (has('tap_drill_diameter')) f.tapDrillDiameter = len('tap_drill_diameter');
+        if (has('drill_point')) f.tip = choice(a.drill_point, HOLE_TIP, 'drill_point');
+        if (has('drill_point_angle')) f.tipAngle = ang('drill_point_angle');
         if (has('reverse')) f.flip = bool(a.reverse, 'reverse');
         return f;
       }
@@ -289,12 +302,21 @@ export class FeatureCodec {
       case 'hole': return {
         sketch: f.sketch, kind: f.kind, diameter: L(f.diameter), end: END_OUT[f.end], depth: f.end === 'throughAll' ? undefined : L(f.depth),
         ...(f.kind === 'counterbore' ? { cb_diameter: L(f.cbDiameter), cb_depth: L(f.cbDepth) } : {}),
+        ...(f.kind === 'doubleCounterbore' ? {
+          cb_diameter: L(f.cbDiameter), cb_depth: L(f.cbDepth),
+          cb2_diameter: L(f.cb2Diameter ?? f.cbDiameter), cb2_depth: L(f.cb2Depth ?? f.cbDepth),
+        } : {}),
         ...(f.kind === 'countersink' ? { cs_diameter: L(f.csDiameter), cs_angle: A(f.csAngle) } : {}),
+        ...(f.kind === 'counterdrill' ? {
+          cd_diameter: L(f.cdDiameter ?? f.diameter), cd_depth: L(f.cdDepth ?? f.depth), cd_angle: A(f.cdAngle ?? 90),
+        } : {}),
         ...(f.kind === 'spotface' ? { sf_diameter: L(f.sfDiameter ?? f.diameter), sf_depth: L(f.sfDepth ?? f.depth) } : {}),
         ...(f.kind === 'tapped' ? {
           thread_size: f.threadSize ?? 'Custom', thread_pitch: L(f.threadPitch ?? f.diameter), thread_class: f.threadClass ?? '6H',
           tap_drill_diameter: L(f.tapDrillDiameter ?? f.diameter),
         } : {}),
+        drill_point: f.tip ?? 'flat',
+        drill_point_angle: f.tip === 'drill' && f.end === 'blind' ? A(f.tipAngle ?? 118) : undefined,
         reverse: f.flip,
       };
       case 'linearPattern': return {
