@@ -728,6 +728,50 @@ export class App {
     return this.store.doc.components?.find((c) => c.id === id) ?? null;
   }
 
+  /** The transforms the assembly solver gives the components right now. */
+  solvedComponentTransforms(): Map<Id, ComponentTransform> {
+    return this.isAssembly ? assemblyTransforms(this.store.doc, this.jointOverrides()) : new Map();
+  }
+
+  /** The component a picked face or edge belongs to (assemblies tag them). */
+  componentOfItem(item: SelItem | null): AssemblyComponent | null {
+    if (!item) return null;
+    const id = item.kind === 'face' ? this.faces[item.index]?.component
+      : item.kind === 'edge' ? this.edges[item.index]?.component : undefined;
+    return id ? this.component(id) : null;
+  }
+
+  /**
+   * In an assembly a click on a component's geometry selects the component,
+   * like Fusion; panels that grip a face pick the face instead.
+   */
+  selectionItemFor(item: SelItem | null): SelItem | null {
+    if (!this.isAssembly || !item || this.panel) return item;
+    const component = this.componentOfItem(item);
+    return component ? { kind: 'component', id: component.id } : item;
+  }
+
+  /** Faces of the selected and hovered components, for the whole-part highlight. */
+  componentHighlightItems(bit: 'selected' | 'hover'): SelItem[] {
+    if (!this.isAssembly) return [];
+    const out: SelItem[] = [];
+    const add = (it: SelItem | null) => {
+      if (!it) return;
+      if (it.kind === 'component') {
+        for (let i = 0; i < this.faces.length; i++) if (this.faces[i].component === it.id) out.push({ kind: 'face', index: i, name: this.faces[i].name });
+        return;
+      }
+      if (it.kind === 'face' || it.kind === 'edge') {
+        const component = this.componentOfItem(it);
+        if (!component) return;
+        for (let i = 0; i < this.faces.length; i++) if (this.faces[i].component === component.id) out.push({ kind: 'face', index: i, name: this.faces[i].name });
+      }
+    };
+    if (bit === 'selected') for (const it of this.selection.items) add(it);
+    else add(this.selection.hover);
+    return out;
+  }
+
   openComponent(id: Id) {
     if (!this.component(id)) return;
     void import('./assembly').then(({ AssemblyComponentPanel }) => this.openPanel(new AssemblyComponentPanel(this, id)));
@@ -882,13 +926,40 @@ export class App {
     });
   }
 
+  /**
+   * Moves several components at once. Called every frame of a drag inside a
+   * batch, so the whole gesture stays one undo step.
+   */
+  setComponentTransforms(transforms: Map<Id, ComponentTransform>, label = tr("Move components")) {
+    if (!transforms.size) return;
+    this.store.change(label, (doc) => {
+      for (const [id, transform] of transforms) {
+        const component = doc.components?.find((c) => c.id === id);
+        if (component) component.transform = { position: [...transform.position], rotation: [...transform.rotation] };
+      }
+    });
+  }
+
+  /**
+   * Adds a joint made between picked geometry: the driven component is placed
+   * where the joint puts it and constrained to follow the reference.
+   */
+  addGeometryJoint(joint: AssemblyJoint, placement: ComponentTransform) {
+    this.store.change(tr("Add joint"), (doc) => {
+      doc.joints ??= [];
+      doc.joints.push(joint);
+      const component = doc.components?.find((c) => c.id === joint.component);
+      if (component) component.transform = { position: [...placement.position], rotation: [...placement.rotation] };
+    });
+  }
+
   deleteComponents(ids: Id[]) {
     if (!ids.length) return;
     const remove = new Set(ids);
     this.store.change(tr("Delete components"), (doc) => {
       doc.components = doc.components?.filter((c) => !remove.has(c.id));
       doc.mates = doc.mates?.filter((m) => !remove.has(m.a) && !remove.has(m.b));
-      doc.joints = doc.joints?.filter((j) => !remove.has(j.component));
+      doc.joints = doc.joints?.filter((j) => !remove.has(j.component) && !(j.relativeTo && remove.has(j.relativeTo)));
     });
     this.selection.clear();
   }
@@ -1383,6 +1454,9 @@ export class App {
       return { ...f, face: f.face || f.planarOnly, plane: f.plane };
     }
     if (this.sketchEditor) return { edge: true, vertex: true };
+    // In an assembly a click picks the component through its surface, so
+    // vertices and edges do not steal the click from the part.
+    if (this.isAssembly) return { face: true };
     return { face: true, edge: true, vertex: true, plane: true };
   }
 
@@ -1460,14 +1534,22 @@ export class App {
       return;
     }
     if (!item) { if (!e.shift && !e.ctrl) this.selection.clear(); return; }
-    if (e.shift || e.ctrl) this.selection.toggle(item);
-    else this.selection.set([item]);
+    const picked = this.selectionItemFor(item);
+    if (!picked) return;
+    if (e.shift || e.ctrl) this.selection.toggle(picked);
+    else this.selection.set([picked]);
     if (this.selection.items.length) this.showContextToolbar(e);
   }
 
   onViewportDoubleClick(e: VPEvent) {
     if (this.panel || this.sketchEditor) return;
     const item = this.viewport.pickItem(e.x, e.y, { face: true, plane: true });
+    const component = this.componentOfItem(item);
+    if (component && this.isAssembly) {
+      this.selection.set([{ kind: 'component', id: component.id }]);
+      this.openComponent(component.id);
+      return;
+    }
     if (item?.kind === 'face') {
       const f = this.faces[item.index];
       if (f) this.editFeature(f.feature);
@@ -1475,7 +1557,7 @@ export class App {
   }
 
   onViewportContextMenu(e: VPEvent, cx: number, cy: number) {
-    const item = this.viewport.pickItem(e.x, e.y, this.pickFilter());
+    const item = this.selectionItemFor(this.viewport.pickItem(e.x, e.y, this.pickFilter()));
     if (item && !this.selection.has(item) && !this.panel) this.selection.set([item]);
     const items = this.hooks.contextItems('viewport');
     if (items.length) openMenu(items, cx, cy, { label: tr("Context menu") });

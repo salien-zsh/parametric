@@ -1,6 +1,6 @@
 {
   "name": "parametric",
-  "version": "0.4.17",
+  "version": "0.4.18",
   "description": "Parametric: feature-based 3D part design, assembly and engineering drawings in the browser. Sketch with constraints, build B-rep features, place parts in assemblies and export STEP, STL, SVG or PDF.",
   "type": "module",
   "private": true,

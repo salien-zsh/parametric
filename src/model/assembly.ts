@@ -4,6 +4,7 @@
 import type {
   AssemblyAxis, AssemblyComponent, AssemblyJoint, ComponentTransform, Id, PartDocument,
 } from './types';
+import type { Vec3 } from '../math/vec';
 
 export interface JointOverride {
   value?: number;
@@ -20,6 +21,179 @@ const cloneTransform = (t: ComponentTransform): ComponentTransform => ({
   position: [...t.position],
   rotation: [...t.rotation],
 });
+
+const RAD = Math.PI / 180;
+const DEG = 180 / Math.PI;
+
+/** Rotation matrix of a component transform: the model applies X, then Y, then Z. */
+export function rotationMatrix(rotation: Vec3): number[][] {
+  const [rx, ry, rz] = rotation.map((v: number) => v * RAD);
+  const ca = Math.cos(rx), sa = Math.sin(rx);
+  const cb = Math.cos(ry), sb = Math.sin(ry);
+  const cc = Math.cos(rz), sc = Math.sin(rz);
+  // R = Rz * Ry * Rx
+  return [
+    [cc * cb, cc * sa * sb - ca * sc, ca * cc * sb + sa * sc],
+    [sc * cb, ca * cc + sa * sb * sc, -cc * sa + ca * sb * sc],
+    [-sb, cb * sa, ca * cb],
+  ];
+}
+
+/** Euler angles (degrees) of a rotation matrix, the inverse of rotationMatrix. */
+export function matrixToRotation(m: number[][]): Vec3 {
+  const sb = Math.max(-1, Math.min(1, -m[2][0]));
+  const ry = Math.asin(sb);
+  if (Math.abs(sb) > 0.999999) {
+    // Looking straight up or down: choose X = 0 and put the turn in Z.
+    const rx = 0;
+    const rz = Math.atan2(-m[0][1], m[1][1]);
+    return [rx * DEG, ry * DEG, rz * DEG];
+  }
+  const rx = Math.atan2(m[2][1], m[2][2]);
+  const rz = Math.atan2(m[1][0], m[0][0]);
+  return [rx * DEG, ry * DEG, rz * DEG];
+}
+
+export const multiply = (a: number[][], b: number[][]): number[][] => a.map((row) => [0, 1, 2].map((j) => row[0] * b[0][j] + row[1] * b[1][j] + row[2] * b[2][j]));
+
+export const rotateVec = (m: number[][], v: Vec3): Vec3 => [
+  m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
+  m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
+  m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2],
+];
+
+const transpose = (m: number[][]): number[][] => [0, 1, 2].map((i) => [0, 1, 2].map((j) => m[j][i]));
+const rad = (v: number) => v * RAD;
+
+export const norm3 = (v: Vec3): Vec3 => {
+  const l = Math.hypot(v[0], v[1], v[2]) || 1;
+  return [v[0] / l, v[1] / l, v[2] / l];
+};
+
+/** Rotation taking direction `from` onto `to` (both need not be unit). */
+export function rotationFromTo(from: Vec3, to: Vec3): number[][] {
+  const a = norm3(from), b = norm3(to);
+  const cross: Vec3 = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const dot = Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]));
+  const s = Math.hypot(cross[0], cross[1], cross[2]);
+  if (s < 1e-9) {
+    if (dot > 0) return [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    // Opposite directions: a half turn about any axis perpendicular to `a`.
+    const axis: Vec3 = Math.abs(a[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+    const u = norm3([a[1] * axis[2] - a[2] * axis[1], a[2] * axis[0] - a[0] * axis[2], a[0] * axis[1] - a[1] * axis[0]]);
+    return rotationAxisAngle(u, Math.PI);
+  }
+  return rotationAxisAngle([cross[0] / s, cross[1] / s, cross[2] / s], Math.atan2(s, dot));
+}
+
+/** Rotation of `angle` radians about a unit axis. */
+export function rotationAxisAngle(axis: Vec3, angle: number): number[][] {
+  const [x, y, z] = norm3(axis);
+  const c = Math.cos(angle), s = Math.sin(angle), t = 1 - c;
+  return [
+    [t * x * x + c, t * x * y - s * z, t * x * z + s * y],
+    [t * x * y + s * z, t * y * y + c, t * y * z - s * x],
+    [t * x * z - s * y, t * y * z + s * x, t * z * z + c],
+  ];
+}
+
+/** Transform of a child placed in a parent's frame (parent ∘ child). */
+export function composeTransform(parent: ComponentTransform, child: ComponentTransform): ComponentTransform {
+  const pm = rotationMatrix(parent.rotation);
+  const p = rotateVec(pm, child.position);
+  return {
+    position: [parent.position[0] + p[0], parent.position[1] + p[1], parent.position[2] + p[2]],
+    rotation: matrixToRotation(multiply(pm, rotationMatrix(child.rotation))),
+  };
+}
+
+/** Placement of a child in a parent's frame: inverse(parent) ∘ child. */
+export function relativeTransform(parent: ComponentTransform, child: ComponentTransform): ComponentTransform {
+  const pm = rotationMatrix(parent.rotation);
+  const rel: Vec3 = [child.position[0] - parent.position[0], child.position[1] - parent.position[1], child.position[2] - parent.position[2]];
+  const inv = transpose(pm);
+  const p = rotateVec(inv, rel);
+  return { position: p, rotation: matrixToRotation(multiply(inv, rotationMatrix(child.rotation))) };
+}
+
+/** The dominant world axis of a direction. */
+export function dominantAxis(d: Vec3): AssemblyAxis {
+  const v = d.map(Math.abs);
+  return v[0] >= v[1] && v[0] >= v[2] ? 'x' : v[1] >= v[2] ? 'y' : 'z';
+}
+
+/**
+ * The transform that mates the picked geometry on `b` to the picked geometry
+ * on `a`: the two contact points coincide (plus `offset` along a's direction)
+ * and the directions oppose for a mate, or line up when not flipped.
+ */
+export function jointPlacement(
+  a: { transform: ComponentTransform; p: Vec3; d: Vec3 },
+  b: { transform: ComponentTransform; p: Vec3; d: Vec3 },
+  opts: { mate: boolean; offset: number },
+): ComponentTransform {
+  const targetDir: Vec3 = opts.mate ? [-a.d[0], -a.d[1], -a.d[2]] : [...a.d];
+  const align = rotationFromTo(b.d, targetDir);
+  const bm = rotationMatrix(b.transform.rotation);
+  const rotation = matrixToRotation(multiply(align, bm));
+  const target: Vec3 = [
+    a.p[0] + a.d[0] * opts.offset,
+    a.p[1] + a.d[1] * opts.offset,
+    a.p[2] + a.d[2] * opts.offset,
+  ];
+  // Keep the contact point where the geometry puts it: move the component by
+  // the difference between the target point and its contact point.
+  return {
+    position: [
+      b.transform.position[0] + target[0] - b.p[0],
+      b.transform.position[1] + target[1] - b.p[1],
+      b.transform.position[2] + target[2] - b.p[2],
+    ],
+    rotation,
+  };
+}
+
+/** Rotates a placed component about a point and a direction, keeping the point fixed. */
+export function rotateAbout(transform: ComponentTransform, pivot: Vec3, dir: Vec3, angleDeg: number): ComponentTransform {
+  const m = multiply(rotationAxisAngle(dir, rad(angleDeg)), rotationMatrix(transform.rotation));
+  const rel: Vec3 = [transform.position[0] - pivot[0], transform.position[1] - pivot[1], transform.position[2] - pivot[2]];
+  const p = rotateVec(rotationAxisAngle(dir, rad(angleDeg)), rel);
+  return {
+    position: [pivot[0] + p[0], pivot[1] + p[1], pivot[2] + p[2]],
+    rotation: matrixToRotation(m),
+  };
+}
+
+/** A joint's contact point and direction, in world or in a component's frame. */
+export interface JointFrame {
+  p: Vec3;
+  d: Vec3;
+}
+
+/** A world-space joint frame expressed in a component's own frame. */
+export function frameToLocal(transform: ComponentTransform, frame: JointFrame): JointFrame {
+  const inv = transpose(rotationMatrix(transform.rotation));
+  const rel: Vec3 = [frame.p[0] - transform.position[0], frame.p[1] - transform.position[1], frame.p[2] - transform.position[2]];
+  return { p: rotateVec(inv, rel), d: norm3(rotateVec(inv, frame.d)) };
+}
+
+/** A joint frame stored in a component's frame, placed in the world. */
+export function frameToWorld(transform: ComponentTransform, frame: JointFrame): JointFrame {
+  const m = rotationMatrix(transform.rotation);
+  const p = rotateVec(m, frame.p);
+  return {
+    p: [transform.position[0] + p[0], transform.position[1] + p[1], transform.position[2] + p[2]],
+    d: norm3(rotateVec(m, frame.d)),
+  };
+}
+
+const identityTransform = (): ComponentTransform => ({ position: [0, 0, 0], rotation: [0, 0, 0] });
+
+const translateBy = (t: ComponentTransform, d: Vec3): ComponentTransform => ({
+  position: [t.position[0] + d[0], t.position[1] + d[1], t.position[2] + d[2]],
+  rotation: [...t.rotation],
+});
+
 
 /** Clamp a joint's current value to its authored limits. */
 export function jointValue(joint: AssemblyJoint, override?: number): number {
@@ -109,7 +283,33 @@ export function solveAssemblyTransforms(doc: PartDocument): Map<Id, ComponentTra
 export function assemblyTransforms(doc: PartDocument, overrides: JointOverrides = {}): Map<Id, ComponentTransform> {
   const out = solveAssemblyTransforms(doc);
   const components = new Map((doc.components ?? []).map((c) => [c.id, c]));
-  for (const joint of doc.joints ?? []) {
+  const joints = doc.joints ?? [];
+
+  // Two-component joints first: the driven component is placed in the
+  // reference's frame, so moving the reference carries it along. Repeated
+  // passes let a chain of joints settle.
+  const jointed = joints.filter((j) => !!j.relativeTo && !!j.offset);
+  for (let pass = 0; pass < Math.max(2, jointed.length * components.size + 2); pass++) {
+    let changed = false;
+    for (const joint of jointed) {
+      const driven = components.get(joint.component);
+      const reference = components.get(joint.relativeTo!);
+      const base = out.get(joint.relativeTo!);
+      const current = out.get(joint.component);
+      if (!driven || !reference || !base || !current || driven.fixed) continue;
+      const next = composeTransform(base, joint.offset!);
+      if (Math.abs(next.position[0] - current.position[0]) + Math.abs(next.position[1] - current.position[1]) +
+          Math.abs(next.position[2] - current.position[2]) < 1e-9 &&
+          Math.abs(next.rotation[0] - current.rotation[0]) + Math.abs(next.rotation[1] - current.rotation[1]) +
+          Math.abs(next.rotation[2] - current.rotation[2]) < 1e-9) continue;
+      out.set(joint.component, next);
+      changed = true;
+    }
+    if (!changed) break;
+  }
+
+  // Joint motion on top of the constraint.
+  for (const joint of joints) {
     const component = components.get(joint.component);
     const transform = out.get(joint.component);
     if (!component || !transform || component.fixed) continue;
@@ -118,24 +318,43 @@ export function assemblyTransforms(doc: PartDocument, overrides: JointOverrides 
     const value2 = jointValue2(joint, typeof override === 'object' ? override?.value2 : undefined);
     const i = axisIndex(joint.axis);
     const j = axisIndex(joint.axis2 ?? (joint.axis === 'x' ? 'y' : 'x'));
-    if (joint.type === 'prismatic') transform.position[i] += value;
-    else if (joint.type === 'revolute') transform.rotation[i] += value;
+    // A joint made between picked geometry moves along that geometry, which
+    // follows the reference component when it is moved.
+    const reference = joint.relativeTo ? out.get(joint.relativeTo) ?? identityTransform() : identityTransform();
+    const worldFrame = joint.aRef?.d
+      ? frameToWorld(reference, { p: joint.aRef.p ?? [0, 0, 0], d: joint.aRef.d })
+      : null;
+    const dir = worldFrame?.d ?? [joint.axis === 'x' ? 1 : 0, joint.axis === 'y' ? 1 : 0, joint.axis === 'z' ? 1 : 0];
+    const pivot = worldFrame?.p ?? [0, 0, 0];
+    const hasAxis = !!worldFrame;
+    if (joint.type === 'prismatic') out.set(joint.component, translateBy(transform, hasAxis ? scaleVec(norm3(dir), value) : axisVec(joint.axis, value)));
+    else if (joint.type === 'revolute') out.set(joint.component, hasAxis ? rotateAbout(transform, pivot, norm3(dir), value) : withRotation(transform, i, transform.rotation[i] + value));
     else if (joint.type === 'cylindrical') {
-      transform.position[i] += value;
-      transform.rotation[i] += value2;
+      const moved = hasAxis ? translateBy(transform, scaleVec(norm3(dir), value)) : translateBy(transform, axisVec(joint.axis, value));
+      out.set(joint.component, hasAxis ? rotateAbout(moved, pivot, norm3(dir), value2) : withRotation(moved, i, moved.rotation[i] + value2));
     } else if (joint.type === 'planar') {
-      transform.position[i] += value;
-      transform.position[j] += value2;
+      const moved = hasAxis
+        ? translateBy(transform, addVec(scaleVec(norm3(dir), value), scaleVec(axisVec(joint.axis2 ?? 'y', 1), value2)))
+        : translateBy(transform, addVec(axisVec(joint.axis, value), axisVec(joint.axis2 ?? 'y', value2)));
+      out.set(joint.component, moved);
     } else if (joint.type === 'ball') {
-      transform.rotation[i] += value;
-      transform.rotation[j] += value2;
+      out.set(joint.component, withRotation(withRotation(transform, i, transform.rotation[i] + value), j, transform.rotation[j] + value2));
     } else if (joint.type === 'pinSlot') {
-      transform.position[i] += value;
-      transform.rotation[j] += value2;
+      const moved = hasAxis ? translateBy(transform, scaleVec(norm3(dir), value)) : translateBy(transform, axisVec(joint.axis, value));
+      out.set(joint.component, withRotation(moved, j, moved.rotation[j] + value2));
     }
   }
   return out;
 }
+
+const axisVec = (axis: AssemblyAxis, value: number): Vec3 => (axis === 'x' ? [value, 0, 0] : axis === 'y' ? [0, value, 0] : [0, 0, value]);
+const scaleVec = (v: Vec3, s: number): Vec3 => [v[0] * s, v[1] * s, v[2] * s];
+const addVec = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const withRotation = (t: ComponentTransform, i: 0 | 1 | 2, value: number): ComponentTransform => {
+  const rotation: Vec3 = [...t.rotation];
+  rotation[i] = value;
+  return { position: [...t.position], rotation };
+};
 
 export function componentTransform(doc: PartDocument, component: AssemblyComponent, overrides: JointOverrides = {}): ComponentTransform {
   return assemblyTransforms(doc, overrides).get(component.id) ?? cloneTransform(component.transform);

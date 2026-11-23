@@ -69,8 +69,11 @@ The **Mechanical** tab holds the power-transmission generators. Every generator 
 - Create a new assembly and insert saved `.parametric` parts as independent components.
 - **New Part** in an assembly creates an empty in-place part and opens it for sketching and modeling; **Finish Part** writes it back into the component, and a double-click on a component opens its part again.
 - The assembly design tree shows every component; component properties edit its name, visibility, XYZ position and XYZ rotation, with full undo/redo.
-- Ground components and choose origin, X/Y/Z axis, or XY/XZ/YZ plane connectors for assembly mates. Supported mates are coincident, distance, angle, parallel, perpendicular and flush, with mate chains propagated through the assembly.
-- Add rigid, revolute, slider, cylindrical, planar, ball or pin-slot joints. Cylindrical, planar, ball and pin-slot joints expose a second axis and value with independent motion limits.
+- Pick a component in the view (a click selects the whole component, highlighted as one part) or in the design tree; Ctrl-click adds to the selection.
+- **Move/Rotate**: drag a component in the view to move it, hold Shift while dragging to rotate it, or type X/Y/Z offsets and a rotation about X, Y or Z. A component joined to another moves by its joint value instead, and dragging it slides or turns the joint within its limits. The whole drag is one undo step.
+- **Joint**: select two components, pick a face, an edge or the origins on each, and the driven part snaps into place with the picked geometry meeting the reference (mated faces, coaxial edges or coincident origins). Joints are rigid, revolute, slider, cylindrical, planar, ball or pin-slot; cylindrical, planar, ball and pin-slot joints expose a second axis and value with independent motion limits.
+- Every joint made between picked geometry stores where it was made, so moving the reference component carries the joined parts with it, and the joint value drives the motion from there.
+- Legacy axis connectors are still available through **Assembly Mate**: origin, X/Y/Z axis or XY/XZ/YZ plane connectors with coincident, distance, angle, parallel, perpendicular and flush types, propagated through mate chains.
 - The motion study panel drives primary and secondary joint values interactively or plays the primary value back in a continuous loop without adding simulation frames to Undo.
 - Run a B-Rep interference check between every pair of visible components and report the exact overlap volume.
 - Run Assembly Diagnostics to find fixed-fixed mate conflicts, joints driving grounded parts, missing references, invalid secondary ranges and assemblies without a grounded component.
@@ -145,7 +148,7 @@ For distribution without Windows SmartScreen warnings, configure code signing th
 | Area | Where | Notes |
 |---|---|---|
 | Document model | `src/model` | Plain JSON parts: features, sketches, variables. Undo/redo by snapshots. Parameters may be expressions. |
-| Assembly model | `src/model/document.ts`, `src/app/assembly.ts` | Assemblies embed portable part documents plus rigid placement; component properties and assembly bill of materials are undoable document data. |
+| Assembly model | `src/model/document.ts`, `src/model/assembly.ts`, `src/app/assembly.ts` | Assemblies embed portable part documents plus rigid placement; joints made between picked geometry store a relative placement so the driven part follows its reference, and components, mates and joints are undoable document data. |
 | Sketch solver | `src/sketch/solver.ts` | Minimum-norm damped Gauss-Newton per independent cluster, with a rank analysis for degrees of freedom and redundant or conflicting constraints. |
 | Profiles | `src/sketch/profiles.ts` | Planar face finding on the sketch graph; nested loops alternate material and holes. |
 | Geometry kernel | `src/kernel` | OpenCascade (WebAssembly) in a Web Worker. Each feature is cached under a hash of everything before it, so edits rebuild only what changed. Faces are named after the feature and sketch entity that created them. |

@@ -1,11 +1,18 @@
-// Assembly component properties: transform, visibility and name.
+// Assembly component properties, move/rotate and the joints that constrain
+// parts to each other.
 
-import { connectorAxis, movableJoints } from '../model/assembly';
-import type { AssemblyAxis, AssemblyJoint, AssemblyJointType, AssemblyMate, AssemblyMateType, ComponentTransform, Id } from '../model/types';
+import {
+  connectorAxis, dominantAxis, frameToLocal, jointPlacement, movableJoints, relativeTransform, rotateAbout,
+} from '../model/assembly';
+import type {
+  AssemblyAxis, AssemblyJoint, AssemblyJointRef, AssemblyJointType, AssemblyMate, AssemblyMateType, ComponentTransform, Id,
+} from '../model/types';
+import type { Vec3 } from '../math/vec';
 import { h } from '../ui/dom';
 import { tr } from '../i18n';
 import type { App } from './app';
 import { PropertyPanel, checkbox, numberField, section, selectField } from './pm';
+import type { VPEvent, ViewportTool } from './viewport';
 
 const CONNECTORS = [
   { value: 'origin' as const, labelKey: 'Origin' },
@@ -230,12 +237,21 @@ export class AssemblyMatePanel extends PropertyPanel {
   }
 }
 
+/**
+ * Fusion's Joint: select the geometry where the two parts meet (their origin,
+ * a planar face or an edge) and the joint type. The driven part is placed
+ * where the joint puts it and follows the reference from then on.
+ */
 export class AssemblyJointPanel extends PropertyPanel {
-  readonly title: string;
-  icon = 'revolve';
+  icon = 'relation';
   editingId: Id | null;
   private draft: AssemblyJoint;
   private readonly original: string;
+  /** Two components were selected: a joint between picked geometry. */
+  private pair: { a: Id; b: Id } | null = null;
+  private aChoice = 'origin';
+  private bChoice = 'origin';
+  private mate = true;
 
   constructor(private app: App, joint?: AssemblyJoint) {
     super();
@@ -243,14 +259,25 @@ export class AssemblyJointPanel extends PropertyPanel {
       this.draft = structuredClone(joint);
       this.editingId = joint.id;
       this.title = tr("Edit Joint");
+      this.aChoice = connectorKey(app, joint.aRef);
+      this.bChoice = connectorKey(app, joint.bRef);
+      this.mate = joint.flip !== true;
     } else {
-      const component = app.selection.ofKind('component')[0];
-      if (!component) throw new Error(tr("Select one component to add a joint."));
+      const selected = app.selection.ofKind('component');
+      if (selected.length >= 2) {
+        // Fusion: pick the reference part first, the moving part second.
+        this.pair = { a: selected[0].id, b: selected[1].id };
+        this.aChoice = 'origin';
+        this.bChoice = 'origin';
+      }
+      const component = selected[0];
+      if (!component) throw new Error(tr("Select one or two components to add a joint."));
       this.draft = {
         id: app.store.nextId('j'),
         name: tr("Joint{0}", [app.store.doc.joints?.length ? (app.store.doc.joints.length + 1) : 1]),
-        type: 'revolute',
-        component: component.id,
+        type: this.pair ? 'rigid' : 'revolute',
+        component: this.pair ? this.pair.b : component.id,
+        relativeTo: this.pair?.a,
         axis: 'z',
         axis2: 'y',
         value: 0,
@@ -266,14 +293,14 @@ export class AssemblyJointPanel extends PropertyPanel {
     this.original = JSON.stringify(this.draft);
   }
 
+  readonly title: string;
+
   private changed() {
     this.app.commands.changed();
   }
 
   render(): HTMLElement[] {
     const d = this.draft;
-    const primaryAngle = d.type === 'revolute' || d.type === 'ball';
-    const secondaryAngle = jointSecondaryAngle(d.type);
     const name = h('input', { class: 'input', value: d.name, 'aria-label': tr("Joint name"), autocomplete: 'off' }) as HTMLInputElement;
     name.addEventListener('input', () => { d.name = name.value; this.changed(); });
     const type = selectField<AssemblyJointType>(tr("Joint type"), d.type, [
@@ -293,35 +320,66 @@ export class AssemblyJointPanel extends PropertyPanel {
       this.app.refreshPanel();
       this.changed();
     });
+    if (this.pair) {
+      const aOptions = jointConnectors(this.app, this.pair.a);
+      const bOptions = jointConnectors(this.app, this.pair.b);
+      const aRef = selectField(tr("Reference geometry"), this.aChoice, aOptions, (value) => { this.aChoice = value; this.changed(); });
+      const bRef = selectField(tr("Driven geometry"), this.bChoice, bOptions, (value) => { this.bChoice = value; this.changed(); });
+      const mate = checkbox(tr("Mate the picked faces"), this.mate, (checked) => { this.mate = checked; this.changed(); });
+      const a = this.app.component(this.pair.a)?.name ?? this.pair.a;
+      const b = this.app.component(this.pair.b)?.name ?? this.pair.b;
+      return [
+        section(tr("Joint"), [
+          h('div', { class: 'field-label' }, tr("Joint name")), name,
+          h('p', { class: 'field-label' }, tr("{0} is driven from {1}.", [b, a])),
+          type,
+        ]),
+        section(tr("Geometry"), [aRef, bRef, mate]),
+        d.type === 'rigid'
+          ? section(tr("Rigid"), [h('p', { class: 'field-label' }, tr("A rigid joint locks the two parts together."))])
+          : section(tr("Motion"), [this.valueField(d), ...this.rangeFields(d)]),
+      ];
+    }
+    const component = this.app.component(d.component);
     const axis = selectField<AssemblyAxis>(tr("Axis"), d.axis, [
       { value: 'x', label: 'X' }, { value: 'y', label: 'Y' }, { value: 'z', label: 'Z' },
     ], (value) => { d.axis = value; this.changed(); });
     const axis2 = selectField<AssemblyAxis>(tr("Secondary axis"), d.axis2 ?? 'y', [
       { value: 'x', label: 'X' }, { value: 'y', label: 'Y' }, { value: 'z', label: 'Z' },
     ], (value) => { d.axis2 = value; this.changed(); });
-    const ctx = this.app.unitContext();
-    const value = numberField({ label: tr("Current value"), value: d.value, kind: primaryAngle ? 'angle' : 'length', ctx, onChange: (v) => { if (typeof v === 'number') d.value = v; this.changed(); } });
-    const min = numberField({ label: tr("Minimum"), value: d.min, kind: primaryAngle ? 'angle' : 'length', ctx, onChange: (v) => { if (typeof v === 'number') d.min = v; this.changed(); } });
-    const max = numberField({ label: tr("Maximum"), value: d.max, kind: primaryAngle ? 'angle' : 'length', ctx, onChange: (v) => { if (typeof v === 'number') d.max = v; this.changed(); } });
-    const value2 = numberField({ label: tr("Secondary value"), value: d.value2 ?? 0, kind: secondaryAngle ? 'angle' : 'length', ctx, onChange: (v) => { if (typeof v === 'number') d.value2 = v; this.changed(); } });
-    const min2 = numberField({ label: tr("Secondary minimum"), value: d.min2 ?? -180, kind: secondaryAngle ? 'angle' : 'length', ctx, onChange: (v) => { if (typeof v === 'number') d.min2 = v; this.changed(); } });
-    const max2 = numberField({ label: tr("Secondary maximum"), value: d.max2 ?? 180, kind: secondaryAngle ? 'angle' : 'length', ctx, onChange: (v) => { if (typeof v === 'number') d.max2 = v; this.changed(); } });
+    const secondaryAngle = jointSecondaryAngle(d.type);
+    const value2 = numberField({ label: tr("Secondary value"), value: d.value2 ?? 0, kind: secondaryAngle ? 'angle' : 'length', ctx: this.app.unitContext(), onChange: (v) => { if (typeof v === 'number') d.value2 = v; this.changed(); } });
+    const min2 = numberField({ label: tr("Secondary minimum"), value: d.min2 ?? -180, kind: secondaryAngle ? 'angle' : 'length', ctx: this.app.unitContext(), onChange: (v) => { if (typeof v === 'number') d.min2 = v; this.changed(); } });
+    const max2 = numberField({ label: tr("Secondary maximum"), value: d.max2 ?? 180, kind: secondaryAngle ? 'angle' : 'length', ctx: this.app.unitContext(), onChange: (v) => { if (typeof v === 'number') d.max2 = v; this.changed(); } });
     const secondary = section(tr("Secondary motion"), [axis2, value2, min2, max2]);
     secondary.hidden = !jointHasSecondary(d.type);
-    const primary = section(tr("Motion"), [value, min, max]);
+    const primary = section(tr("Motion"), [this.valueField(d), ...this.rangeFields(d)]);
     primary.hidden = d.type === 'rigid';
     return [
       section(tr("Joint"), [
         h('div', { class: 'field-label' }, tr("Joint name")), name,
-        h('p', { class: 'field-label' }, tr("Component: {0}", [this.app.component(d.component)?.name ?? d.component])),
+        h('p', { class: 'field-label' }, tr("Component: {0}", [component?.name ?? d.component])),
         type, axis,
       ]),
       primary, secondary,
     ];
   }
 
+  private valueField(d: AssemblyJoint) {
+    const primaryAngle = d.type === 'revolute' || d.type === 'ball';
+    return numberField({ label: tr("Current value"), value: d.value, kind: primaryAngle ? 'angle' : 'length', ctx: this.app.unitContext(), onChange: (v) => { if (typeof v === 'number') d.value = v; this.changed(); } });
+  }
+
+  private rangeFields(d: AssemblyJoint) {
+    const primaryAngle = d.type === 'revolute' || d.type === 'ball';
+    return [
+      numberField({ label: tr("Minimum"), value: d.min, kind: primaryAngle ? 'angle' : 'length', ctx: this.app.unitContext(), onChange: (v) => { if (typeof v === 'number') d.min = v; this.changed(); } }),
+      numberField({ label: tr("Maximum"), value: d.max, kind: primaryAngle ? 'angle' : 'length', ctx: this.app.unitContext(), onChange: (v) => { if (typeof v === 'number') d.max = v; this.changed(); } }),
+    ];
+  }
+
   get edited(): boolean {
-    return this.original !== JSON.stringify(this.draft);
+    return this.original !== JSON.stringify(this.draft) || !!this.pair;
   }
 
   ok(): boolean {
@@ -333,10 +391,105 @@ export class AssemblyJointPanel extends PropertyPanel {
     }
     this.draft.name = this.draft.name.trim();
     this.draft.value = Math.max(this.draft.min, Math.min(this.draft.max, this.draft.value));
+    if (this.pair && !this.editingId) {
+      const placed = this.makeGeometryJoint();
+      if (!placed) return false;
+      this.app.addGeometryJoint(placed.joint, placed.placement);
+      return true;
+    }
     if (this.editingId) this.app.replaceJoint(this.draft);
     else this.app.addJoint(this.draft);
     return true;
   }
+
+  /** Computes where the driven component goes so the picked geometry meets. */
+  private makeGeometryJoint(): { joint: AssemblyJoint; placement: ComponentTransform } | null {
+    const pair = this.pair!;
+    const a = this.app.component(pair.a);
+    const b = this.app.component(pair.b);
+    const aFrame = connectorFrame(this.app, pair.a, this.aChoice);
+    const bFrame = connectorFrame(this.app, pair.b, this.bChoice);
+    if (!a || !b || !aFrame || !bFrame) {
+      this.setMessage('error', tr("Pick reference geometry on both components."));
+      return null;
+    }
+    if (a.fixed && b.fixed) {
+      this.setMessage('error', tr("Both components are grounded. Float one of them first."));
+      return null;
+    }
+    const mate = this.mate;
+    const placement = jointPlacement(
+      { transform: a.transform, p: aFrame.p, d: aFrame.d },
+      { transform: b.transform, p: bFrame.p, d: bFrame.d },
+      { mate, offset: 0 },
+    );
+    const joint: AssemblyJoint = {
+      ...this.draft,
+      component: pair.b,
+      relativeTo: pair.a,
+      offset: relativeTransform(a.transform, placement),
+      aRef: { kind: aFrame.kind, name: aFrame.name, ...frameToLocal(a.transform, { p: aFrame.p, d: aFrame.d }) },
+      bRef: { kind: bFrame.kind, name: bFrame.name },
+      axis: dominantAxis(aFrame.d),
+      flip: !mate,
+    };
+    if (joint.type === 'revolute' || joint.type === 'ball') {
+      joint.min = -180; joint.max = 180;
+    } else if (joint.type !== 'rigid' && joint.type !== 'planar') {
+      joint.min = -100; joint.max = 100;
+    }
+    joint.value = 0;
+    return { joint, placement };
+  }
+}
+
+/** "origin", "face:<index>" or "edge:<index>" for a connector as stored. */
+function connectorKey(app: App, ref?: AssemblyJointRef | null): string {
+  if (!ref) return 'origin';
+  if (ref.kind === 'origin') return 'origin';
+  if (ref.kind === 'face') {
+    const i = app.faces.findIndex((f) => f.name === ref.name);
+    return i >= 0 ? `face:${i}` : 'origin';
+  }
+  const i = app.edges.findIndex((e) => e.name === ref.name);
+  return i >= 0 ? `edge:${i}` : 'origin';
+}
+
+/** The geometry a joint can grip on one component, as select options. */
+function jointConnectors(app: App, componentId: Id): { value: string; label: string }[] {
+  const out: { value: string; label: string }[] = [{ value: 'origin', label: tr("Origin") }];
+  let faces = 0, edges = 0;
+  app.faces.forEach((face, i) => {
+    if (face.component === componentId && face.type === 'plane') {
+      out.push({ value: `face:${i}`, label: tr("Face {0}", [++faces]) });
+    }
+  });
+  app.edges.forEach((edge, i) => {
+    if (edge.component !== componentId) return;
+    if (edge.type === 'circle' || edge.type === 'line') out.push({ value: `edge:${i}`, label: tr("Edge {0}", [++edges]) });
+  });
+  return out;
+}
+
+/** Contact point and direction of a picked connector, in world space. */
+function connectorFrame(app: App, componentId: Id, value: string): { p: Vec3; d: Vec3; kind: AssemblyJointRef['kind']; name?: string } | null {
+  if (value === 'origin') {
+    const component = app.component(componentId);
+    return component ? { p: [...component.transform.position], d: [0, 0, 1], kind: 'origin' } : null;
+  }
+  const [kind, raw] = value.split(':');
+  const index = Number(raw);
+  if (kind === 'face') {
+    const face = app.faces[index];
+    if (!face || face.component !== componentId || !face.normal) return null;
+    return { p: [...face.center], d: [...face.normal], kind: 'face', name: face.name };
+  }
+  const edge = app.edges[index];
+  if (!edge || edge.component !== componentId) return null;
+  const p = edge.type === 'circle' ? edge.center : edge.mid;
+  const d = edge.type === 'circle' ? edge.axis : edge.dir;
+  if (!p || !d) return null;
+  return { p: [...p], d: [...d], kind: 'edge', name: edge.name };
 }
 
 export class MotionStudyPanel extends PropertyPanel {
@@ -423,4 +576,253 @@ export class MotionStudyPanel extends PropertyPanel {
     clearInterval(this.timer);
     this.timer = 0;
   }
+}
+
+/**
+ * Fusion's Move: drag a component in the view to move it (Shift-drag to
+ * rotate), or type offsets. A component joined to another moves by its joint
+ * value instead, like dragging a jointed part in Fusion.
+ */
+export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
+  icon = 'select';
+  private ids: Id[] = [];
+  private start = new Map<Id, ComponentTransform>();
+  private offset: Vec3 = [0, 0, 0];
+  private spinAxis: AssemblyAxis = 'z';
+  private spinAngle = 0;
+  private fields: Record<'x' | 'y' | 'z', HTMLElement> | null = null;
+  private angleField: HTMLElement | null = null;
+  private dragFrom: { x: number; y: number; rotate: boolean } | null = null;
+  private jointDrag: { id: Id; from: number; base: number; perPixel: number } | null = null;
+  private batching = false;
+
+  constructor(private app: App) {
+    super();
+    this.ids = app.selection.ofKind('component')
+      .map((it) => it.id)
+      .filter((id) => !!app.component(id) && !app.component(id)!.fixed);
+    for (const id of this.ids) {
+      const component = app.component(id);
+      if (component) this.start.set(id, { position: [...component.transform.position], rotation: [...component.transform.rotation] });
+    }
+  }
+
+  get title() {
+    return tr("Move/Rotate");
+  }
+
+  private jointOf(id: Id): AssemblyJoint | undefined {
+    return (this.app.store.doc.joints ?? []).find((j) => j.component === id && j.type !== 'rigid');
+  }
+
+  private attachTool() {
+    if (this.ids.length) this.app.viewport.tool = this;
+  }
+
+  mount(): HTMLElement {
+    const el = super.mount();
+    this.attachTool();
+    return el;
+  }
+
+  render(): HTMLElement[] {
+    this.attachTool();
+    if (!this.ids.length) {
+      return [section(tr("Move/Rotate"), [h('p', { class: 'field-label' }, tr("Select a component to move. A grounded component cannot be moved."))])];
+    }
+    const ctx = this.app.unitContext();
+    const names = this.ids.map((id) => this.app.component(id)?.name ?? id).join(', ');
+    const joint = this.jointOf(this.ids[0]);
+    const offsetField = (axis: 0 | 1 | 2, key: 'x' | 'y' | 'z') => numberField({
+      label: tr("Move {0}", [key.toUpperCase()]), value: this.offset[axis], kind: 'length', ctx, allowExpr: false,
+      onChange: (v) => { if (typeof v === 'number') { this.offset[axis] = v; this.apply(); } },
+    });
+    const fields = { x: offsetField(0, 'x'), y: offsetField(1, 'y'), z: offsetField(2, 'z') };
+    this.fields = fields;
+    const angle = numberField({
+      label: tr("Rotate"), value: this.spinAngle, kind: 'angle', ctx, allowExpr: false,
+      onChange: (v) => { if (typeof v === 'number') { this.spinAngle = v; this.spinAxis = this.spinAxis; this.apply(); } },
+    });
+    this.angleField = angle;
+    const axis = selectField<AssemblyAxis>(tr("Rotation axis"), this.spinAxis, [
+      { value: 'x', label: 'X' }, { value: 'y', label: 'Y' }, { value: 'z', label: 'Z' },
+    ], (v) => { this.spinAxis = v; this.apply(); });
+    const reset = h('button', { class: 'btn small', type: 'button' }, tr("Reset"));
+    reset.addEventListener('click', () => {
+      this.offset = [0, 0, 0];
+      this.spinAngle = 0;
+      for (const [id, start] of this.start) {
+        this.app.setComponentTransforms(new Map([[id, start]]), tr("Reset placement"));
+      }
+      this.app.refreshPanel();
+    });
+    const slider = joint ? this.jointSlider(joint) : null;
+    return [
+      section(tr("Components"), [h('p', { class: 'field-label' }, names)]),
+      section(tr("Move"), [fields.x, fields.y, fields.z, reset]),
+      section(tr("Rotate"), [axis, angle]),
+      joint ? section(tr("Joint"), [
+        h('p', { class: 'field-label' }, tr("{0} drives this component.", [joint.name])),
+        slider,
+      ]) : section(tr("Free Move"), [h('p', { class: 'field-label' }, tr("Drag the component to move it. Hold Shift while dragging to rotate it."))]),
+    ];
+  }
+
+  /** A jointed component moves by its joint value, like dragging it in Fusion. */
+  private jointSlider(joint: AssemblyJoint): HTMLElement {
+    const angle = joint.type === 'revolute' || joint.type === 'ball';
+    const range = h('input', {
+      type: 'range', min: String(joint.min), max: String(joint.max), step: angle ? '0.5' : '0.1',
+      value: String(joint.value), 'aria-label': tr("Joint position"),
+    }) as HTMLInputElement;
+    const out = h('output', { class: 'field-label' }, `${Number(joint.value).toFixed(2)}${angle ? '°' : ' mm'}`);
+    range.addEventListener('input', () => {
+      out.textContent = `${Number(range.value).toFixed(2)}${angle ? '°' : ' mm'}`;
+      this.setJointValue(joint.id, Number(range.value));
+    });
+    return h('div', {}, range, out);
+  }
+
+  private setJointValue(id: Id, value: number) {
+    this.beginBatch();
+    this.app.store.change(tr("Move component by joint"), (doc) => {
+      const joint = doc.joints?.find((j) => j.id === id);
+      if (joint) joint.value = Math.max(joint.min, Math.min(joint.max, value));
+    });
+    this.app.requestRebuild();
+  }
+
+  private beginBatch() {
+    if (this.batching) return;
+    this.batching = true;
+    this.app.store.beginBatch(tr("Move components"));
+  }
+
+  private endBatch(keep: boolean) {
+    if (!this.batching) return;
+    this.batching = false;
+    if (keep) this.app.store.endBatch();
+    else this.app.store.cancelBatch();
+  }
+
+  /** Applies the typed offsets and rotation to every selected component. */
+  private apply() {
+    if (!this.ids.length) return;
+    this.beginBatch();
+    const transforms = new Map<Id, ComponentTransform>();
+    const axis: Vec3 = this.spinAxis === 'x' ? [1, 0, 0] : this.spinAxis === 'y' ? [0, 1, 0] : [0, 0, 1];
+    for (const id of this.ids) {
+      const start = this.start.get(id);
+      if (!start) continue;
+      const moved: ComponentTransform = {
+        position: [start.position[0] + this.offset[0], start.position[1] + this.offset[1], start.position[2] + this.offset[2]],
+        rotation: [...start.rotation],
+      };
+      transforms.set(id, this.spinAngle ? rotateAbout(moved, startedPivot(start), axis, this.spinAngle) : moved);
+    }
+    this.app.setComponentTransforms(transforms);
+  }
+
+  pointerDown = (e: VPEvent): boolean => {
+    const item = this.app.viewport.pickItem(e.x, e.y, { face: true, edge: true });
+    const component = this.app.componentOfItem(item);
+    if (!component || !this.ids.includes(component.id)) return false;
+    this.app.selection.set([{ kind: 'component', id: component.id }]);
+    const joint = this.jointOf(component.id);
+    this.jointDrag = joint
+      ? { id: joint.id, from: e.y, base: joint.value, perPixel: joint.type === 'revolute' || joint.type === 'ball' ? 0.6 : Math.max(0.01, this.app.renderer.camera.pixelSize) }
+      : null;
+    this.dragFrom = { x: e.x, y: e.y, rotate: e.shift };
+    this.beginBatch();
+    return true;
+  };
+
+  pointerMove = (e: VPEvent, dragging: boolean): void => {
+    const from = this.dragFrom;
+    if (!from || !dragging) return;
+    if (this.jointDrag) {
+      this.setJointValue(this.jointDrag.id, this.jointDrag.base + (from.y - e.y) * this.jointDrag.perPixel);
+      this.dragFrom = { ...from, y: e.y };
+      return;
+    }
+    if (from.rotate) {
+      const angle = (e.x - from.x) * 0.6;
+      const cam = this.app.renderer.camera;
+      this.rotateLive = { axis: cam.back, angle };
+    } else {
+      const cam = this.app.renderer.camera;
+      const s = cam.pixelSize;
+      const dx = (e.x - from.x) * s;
+      const dy = (from.y - e.y) * s;
+      this.offset = [this.offset[0] + dx * cam.right[0] + dy * cam.up[0], this.offset[1] + dx * cam.right[1] + dy * cam.up[1], this.offset[2] + dx * cam.right[2] + dy * cam.up[2]];
+    }
+    this.dragFrom = { ...from, x: e.x, y: e.y };
+    this.applyLive();
+  };
+
+  pointerUp = (): void => {
+    this.dragFrom = null;
+    this.jointDrag = null;
+    this.rotateLive = null;
+    // Keep what the drag produced as one undo step.
+    this.endBatch(true);
+  };
+
+  private rotateLive: { axis: Vec3; angle: number } | null = null;
+
+  /** Drag updates bypass the typed fields: apply straight onto the components. */
+  private applyLive() {
+    const transforms = new Map<Id, ComponentTransform>();
+    for (const id of this.ids) {
+      const start = this.start.get(id);
+      if (!start) continue;
+      let t: ComponentTransform = {
+        position: [start.position[0] + this.offset[0], start.position[1] + this.offset[1], start.position[2] + this.offset[2]],
+        rotation: [...start.rotation],
+      };
+      if (this.rotateLive) t = rotateAbout(t, startedPivot(start), this.rotateLive.axis, this.rotateLive.angle);
+      transforms.set(id, t);
+    }
+    this.app.setComponentTransforms(transforms);
+  }
+
+  /** Numbers refresh after a drag, without rebuilding the panel while dragging. */
+  onBuild(): void {
+    if (this.dragFrom) return;
+    if (this.fields) {
+      const ctx = this.app.unitContext();
+      setField(this.fields.x, this.offset[0], ctx);
+      setField(this.fields.y, this.offset[1], ctx);
+      setField(this.fields.z, this.offset[2], ctx);
+    }
+    if (this.angleField) setField(this.angleField, this.spinAngle, this.app.unitContext());
+  }
+
+  get edited(): boolean {
+    return !!this.offset.some((v) => Math.abs(v) > 1e-9) || Math.abs(this.spinAngle) > 1e-9;
+  }
+
+  cancel(): void {
+    this.endBatch(false);
+  }
+
+  ok(): boolean {
+    this.endBatch(true);
+    return true;
+  }
+
+  dispose(): void {
+    if (this.app.viewport.tool === this) this.app.viewport.tool = null;
+    this.endBatch(false);
+  }
+}
+
+/** A component's start position, used as the pivot of its rotation. */
+const startedPivot = (start: ComponentTransform): Vec3 => [...start.position];
+
+/** Writes a value into a number field without firing its change handler. */
+function setField(field: HTMLElement, value: number, ctx: ReturnType<App['unitContext']>) {
+  const input = field.querySelector<HTMLInputElement>('input');
+  if (input && document.activeElement !== input) input.value = String(Math.round(value * 1000) / 1000);
+  void ctx;
 }

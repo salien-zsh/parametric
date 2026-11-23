@@ -5,6 +5,7 @@
 import { convertExpressionUnits, evaluate, evaluateVariables, renameReferences, variableReferenceChanges } from './expr';
 import { FEATURE_LABELS, PARAM_FIELDS, type ParamKind, getPath, setPath } from './features';
 import type {
+  AssemblyJointRef,
   AssemblyComponent, AssemblyJoint, AssemblyMate, ComponentTransform, Feature, Id, Param, ParameterConfiguration, PartDocument, SkDimension, SketchFeature, UnitSystem, Variable,
 } from './types';
 import { isDimension } from './types';
@@ -107,6 +108,12 @@ export function parseDocument(text: string): PartDocument {
     featureIds.add(f.id);
   }
   const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+  const isVec3 = (v: unknown): v is [number, number, number] =>
+    Array.isArray(v) && v.length === 3 && v.every((x) => typeof x === 'number' && Number.isFinite(x));
+  const isJointRef = (v: unknown) => v == null || (isObj(v)
+    && (v.kind === 'origin' || v.kind === 'face' || v.kind === 'edge')
+    && (v.name == null || typeof v.name === 'string')
+    && (v.p == null || isVec3(v.p)) && (v.d == null || isVec3(v.d)));
   // Check nested geometry before loading can replace the current document.
   if (!d.features.every((f) => f.type !== 'sketch' || validSketch(f))) {
     throw new Error(tr("The part file is damaged (invalid sketch)."));
@@ -215,7 +222,11 @@ export function parseDocument(text: string): PartDocument {
         || (rawJoint.value2 != null && !Number.isFinite(rawJoint.value2))
         || (rawJoint.min2 != null && !Number.isFinite(rawJoint.min2))
         || (rawJoint.max2 != null && !Number.isFinite(rawJoint.max2))
-        || (rawJoint.min2 != null && rawJoint.max2 != null && rawJoint.min2 > rawJoint.max2)) {
+        || (rawJoint.min2 != null && rawJoint.max2 != null && rawJoint.min2 > rawJoint.max2)
+        || (rawJoint.relativeTo != null && (typeof rawJoint.relativeTo !== 'string' || !componentIds.has(rawJoint.relativeTo) || rawJoint.relativeTo === rawJoint.component))
+        || (rawJoint.offset != null && !(isObj(rawJoint.offset) && isVec3(rawJoint.offset.position) && isVec3(rawJoint.offset.rotation)))
+        || !isJointRef(rawJoint.aRef) || !isJointRef(rawJoint.bRef)
+        || (rawJoint.flip != null && typeof rawJoint.flip !== 'boolean')) {
         throw new Error(tr("The assembly file is damaged (invalid joint)."));
       }
       jointIds.add(rawJoint.id);
@@ -232,6 +243,13 @@ export function parseDocument(text: string): PartDocument {
         value2: rawJoint.value2 ?? 0,
         min2: rawJoint.min2 ?? -180,
         max2: rawJoint.max2 ?? 180,
+        ...(typeof rawJoint.relativeTo === 'string' ? { relativeTo: rawJoint.relativeTo } : {}),
+        ...(isObj(rawJoint.offset)
+          ? { offset: { position: [...(rawJoint.offset.position as [number, number, number])], rotation: [...(rawJoint.offset.rotation as [number, number, number])] } }
+          : {}),
+        ...(isJointRef(rawJoint.aRef) && rawJoint.aRef ? { aRef: rawJoint.aRef as AssemblyJointRef } : {}),
+        ...(isJointRef(rawJoint.bRef) && rawJoint.bRef ? { bRef: rawJoint.bRef as AssemblyJointRef } : {}),
+        ...(rawJoint.flip === true ? { flip: true } : {}),
       };
     }) : [];
   } else {

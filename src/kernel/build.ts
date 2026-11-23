@@ -290,6 +290,8 @@ export class ModelBuilder {
     const live = new Set(components.map((c) => c.id));
     for (const id of this.componentBuilders.keys()) if (!live.has(id)) this.componentBuilders.delete(id);
     const placed: Sh[] = [];
+    /** Placed shapes with their component, for tagging faces and edges. */
+    const placedParts: { id: Id; name: string; shape: Sh }[] = [];
     this.assemblyShapes.clear();
     const status: FeatureStatus[] = [];
     const componentResults: NonNullable<BuildResult['components']> = [];
@@ -327,6 +329,7 @@ export class ModelBuilder {
         if (rz) shape = rotated(shape, [0, 0, 0], [0, 0, 1], rz);
         if (component.transform.position.some(Boolean)) shape = translated(shape, component.transform.position);
         placed.push(shape);
+        placedParts.push({ id: component.id, name: component.name, shape });
         this.assemblyShapes.set(component.id, shape);
         if (failure) {
           status.push({ id: component.id, ok: false, error: failure.error });
@@ -346,17 +349,15 @@ export class ModelBuilder {
     this.current = { ...emptyState(), body };
     const key = hashString(JSON.stringify(keyParts)) + ':' + req.quality;
     if (key !== this.meshKey || !this.meshCache) {
-      if (!body) this.meshCache = { mesh: null, faces: [], edges: [] };
-      else {
-        const mesh = this.meshBody(body, req.quality);
-        this.meshCache = { mesh, faces: [], edges: [] };
-      }
+      this.meshCache = body
+        ? this.meshAssembly(placedParts, req.quality)
+        : { mesh: null, faces: [], edges: [] };
       this.meshKey = key;
     }
     return {
       mesh: this.meshCache.mesh,
-      faces: [],
-      edges: [],
+      faces: this.meshCache.faces,
+      edges: this.meshCache.edges,
       status,
       frames: {},
       bbox: body ? boxOf(body) : null,
@@ -1601,6 +1602,84 @@ export class ModelBuilder {
       edgeIds: new Float32Array(e.lines.length / 3),
       vertices: new Float32Array(0),
     };
+  }
+
+  /**
+   * Mesh of an assembly. Every component keeps its own face and edge lists,
+   * named after the component, so a pick selects the component and a joint can
+   * grip one of its faces or edges.
+   */
+  private meshAssembly(parts: { id: Id; name: string; shape: Sh }[], quality: number): { mesh: MeshData | null; faces: FaceInfo[]; edges: EdgeInfo[] } {
+    const faces: FaceInfo[] = [];
+    const edges: EdgeInfo[] = [];
+    const positions: number[] = [];
+    const normals: number[] = [];
+    const indices: number[] = [];
+    const vertexFace: number[] = [];
+    const edgePositions: number[] = [];
+    const edgeIds: number[] = [];
+    const vertices: number[] = [];
+    for (const part of parts) {
+      const faceShapes = subShapes(part.shape, 'face');
+      const faceBase = faces.length;
+      faceShapes.forEach((shape, i) => {
+        const d = describeFace(shape);
+        const info: FaceInfo = { name: `${part.id}/f${i}`, type: d.type, center: d.center, area: d.area, feature: part.id, component: part.id };
+        if (d.type === 'plane') { info.normal = d.d; info.frame = planarFaceFrame(d); }
+        if (d.type === 'cylinder' || d.type === 'cone' || d.type === 'sphere') { info.axis = { p: d.p, d: d.d }; info.radius = d.r; }
+        faces.push(info);
+      });
+      const edgeShapes = subShapes(part.shape, 'edge');
+      const edgeBase = edges.length;
+      edgeShapes.forEach((shape, i) => {
+        const d = describeEdge(shape);
+        edges.push({
+          name: `${part.id}/e${i}`, type: d.type, a: d.a, b: d.b, mid: d.mid, length: d.length, faces: [],
+          dir: d.dir, center: d.center, axis: d.axis, radius: d.radius, component: part.id,
+        });
+      });
+      const { tol, ang } = this.meshParams(part.shape, quality);
+      const m = meshShape(part.shape, tol, ang);
+      const vBase = positions.length / 3;
+      positions.push(...m.positions);
+      normals.push(...m.normals);
+      for (const t of m.indices) indices.push(t + vBase);
+      const faceOf = new Float32Array(m.positions.length / 3);
+      const faceIndex = new ShapeIndex(faceShapes);
+      const claimed = new Set<number>();
+      for (let g = 0; g + 2 < m.faceGroups.length; g += 3) {
+        const start = m.faceGroups[g], count = m.faceGroups[g + 1], hash = m.faceGroups[g + 2];
+        const cands = faceIndex.findHash(hash);
+        const fi = cands.find((c) => !claimed.has(c)) ?? cands[0] ?? 0;
+        claimed.add(fi);
+        for (let t = start; t < start + count; t++) faceOf[m.indices[t]] = faceBase + fi;
+      }
+      for (const v of faceOf) vertexFace.push(v);
+      const em = meshEdgesOf(part.shape, tol, ang);
+      const edgeIndex = new ShapeIndex(edgeShapes);
+      const claimedE = new Set<number>();
+      for (let g = 0; g + 2 < em.groups.length; g += 3) {
+        const start = em.groups[g], count = em.groups[g + 1], hash = em.groups[g + 2];
+        const cands = edgeIndex.findHash(hash);
+        const ei = cands.find((c) => !claimedE.has(c)) ?? cands[0] ?? 0;
+        claimedE.add(ei);
+        for (let k = start; k < start + count; k++) {
+          edgePositions.push(em.lines[k * 3], em.lines[k * 3 + 1], em.lines[k * 3 + 2]);
+          edgeIds.push(edgeBase + ei);
+        }
+      }
+      for (const p of subShapes(part.shape, 'vertex').map(vertexPoint)) vertices.push(p[0], p[1], p[2]);
+    }
+    const mesh: MeshData = {
+      positions: new Float32Array(positions),
+      normals: new Float32Array(normals),
+      indices: new Uint32Array(indices),
+      vertexFace: new Float32Array(vertexFace),
+      edgePositions: new Float32Array(edgePositions),
+      edgeIds: new Float32Array(edgeIds),
+      vertices: new Float32Array(vertices),
+    };
+    return { mesh, faces, edges };
   }
 
   private meshState(st: State, quality: number): { mesh: MeshData | null; faces: FaceInfo[]; edges: EdgeInfo[] } {

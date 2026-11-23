@@ -44,6 +44,8 @@ export interface FaceInfo {
   radius?: number;
   /** Feature that last named this face. */
   feature: Id;
+  /** Assembly components: the component that owns the face. */
+  component?: Id;
 }
 
 export interface EdgeInfo {
@@ -59,6 +61,8 @@ export interface EdgeInfo {
   center?: Vec3;
   axis?: Vec3;
   radius?: number;
+  /** Assembly components: the component that owns the edge. */
+  component?: Id;
 }
 
 export interface MeshData {

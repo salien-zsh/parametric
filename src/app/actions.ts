@@ -233,9 +233,20 @@ export function registerCommands(app: App, files: FileOps) {
       },
     },
     {
+      id: 'moveComponents', label: tr("Move/Rotate"), icon: 'select',
+      keywords: tr("move rotate drag position assembly component"),
+      description: tr("Move or rotate the selected components by dragging in the view, or by typing offsets."),
+      enabled: () => app.isAssembly && app.selection.ofKind('component').length >= 1,
+      run: () => {
+        void import('./assembly').then(({ AssemblyMovePanel }) => app.openPanel(new AssemblyMovePanel(app)))
+          .catch((e) => toast({ kind: 'error', message: (e as Error).message }));
+      },
+    },
+    {
       id: 'addJoint', label: tr("Joint..."), icon: 'revolve',
-      keywords: tr("revolute prismatic hinge slider assembly"),
-      enabled: () => app.isAssembly && app.selection.ofKind('component').length === 1,
+      keywords: tr("constraint mate align revolute prismatic hinge slider assembly"),
+      description: tr("Join two components at picked geometry: a face, an edge or their origins."),
+      enabled: () => app.isAssembly && app.selection.ofKind('component').length >= 1,
       run: () => {
         void import('./assembly').then(({ AssemblyJointPanel }) => app.openPanel(new AssemblyJointPanel(app)))
           .catch((e) => toast({ kind: 'error', message: (e as Error).message }));
@@ -497,7 +508,8 @@ export const RIBBON: RibbonTab[] = [
       [{ stack: [{ cmd: 'chamfer' }, { cmd: 'shell' }, { cmd: 'draft' }] }, { stack: [{ cmd: 'circularPattern' }, { cmd: 'mirror' }] }],
       [{ cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle', 'planeTangent', 'planeTwoEdges', 'planeThreePoints'] }, { cmd: 'importStep' }],
       [{ cmd: 'newAssembly' }, { cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'openDrawing' }],
-      [{ cmd: 'fixComponent' }, { cmd: 'addMate' }, { cmd: 'addJoint' }, { cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
+      [{ cmd: 'fixComponent' }, { cmd: 'moveComponents' }, { cmd: 'addJoint' }, { cmd: 'addMate' }, { cmd: 'motionStudy' }],
+      [{ cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
     ],
   },
   {

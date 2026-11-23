@@ -579,6 +579,20 @@ export interface AssemblyMate {
 
 export type AssemblyJointType = 'rigid' | 'revolute' | 'prismatic' | 'cylindrical' | 'planar' | 'ball' | 'pinSlot';
 
+/**
+ * Where a joint grips a component: its origin, a planar face or an edge. The
+ * point and direction are stored in world space as they were when the joint
+ * was created, so the joint keeps its placement.
+ */
+export interface AssemblyJointRef {
+  kind: 'origin' | 'face' | 'edge';
+  /** Face or edge name as built (empty for the origin). */
+  name?: string;
+  /** Contact point and direction (face normal or edge direction). */
+  p?: Vec3;
+  d?: Vec3;
+}
+
 /** A joint drives one component from its constrained position. */
 export interface AssemblyJoint {
   id: Id;
@@ -596,6 +610,18 @@ export interface AssemblyJoint {
   value2?: number;
   min2?: number;
   max2?: number;
+  /** Two-component joint: the component this one is assembled to. */
+  relativeTo?: Id;
+  /**
+   * Placement of this component in the reference component's frame, captured
+   * when the joint was made. The driven component follows the reference.
+   */
+  offset?: ComponentTransform;
+  /** The geometry the joint was made between, for editing and the tree. */
+  aRef?: AssemblyJointRef;
+  bRef?: AssemblyJointRef;
+  /** Mate the picked faces instead of aligning their normals (face joints). */
+  flip?: boolean;
 }
 
 export interface PartDocument {

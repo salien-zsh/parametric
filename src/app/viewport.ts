@@ -526,6 +526,19 @@ export class Viewport {
       if (it.kind === 'feature') {
         app.faces.forEach((f, i) => { if (f.feature === it.id) faces[i] |= bit; });
       }
+      // A selected component lights up as a whole; in an assembly so does the
+      // component a hovered or picked face belongs to (clicking part of a
+      // component selects the component).
+      if (it.kind === 'component') {
+        app.faces.forEach((f, i) => { if (f.component === it.id) faces[i] |= bit; });
+        app.edges.forEach((e, i) => { if (e.component === it.id) edges[i] |= bit; });
+      } else if (app.isAssembly && (it.kind === 'face' || it.kind === 'edge')) {
+        const component = app.componentOfItem(it);
+        if (component) {
+          app.faces.forEach((f, i) => { if (f.component === component.id) faces[i] |= bit; });
+          app.edges.forEach((e, i) => { if (e.component === component.id) edges[i] |= bit; });
+        }
+      }
     };
     for (const it of app.selection.items) mark(it, STATE_SELECTED);
     mark(app.selection.hover, STATE_HOVER);
