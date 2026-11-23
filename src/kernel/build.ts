@@ -17,7 +17,7 @@ import { add, dist, dot, frameFrom, len, normalize, qAxisAngle, qRotate, scale, 
 import type {
   AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
-  PlaneRef, RevolveFeature, ShellFeature, SkDimension, SketchFeature, SweepFeature,
+  PlaneRef, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SweepFeature,
 } from '../model/types';
 import { dependencies } from '../model/features';
 import { BASE_FRAMES } from '../model/planes';
@@ -389,6 +389,7 @@ export class ModelBuilder {
       case 'loft': this.applyLoft(f, st); return 'tool';
       case 'sweep': this.applySweep(f, st); return 'tool';
       case 'draft': this.applyDraft(f, st); return 'body';
+      case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'import': await this.applyImport(f, st, req); return 'body';
     }
   }
@@ -1348,6 +1349,74 @@ export class ModelBuilder {
     // A path in the profile's plane sweeps a solid without volume.
     if (isEmpty(tool) || flat(tool)) throw new FeatureError(SWEEP_FAILED);
     this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `s${k}`), f.cut);
+  }
+
+  /**
+   * A stepped shaft along +X: a half profile in the XY plane revolved about the
+   * axis, with optional 45-degree end chamfers and one keyway cut into a
+   * segment. Used by the mechanical shaft designer.
+   */
+  private applyShaft(f: ShaftFeature, st: State) {
+    const segments = f.segments.map((s) => ({ d: num(s.diameter), l: num(s.length) }));
+    if (!segments.length) throw new FeatureError(tr("Add at least one shaft segment"));
+    for (const s of segments) {
+      if (!(s.d > 0)) throw new FeatureError(tr("Shaft diameters must be greater than zero"));
+      if (!(s.l > 0)) throw new FeatureError(tr("Shaft segment lengths must be greater than zero"));
+    }
+    const chamfer = Math.max(0, num(f.endChamfer ?? 0));
+    const firstR = segments[0].d / 2, lastR = segments[segments.length - 1].d / 2;
+    if (chamfer > 0 && (chamfer >= firstR || chamfer >= lastR)) throw new FeatureError(tr("The end chamfer must be smaller than the shaft radius"));
+    if (chamfer > 0 && (chamfer >= segments[0].l * 0.45 || chamfer >= segments[segments.length - 1].l * 0.45)) {
+      throw new FeatureError(tr("The end chamfer is too long for the end segment"));
+    }
+    const pts: [number, number][] = [[0, 0]];
+    if (chamfer > 0) pts.push([0, firstR - chamfer], [chamfer, firstR]);
+    else pts.push([0, firstR]);
+    let x = 0;
+    let previousR = firstR;
+    for (const [i, s] of segments.entries()) {
+      const r = s.d / 2;
+      if (i > 0 && Math.abs(r - previousR) > 1e-9) pts.push([x, previousR], [x, r]);
+      const last = i === segments.length - 1;
+      const end = last && chamfer > 0 ? x + s.l - chamfer : x + s.l;
+      pts.push([end, r]);
+      if (last && chamfer > 0) pts.push([x + s.l, r - chamfer]);
+      x += s.l;
+      previousR = r;
+    }
+    pts.push([x, 0]);
+    const clean = pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 1e-9);
+    const edges = clean.map((p, i) => R.makeLine([p[0], p[1], 0], [clean[(i + 1) % clean.length][0], clean[(i + 1) % clean.length][1], 0]));
+    const face = R.makeFace(R.assembleWire(edges));
+    let tool = R.revolution(face, [0, 0, 0], [1, 0, 0], 360) as unknown as Sh;
+
+    const k = f.keyway;
+    if (k) {
+      const index = Math.trunc(Number(k.segment));
+      const seg = segments[index];
+      if (!seg) throw new FeatureError(tr("Select the segment that carries the keyway"));
+      const width = num(k.width), depth = num(k.depth), length = num(k.length);
+      if (!(width > 0) || !(depth > 0) || !(length > 0)) throw new FeatureError(tr("Keyway width, depth and length must be greater than zero"));
+      if (depth >= seg.d / 2) throw new FeatureError(tr("Keyway depth must be less than the shaft radius"));
+      if (width >= seg.d) throw new FeatureError(tr("Keyway width must be less than the shaft diameter"));
+      if (length > seg.l) throw new FeatureError(tr("Keyway length cannot be longer than its segment"));
+      if (length < width) throw new FeatureError(tr("Keyway length must be at least its width"));
+      let start = 0;
+      for (let i = 0; i < index; i++) start += segments[i].l;
+      const half = width / 2;
+      const x0 = start + (seg.l - length) / 2;
+      const x1 = x0 + length;
+      const y0 = seg.d / 2 - depth;
+      const height = depth + 1;
+      const box = R.makeBox([x0 + half, y0, -half], [x1 - half, seg.d / 2 + 1, half]);
+      const rounded = fuse(
+        fuse(box, R.makeCylinder(half, height, [x0 + half, y0, 0], [0, 1, 0])),
+        R.makeCylinder(half, height, [x1 - half, y0, 0], [0, 1, 0]),
+      );
+      tool = cut(tool, rounded);
+    }
+    const named = this.nameTool(f.id, tool, (_d, i) => `s${i}`);
+    this.applyTool(f.id, st, tool, named, false);
   }
 
   private applyDraft(f: DraftFeature, st: State) {

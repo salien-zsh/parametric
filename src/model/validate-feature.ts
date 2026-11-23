@@ -30,6 +30,17 @@ function axis(v: unknown): boolean {
 }
 
 const patternDir = (v: unknown) => object(v) && axis(v.ref);
+const positive = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0;
+
+function shaftSegment(v: unknown): boolean {
+  return object(v) && positive(v.diameter) && positive(v.length);
+}
+
+function shaftKeyway(v: unknown): boolean {
+  if (v == null) return true;
+  return object(v) && typeof v.segment === 'number' && Number.isInteger(v.segment) && v.segment >= 0
+    && positive(v.width) && positive(v.depth) && positive(v.length);
+}
 
 export function validFeature(f: Feature): boolean {
   const r = f as unknown as Record<string, unknown>;
@@ -62,6 +73,8 @@ export function validFeature(f: Feature): boolean {
       return list(r.profiles, id);
     case 'sweep':
       return (r.profile == null || id(r.profile)) && (r.path == null || id(r.path));
+    case 'shaft':
+      return list(r.segments, shaftSegment) && shaftKeyway(r.keyway);
     default:
       return true;
   }

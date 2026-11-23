@@ -346,6 +346,12 @@ export class FeatureCodec {
       case 'loft': return { profiles: f.profiles, cut: f.cut, ruled: f.ruled };
       case 'sweep': return { profile: f.profile, path: f.path, cut: f.cut };
       case 'draft': return { faces: f.faces.map((x) => x.name), neutral_plane: planeSpec(f.neutral), angle: A(f.angle), reverse: f.flip };
+      case 'shaft': return {
+        segments: f.segments.map((s) => ({ diameter: L(s.diameter), length: L(s.length) })),
+        end_chamfer: L(f.endChamfer),
+        keyway: f.keyway ? { segment: f.keyway.segment, width: L(f.keyway.width), depth: L(f.keyway.depth), length: L(f.keyway.length) } : null,
+        material: f.material, power: f.power, speed: f.speed, service_factor: f.serviceFactor, allowable_shear: f.allowableShear,
+      };
       case 'import': return { format: f.format, file: f.fileName };
     }
   }

@@ -4,16 +4,18 @@ import type { Frame, Vec3 } from '../math/vec';
 import { add, dot, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newMirror, newPlane, newRevolve, newShell, newSketch, newSweep, FEATURE_LABELS, featureIcon, THREAD_PRESETS,
+  newMirror, newPlane, newRevolve, newShaft, newShell, newSketch, newSweep, FEATURE_LABELS, featureIcon, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
 import { changeFeatureUnits } from '../model/document';
 import { evaluateVariables, variableReferenceChanges } from '../model/expr';
+import { SHAFT_MATERIALS, sizeShaft } from '../model/shaft';
+import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
   AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, RevolveFeature,
-  ShellFeature, SketchFeature, SweepFeature, UnitSystem, Variable,
+  ShaftFeature, ShellFeature, SketchFeature, SweepFeature, UnitSystem, Variable,
 } from '../model/types';
 import { h } from '../ui/dom';
 import type { App } from './app';
@@ -514,6 +516,188 @@ export class DraftPanel extends FeaturePanel<DraftFeature> {
 
   preview() {
     return this.f.neutral && this.f.faces.length ? this.f : null;
+  }
+}
+
+// ---------- shaft (mechanical design) ----------
+
+/** A keyway sized for a segment: a quarter of the diameter wide, 8% deep. */
+function defaultKeyway(f: ShaftFeature) {
+  const segment = Math.min(f.keyway?.segment ?? 0, Math.max(0, f.segments.length - 1));
+  const d = Number(f.segments[segment]?.diameter) || 20;
+  const l = Number(f.segments[segment]?.length) || 40;
+  return {
+    segment,
+    width: Math.max(2, d * 0.25),
+    depth: Math.max(1, d * 0.08),
+    length: Math.max(4, Math.min(l * 0.6, l - 2)),
+  };
+}
+
+export class ShaftPanel extends FeaturePanel<ShaftFeature> {
+  private statsEl: HTMLElement | null = null;
+  private allowableField: HTMLElement | null = null;
+
+  get title() {
+    return this.editingId ? this.f.name : tr("Shaft Design");
+  }
+
+  private scalar(label: string, value: number, step: number, onChange: (v: number) => void): HTMLElement {
+    const input = h('input', {
+      class: 'input', type: 'number', step, value: String(Math.round(value * 1000) / 1000), 'aria-label': label,
+    }) as HTMLInputElement;
+    input.addEventListener('input', () => {
+      const v = Number(input.value);
+      if (!Number.isFinite(v)) return;
+      onChange(v);
+      this.syncStats();
+    });
+    return h('div', {}, h('div', { class: 'field-label' }, label), input);
+  }
+
+  render(): HTMLElement[] {
+    const f = this.f;
+    const ctx = this.ctx();
+    const segments: HTMLElement[] = [];
+    for (const [i, s] of f.segments.entries()) {
+      const remove = h('button', { class: 'btn ghost small', type: 'button' }, tr("Remove"));
+      remove.disabled = f.segments.length <= 1;
+      remove.addEventListener('click', () => {
+        if (f.segments.length <= 1) return;
+        f.segments.splice(i, 1);
+        if (f.keyway && f.keyway.segment >= f.segments.length) f.keyway.segment = f.segments.length - 1;
+        this.app.refreshPanel();
+        this.changed();
+      });
+      segments.push(h('div', { class: 'shaft-segment' },
+        h('div', { class: 'row' }, h('span', { class: 'field-label grow' }, tr("Segment {0}", [i + 1])), remove),
+        numberField({
+          label: tr("Diameter {0}", [i + 1]), icon: 'ruler', value: s.diameter, kind: 'length', ctx, min: 1e-6, allowExpr: false,
+          onChange: (v) => { s.diameter = v; this.syncStats(); this.changed(); },
+        }),
+        numberField({
+          label: tr("Length {0}", [i + 1]), icon: 'ruler', value: s.length, kind: 'length', ctx, min: 1e-6, allowExpr: false,
+          onChange: (v) => { s.length = v; this.syncStats(); this.changed(); },
+        }),
+      ));
+    }
+    const add = h('button', { class: 'btn small', type: 'button' }, tr("Add Segment"));
+    add.addEventListener('click', () => {
+      const last = f.segments[f.segments.length - 1];
+      f.segments.push({ diameter: Number(last?.diameter) || 20, length: 30 });
+      if (f.keyway && f.keyway.segment > f.segments.length - 1) f.keyway.segment = f.segments.length - 1;
+      this.app.refreshPanel();
+      this.changed();
+    });
+
+    const material = selectField(tr("Material"), f.material, SHAFT_MATERIALS.map((m) => ({ value: m.id, label: m.name })), (v) => {
+      f.material = v;
+      const preset = SHAFT_MATERIALS.find((m) => m.id === v);
+      if (preset) {
+        f.allowableShear = preset.allowableShear;
+        if (this.allowableField) setNumberFieldValue(this.allowableField, preset.allowableShear, ctx);
+      }
+      this.syncStats();
+    }, 'shaft');
+    const allowable = numberField({
+      label: tr("Allowable shear stress (MPa)"), icon: 'ruler', value: f.allowableShear, kind: 'count', ctx, min: 1, allowExpr: false,
+      onChange: (v) => { f.allowableShear = v; this.syncStats(); },
+    });
+    this.allowableField = allowable;
+    this.statsEl = h('div', { class: 'pm-msg info', role: 'status' });
+    const mechanical = section(tr("Shaft Check"), [
+      material,
+      this.scalar(tr("Power (kW)"), Number(f.power) || 0, 0.1, (v) => { f.power = v; }),
+      this.scalar(tr("Speed (rpm)"), Number(f.speed) || 0, 10, (v) => { f.speed = v; }),
+      this.scalar(tr("Service factor"), Number(f.serviceFactor) || 1, 0.05, (v) => { f.serviceFactor = v; }),
+      allowable,
+      this.statsEl,
+    ]);
+
+    const endChamfer = numberField({
+      label: tr("End chamfer"), icon: 'chamfer', value: f.endChamfer, kind: 'length', ctx, min: 0, allowExpr: false,
+      onChange: (v) => { f.endChamfer = v; this.changed(); },
+    });
+    const keywayToggle = checkbox(tr("Keyway"), !!f.keyway, (v) => {
+      f.keyway = v ? defaultKeyway(f) : null;
+      this.app.refreshPanel();
+      this.changed();
+    });
+    const keywayFields: HTMLElement[] = [];
+    if (f.keyway) {
+      const k = f.keyway;
+      keywayFields.push(
+        selectField(tr("Keyway segment"), String(k.segment), f.segments.map((_, i) => ({ value: String(i), label: tr("Segment {0}", [i + 1]) })), (v) => {
+          k.segment = Number(v);
+          this.changed();
+        }, 'shaft'),
+        numberField({
+          label: tr("Keyway width"), icon: 'ruler', value: k.width, kind: 'length', ctx, min: 1e-6, allowExpr: false,
+          onChange: (v) => { k.width = v; this.changed(); },
+        }),
+        numberField({
+          label: tr("Keyway depth"), icon: 'ruler', value: k.depth, kind: 'length', ctx, min: 1e-6, allowExpr: false,
+          onChange: (v) => { k.depth = v; this.changed(); },
+        }),
+        numberField({
+          label: tr("Keyway length"), icon: 'ruler', value: k.length, kind: 'length', ctx, min: 1e-6, allowExpr: false,
+          onChange: (v) => { k.length = v; this.changed(); },
+        }),
+      );
+    }
+
+    this.syncStats();
+    return [
+      section(tr("Shaft Segments"), [...segments, add]),
+      mechanical,
+      section(tr("Ends and Features"), [endChamfer, keywayToggle, ...keywayFields]),
+    ];
+  }
+
+  private syncStats() {
+    const el = this.statsEl;
+    if (!el) return;
+    const f = this.f;
+    const sizing = sizeShaft(Number(f.power) || 0, Number(f.speed) || 0, Number(f.serviceFactor) || 0, Number(f.allowableShear) || 0,
+      f.segments.map((s) => Number(s.diameter) || 0));
+    if (!sizing || !Number.isFinite(sizing.minDiameter)) {
+      el.className = 'pm-msg warn';
+      el.textContent = tr("Enter a power, speed, service factor and allowable stress to size the shaft.");
+      return;
+    }
+    const dec = this.app.store.doc.decimals;
+    const strong = sizing.maxUtilization <= 1;
+    el.className = `pm-msg ${strong ? 'info' : 'error'}`;
+    el.textContent = tr(
+      "Design torque {0} N·m, minimum diameter {1} mm. Maximum torsional stress {2} MPa ({3}% of allowable).",
+      [
+        formatNumber(sizing.designTorque, Math.max(1, dec - 1)),
+        formatNumber(sizing.minDiameter, dec),
+        formatNumber(sizing.maxUtilization * Number(f.allowableShear), dec),
+        formatNumber(sizing.maxUtilization * 100, 0),
+      ],
+    );
+  }
+
+  protected validate() {
+    const f = this.f;
+    if (!f.segments.length) return tr("Add at least one shaft segment");
+    if (f.segments.some((s) => !(Number(s.diameter) > 0) || !(Number(s.length) > 0))) return tr("Every shaft segment needs a positive diameter and length");
+    if (f.keyway) {
+      const k = f.keyway, seg = f.segments[k.segment];
+      if (!seg) return tr("Select the segment that carries the keyway");
+      const d = Number(seg.diameter), l = Number(seg.length);
+      if (!(Number(k.width) > 0) || !(Number(k.depth) > 0) || !(Number(k.length) > 0)) return tr("Keyway width, depth and length must be greater than zero");
+      if (Number(k.width) >= d) return tr("Keyway width must be less than the shaft diameter");
+      if (Number(k.depth) >= d / 2) return tr("Keyway depth must be less than the shaft radius");
+      if (Number(k.length) > l) return tr("Keyway length cannot be longer than its segment");
+      if (Number(k.length) < Number(k.width)) return tr("Keyway length must be at least its width");
+    }
+    return null;
+  }
+
+  preview() {
+    return this.f.segments.length ? this.f : null;
   }
 }
 
@@ -1232,6 +1416,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'loft': return new LoftPanel(app, f, editing);
     case 'sweep': return new SweepPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
+    case 'shaft': return new ShaftPanel(app, f, editing);
     default: return null;
   }
 }
@@ -1295,6 +1480,7 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
     case 'draft': { const x = newDraft(id, name); x.faces = faces; f = x; break; }
+    case 'shaft': f = newShaft(id, name); break;
     default: return null;
   }
   // Features that add depth are easier to judge in a 3D view.

@@ -350,6 +350,38 @@ export interface DraftFeature extends FeatureBase {
   flip: boolean;
 }
 
+/** A stepped shaft generator segment: a cylinder of one diameter and length. */
+export interface ShaftSegment {
+  diameter: Param;
+  length: Param;
+}
+
+/** A keyway cut into one segment, on top of the shaft. */
+export interface ShaftKeyway {
+  segment: number;
+  width: Param;
+  depth: Param;
+  length: Param;
+}
+
+/**
+ * Mechanical shaft design: a stepped shaft along +X with optional end chamfers
+ * and one keyway, plus the loads used for the torsional sizing check.
+ */
+export interface ShaftFeature extends FeatureBase {
+  type: 'shaft';
+  segments: ShaftSegment[];
+  /** 45-degree chamfer at both ends (millimetres, 0 for none). */
+  endChamfer: Param;
+  keyway: ShaftKeyway | null;
+  /** Mechanical inputs for the sizing report (they do not change the solid). */
+  material: string;
+  power: Param;
+  speed: Param;
+  serviceFactor: Param;
+  allowableShear: Param;
+}
+
 export interface ImportFeature extends FeatureBase {
   type: 'import';
   format: 'step' | 'brep';
@@ -373,6 +405,7 @@ export type Feature =
   | LoftFeature
   | SweepFeature
   | DraftFeature
+  | ShaftFeature
   | ImportFeature;
 
 export type FeatureType = Feature['type'];

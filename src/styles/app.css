@@ -360,6 +360,8 @@ a.icon-btn { text-decoration: none; }
 .selbox .item { display: flex; align-items: center; gap: 6px; padding: 2px 4px 2px 6px; border-radius: 2px; font-size: var(--fs-sm); }
 .selbox .item:hover { background: var(--hover); }
 .selbox .item .rm { margin-left: auto; width: 20px; height: 20px; }
+.shaft-segment { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px; display: flex; flex-direction: column; gap: 6px; background: var(--panel-2); }
+.shaft-segment > .row .field-label { font-weight: 600; }
 .relations-list { display: flex; flex-direction: column; gap: 2px; }
 .rel-btn { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 1px solid transparent; border-radius: var(--radius-sm); padding: 4px 6px; text-align: left; }
 .rel-btn:hover { background: var(--hover); }

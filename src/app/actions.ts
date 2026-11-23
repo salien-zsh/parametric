@@ -381,6 +381,7 @@ export function registerCommands(app: App, files: FileOps) {
     feature('plane', tr("Offset Plane"), 'plane', tr("Create a reference plane offset from a plane or face."), { planeKind: 'offset', keywords: tr("reference geometry datum") }),
     feature('plane', tr("Midplane"), 'plane', tr("Create a reference plane halfway between two parallel planes or faces."), { id: 'planeMidplane', planeKind: 'midplane', keywords: tr("reference geometry datum middle symmetry") }),
     feature('plane', tr("Plane at Angle"), 'plane', tr("Create a reference plane rotated about an edge from a plane or face."), { id: 'planeAngle', planeKind: 'angle', keywords: tr("reference geometry datum angle rotate axis") }),
+    feature('shaft', tr("Shaft Design"), 'shaft', tr("Design a stepped shaft with segments, end chamfers and a keyway, and check its torsional sizing."), { keywords: tr("mechanical shaft axis step keyway torque power speed") }),
     // ---- evaluate ----
     { id: 'measure', label: tr("Measure"), icon: 'measure', keywords: tr("distance length angle area"), description: tr("Measure distances, lengths, angles and areas."), enabled: hasBody, run: () => { void app.openPanel(new MeasurePanel(app)); } },
     { id: 'massProperties', label: tr("Mass Properties"), icon: 'massProperties', keywords: tr("volume weight inertia center of mass"), description: tr("Volume, mass, centre of mass and inertia."), enabled: hasBody, run: () => massPropertiesDialog(app) },
@@ -513,6 +514,11 @@ export const RIBBON: RibbonTab[] = [
     labels: [tr("Sketch"), tr("Draw"), tr("Modify"), tr("Constrain")],
   },
   {
+    id: 'mechanical', label: tr("Mechanical"),
+    groups: [[{ cmd: 'shaft' }]],
+    labels: [tr("Shaft")],
+  },
+  {
     id: 'evaluate', label: tr("Evaluate"),
     groups: [
       [{ cmd: 'measure' }, { cmd: 'massProperties' }, { cmd: 'sectionView' }],
@@ -575,7 +581,7 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
         m('sketch'), m('insertComponent'), m('newAssemblyPart'), m('addMate'), m('addJoint'), sep,
         { label: tr("Boss/Base"), icon: 'extrude', submenu: () => [m('extrude'), m('revolve'), m('sweep'), m('loft')] },
         { label: tr("Cut"), icon: 'extrudeCut', submenu: () => [m('extrudeCut'), m('revolveCut'), m('sweepCut'), m('loftCut')] },
-        { label: tr("Features"), icon: 'fillet', submenu: () => [m('fillet'), m('chamfer'), m('hole'), m('shell'), m('draft')] },
+        { label: tr("Features"), icon: 'fillet', submenu: () => [m('fillet'), m('chamfer'), m('hole'), m('shell'), m('draft'), m('shaft')] },
         { label: tr("Pattern/Mirror"), icon: 'linearPattern', submenu: () => [m('linearPattern'), m('circularPattern'), m('mirror')] },
         { label: tr("Reference Geometry"), icon: 'plane', submenu: () => [m('plane'), m('planeMidplane'), m('planeAngle')] },
         sep, m('importStep'),

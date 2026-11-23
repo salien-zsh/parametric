@@ -2,7 +2,7 @@
 
 import type {
   AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
-  Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShellFeature,
+  Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShaftFeature, ShellFeature,
   SketchFeature, SweepFeature,
 } from './types';
 import { tr } from '../i18n';
@@ -78,11 +78,9 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
     { path: 'angle', kind: 'angle', label: tr("Angle") },
     { path: 'count', kind: 'count', label: tr("Instances") },
   ],
-  plane: [
-    { path: 'offset', kind: 'length', label: tr("Offset") },
-    { path: 'angle', kind: 'angle', label: tr("Angle") },
-  ],
+  plane: [{ path: 'offset', kind: 'length', label: tr("Offset") }, { path: 'angle', kind: 'angle', label: tr("Angle") }],
   draft: [{ path: 'angle', kind: 'angle', label: tr("Draft angle") }],
+  shaft: [{ path: 'endChamfer', kind: 'length', label: tr("End chamfer") }],
 };
 
 const BASE_NAMES: Record<FeatureType, string> = {
@@ -100,6 +98,7 @@ const BASE_NAMES: Record<FeatureType, string> = {
   loft: tr('Loft'),
   sweep: tr('Sweep'),
   draft: tr('Draft'),
+  shaft: tr('Shaft'),
   import: tr('Imported'),
 };
 
@@ -118,6 +117,7 @@ export const FEATURE_LABELS: Record<FeatureType, string> = {
   loft: tr('Loft'),
   sweep: tr('Sweep'),
   draft: tr('Draft'),
+  shaft: tr('Shaft'),
   import: tr('Imported Body'),
 };
 
@@ -170,6 +170,23 @@ export const newHole = (id: Id, name: string, sketch: Id, diameter: number): Hol
   cb2Diameter: diameter * 2.4, cb2Depth: diameter * 0.4, cdDiameter: diameter * 1.8, cdDepth: diameter * 0.5, cdAngle: 90,
   threadSize: 'Custom', threadPitch: diameter * 0.15, threadClass: '6H', tapDrillDiameter: diameter * 0.85,
   tip: 'drill', tipAngle: 118, flip: false,
+});
+
+export const newShaft = (id: Id, name: string): ShaftFeature => ({
+  id, name, type: 'shaft',
+  segments: [
+    { diameter: 25, length: 40 },
+    { diameter: 35, length: 60 },
+    { diameter: 45, length: 35 },
+    { diameter: 30, length: 45 },
+  ],
+  endChamfer: 1.5,
+  keyway: null,
+  material: 'steel45',
+  power: 5,
+  speed: 1450,
+  serviceFactor: 1.2,
+  allowableShear: 40,
 });
 
 export const newLinearPattern = (id: Id, name: string, seeds: Id[], spacing: number): LinearPatternFeature => ({

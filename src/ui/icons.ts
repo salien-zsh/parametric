@@ -54,6 +54,7 @@ const CAD: Record<string, IconNode> = {
   extrudeCut: [P('M4 9l8-4 8 4-8 4z', 's'), P('M4 9v8l8 4 8-4V9'), P('M12 13v8'), P('M9 9.5l3-1.5 3 1.5-3 1.5z', 'a'), P('M12 1v6M10 5l2 2 2-2')],
   revolve: [P('M7 5v14h4a4 4 0 0 0 0-8H7', 'a'), DASH('M4 3v18', '4 2 1 2'), P('M16 4.5a8.5 8.5 0 0 1 0 15'), P('M14 18l2 1.6-.4 2.4')],
   revolveCut: [P('M7 5h5v14H7z', 's'), P('M9 9h3v6H9z', 'a'), DASH('M4 3v18', '4 2 1 2'), P('M16 4.5a8.5 8.5 0 0 1 0 15'), P('M14 18l2 1.6-.4 2.4')],
+  shaft: [P('M2 9h4V7h5v2h2V7h5v6h-5v2h-2v-2H6v2H2z', 'a'), DASH('M1 12h22', '6 2 1.5 2')],
   sweep: [P('M3 19c5 0 6-12 15-12', 'thick-a'), P('M3 19c5 0 6-12 15-12'), ['ellipse', { cx: 19, cy: 7, rx: 2, ry: 3.5 }], ['ellipse', { cx: 3.5, cy: 19, rx: 1.6, ry: 2.8, class: 'a' }]],
   loft: [P('M3 18l5-3h12l-5 3z', 'a'), ['ellipse', { cx: 13, cy: 6, rx: 4, ry: 1.8 }], P('M3 18L9 6M15 18l2-12M20 15l1-9'), DASH('M8 15l1-9', '2 2')],
   fillet: [P('M4 20V4h7a9 9 0 0 1 9 9v7z', 's'), P('M11 4a9 9 0 0 1 9 9', 'thick-a'), P('M4 20V4h7a9 9 0 0 1 9 9v7z')],

@@ -49,6 +49,10 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - Attach files to a message (paperclip, paste or drop): photos and sketches of a part, dimensioned drawings and datasheets as images or PDFs, DXF outlines or CSV tables. It reads sizes and geometry from them.
 - Everything it changes in one message is a single undo step. It runs on Puter AI (Claude Opus 5.5).
 
+**Mechanical**
+- Shaft design in the **Mechanical** tab: build a stepped shaft from a segment table (diameter and length), add 45° end chamfers and an optional keyway, and see the solid update as you type.
+- The same panel checks the shaft in torsion from power, speed, service factor and the material's allowable shear stress: design torque, minimum diameter and the maximum torsional stress as a percentage of the allowable value.
+
 **Drawings**
 - A 2D drawing sheet for each part or assembly (Drawing tab in the status bar): front, top, right, left, back, bottom and isometric views projected from the solid, with hidden lines and overall dimensions.
 - Sheet sizes A4 to A1, Letter and Tabloid, standard scales, drag to arrange views, title block.

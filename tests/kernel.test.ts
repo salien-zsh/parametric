@@ -549,6 +549,28 @@ describe('feature regeneration', () => {
     expect(r.status[3]).toMatchObject({ ok: false, error: expect.stringMatching(/Select the face/) });
   });
 
+  it('builds a stepped shaft and cuts a keyway', async () => {
+    const b = new ModelBuilder();
+    const shaft = (keyway: null | { segment: number; width: number; depth: number; length: number }): Feature => ({
+      id: 'SH', name: 'SH', type: 'shaft',
+      segments: [{ diameter: 20, length: 40 }, { diameter: 30, length: 30 }, { diameter: 20, length: 40 }],
+      endChamfer: 0, keyway, material: 'steel45', power: 5, speed: 1450, serviceFactor: 1.2, allowableShear: 40,
+    });
+    let r = await b.build(req([shaft(null)]));
+    expect(r.status[0]).toMatchObject({ ok: true });
+    const plain = volume(b);
+    expect(plain).toBeCloseTo(Math.PI * (10 ** 2 * 40 + 15 ** 2 * 30 + 10 ** 2 * 40), 1);
+
+    r = await b.build(req([shaft({ segment: 1, width: 6, depth: 3, length: 20 })]));
+    expect(r.status[0]).toMatchObject({ ok: true });
+    const cut = plain - volume(b);
+    expect(cut).toBeGreaterThan(200);
+    expect(cut).toBeLessThan(400);
+
+    r = await b.build(req([shaft({ segment: 1, width: 6, depth: 15, length: 20 })]));
+    expect(r.status[0]).toMatchObject({ ok: false, error: expect.stringMatching(/Keyway depth/) });
+  });
+
   it('cuts spotfaced and tapped holes and reports cosmetic thread representation', async () => {
     const b = new ModelBuilder();
     const base: Feature[] = [sketch('S1', rect(-20, -20, 20, 20)), extrude('E1', 'S1', 3)];
