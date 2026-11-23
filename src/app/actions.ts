@@ -381,6 +381,9 @@ export function registerCommands(app: App, files: FileOps) {
     feature('plane', tr("Offset Plane"), 'plane', tr("Create a reference plane offset from a plane or face."), { planeKind: 'offset', keywords: tr("reference geometry datum") }),
     feature('plane', tr("Midplane"), 'plane', tr("Create a reference plane halfway between two parallel planes or faces."), { id: 'planeMidplane', planeKind: 'midplane', keywords: tr("reference geometry datum middle symmetry") }),
     feature('plane', tr("Plane at Angle"), 'plane', tr("Create a reference plane rotated about an edge from a plane or face."), { id: 'planeAngle', planeKind: 'angle', keywords: tr("reference geometry datum angle rotate axis") }),
+    feature('plane', tr("Tangent Plane"), 'plane', tr("Create a reference plane tangent to a curved face at a point."), { id: 'planeTangent', planeKind: 'tangent', keywords: tr("reference geometry datum tangent cylinder cone sphere") }),
+    feature('plane', tr("Plane Through Two Edges"), 'plane', tr("Create a reference plane through two straight edges."), { id: 'planeTwoEdges', planeKind: 'twoEdges', keywords: tr("reference geometry datum two edges") }),
+    feature('plane', tr("Plane Through Three Points"), 'plane', tr("Create a reference plane through three points."), { id: 'planeThreePoints', planeKind: 'threePoints', keywords: tr("reference geometry datum three points vertices") }),
     feature('shaft', tr("Shaft Design"), 'shaft', tr("Design a stepped shaft with segments, end chamfers and a keyway, and check its torsional sizing."), { keywords: tr("mechanical shaft axis step keyway torque power speed") }),
     feature('spurGear', tr("Spur Gear Design"), 'spurGear', tr("Design an involute spur gear from its module, tooth count and face width, and check the tooth bending stress."), { keywords: tr("mechanical gear involute module teeth transmission") }),
     feature('bevelGear', tr("Bevel Gear Design"), 'bevelGear', tr("Design a straight bevel gear on a 90-degree shaft angle from its module and tooth counts."), { keywords: tr("mechanical bevel cone gear transmission") }),
@@ -492,7 +495,7 @@ export const RIBBON: RibbonTab[] = [
       [{ cmd: 'extrudeCut' }, { cmd: 'revolveCut' }, { stack: [{ cmd: 'sweepCut' }, { cmd: 'loftCut' }] }],
       [{ cmd: 'hole' }, { cmd: 'fillet', menu: ['fillet', 'chamfer'] }, { cmd: 'linearPattern', menu: ['linearPattern', 'circularPattern', 'mirror'] }],
       [{ stack: [{ cmd: 'chamfer' }, { cmd: 'shell' }, { cmd: 'draft' }] }, { stack: [{ cmd: 'circularPattern' }, { cmd: 'mirror' }] }],
-      [{ cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle'] }, { cmd: 'importStep' }],
+      [{ cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle', 'planeTangent', 'planeTwoEdges', 'planeThreePoints'] }, { cmd: 'importStep' }],
       [{ cmd: 'newAssembly' }, { cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'openDrawing' }],
       [{ cmd: 'fixComponent' }, { cmd: 'addMate' }, { cmd: 'addJoint' }, { cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
     ],
@@ -593,7 +596,7 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
         { label: tr("Cut"), icon: 'extrudeCut', submenu: () => [m('extrudeCut'), m('revolveCut'), m('sweepCut'), m('loftCut')] },
         { label: tr("Features"), icon: 'fillet', submenu: () => [m('fillet'), m('chamfer'), m('hole'), m('shell'), m('draft'), m('shaft')] },
         { label: tr("Pattern/Mirror"), icon: 'linearPattern', submenu: () => [m('linearPattern'), m('circularPattern'), m('mirror')] },
-        { label: tr("Reference Geometry"), icon: 'plane', submenu: () => [m('plane'), m('planeMidplane'), m('planeAngle')] },
+        { label: tr("Reference Geometry"), icon: 'plane', submenu: () => [m('plane'), m('planeMidplane'), m('planeAngle'), m('planeTangent'), m('planeTwoEdges'), m('planeThreePoints')] },
         sep, m('importStep'),
       ],
     },
@@ -705,7 +708,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
   const items: MenuItem[] = [];
   if (sel) {
     const plane = app.selectedPlaneRef();
-    if (plane) items.push({ ...m('sketch'), label: tr("Sketch on This") }, m('normalTo'), m('plane', { label: tr("Offset Plane") }), m('planeMidplane'), m('planeAngle'), sep);
+    if (plane) items.push({ ...m('sketch'), label: tr("Sketch on This") }, m('normalTo'), m('plane', { label: tr("Offset Plane") }), m('planeMidplane'), m('planeAngle'), m('planeTangent'), m('planeTwoEdges'), m('planeThreePoints'), sep);
     if (sel.kind === 'face') {
       const owner = app.store.feature(app.faces[sel.index]?.feature ?? '');
       if (owner) items.push({ label: `Edit ${owner.name}`, icon: 'edit', run: () => app.editFeature(owner.id) });

@@ -243,12 +243,41 @@ export class FeatureCodec {
         return f;
       }
       case 'plane': {
-        need('reference');
         const f = out?.type === 'plane' ? out : newPlane(id, name, null, 0);
         if (has('kind')) f.kind = choice(a.kind, PLANE_KIND, 'kind');
-        if (!base && f.kind === 'midplane' && !has('second_reference')) throw new ToolError(tr("second_reference is required for a midplane"));
-        if (!base && f.kind === 'angle' && !has('axis')) throw new ToolError(tr("axis is required for a plane at angle"));
-        if (f.kind === 'angle' && f.angle == null) f.angle = 45;
+        const kind = f.kind ?? 'offset';
+        const pointOf = (v: unknown, what: string): [number, number, number] => {
+          const p = u.point(v, what);
+          if (p.length !== 3) throw new ToolError(tr("{0}: give a world point [x, y, z]", [what]));
+          return [p[0], p[1], p[2]];
+        };
+        if (kind === 'tangent') {
+          if (!base && !has('face')) throw new ToolError(tr("face is required for a tangent plane"));
+          if (has('face')) f.face = refs.faceRefs(a.face, 'face', f.face ? [f.face] : [])[0] ?? null;
+          if (has('point')) f.point = a.point == null ? null : pointOf(a.point, 'point');
+          if (has('reverse')) f.flip = bool(a.reverse, 'reverse');
+          return f;
+        }
+        if (kind === 'twoEdges') {
+          if (has('edges')) f.edges = refs.edgeRefs(a.edges, 'edges', f.edges ?? []);
+          if (!base && (f.edges?.length ?? 0) < 2) throw new ToolError(tr("edges: two straight edge names are required"));
+          if (has('reverse')) f.flip = bool(a.reverse, 'reverse');
+          return f;
+        }
+        if (kind === 'threePoints') {
+          if (has('points')) {
+            const list = Array.isArray(a.points) ? a.points : [];
+            if (list.length !== 3) throw new ToolError(tr("points: three world points are required"));
+            f.points = list.map((p, i) => pointOf(p, `points[${i}]`));
+          }
+          if (!base && (f.points?.length ?? 0) < 3) throw new ToolError(tr("points: three world points are required"));
+          if (has('reverse')) f.flip = bool(a.reverse, 'reverse');
+          return f;
+        }
+        need('reference');
+        if (!base && kind === 'midplane' && !has('second_reference')) throw new ToolError(tr("second_reference is required for a midplane"));
+        if (!base && kind === 'angle' && !has('axis')) throw new ToolError(tr("axis is required for a plane at angle"));
+        if (kind === 'angle' && f.angle == null) f.angle = 45;
         if (has('reference')) f.ref = refs.plane(a.reference, 'reference', f.ref);
         if (has('second_reference')) f.ref2 = refs.plane(a.second_reference, 'second_reference', f.ref2 ?? null);
         if (has('axis')) f.axis = refs.axis(a.axis, 'axis', f.axis ?? null);
@@ -341,6 +370,9 @@ export class FeatureCodec {
         const kind = f.kind ?? 'offset';
         if (kind === 'midplane') return { kind, reference: planeSpec(f.ref), second_reference: planeSpec(f.ref2 ?? null), reverse: f.flip };
         if (kind === 'angle') return { kind, reference: planeSpec(f.ref), axis: axisSpec(f.axis ?? null), angle: A(f.angle ?? 45), reverse: f.flip };
+        if (kind === 'tangent') return { kind, face: f.face?.name ?? null, point: f.point ?? null, reverse: f.flip };
+        if (kind === 'twoEdges') return { kind, edges: (f.edges ?? []).map((e) => e.name), reverse: f.flip };
+        if (kind === 'threePoints') return { kind, points: f.points ?? [], reverse: f.flip };
         return { kind, reference: planeSpec(f.ref), offset: L(f.offset), reverse: f.flip };
       }
       case 'loft': return { profiles: f.profiles, cut: f.cut, ruled: f.ruled };

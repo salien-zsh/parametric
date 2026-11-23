@@ -1,7 +1,7 @@
 // PropertyManager panels for creating and editing features.
 
 import type { Frame, Vec3 } from '../math/vec';
-import { add, dot, scale, sub, toLocal, toWorld } from '../math/vec';
+import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
   newBevelGear, newMirror, newPlane, newRevolve, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
@@ -49,6 +49,9 @@ export const toEdge = (app: App) => (it: SelItem): SelBoxItem | null => {
 };
 
 export const toEdgeOrFace = (app: App) => (it: SelItem): SelBoxItem | null => toEdge(app)(it) ?? toFace(app)(it);
+
+/** A picked model vertex, for references that store a point. */
+export const toVertex = (it: SelItem): SelBoxItem | null => (it.kind === 'vertex' ? { item: it, data: it.p, label: tr("Vertex") } : null);
 
 export const toPlane = (app: App) => (it: SelItem): SelBoxItem | null => {
   if (it.kind === 'plane') {
@@ -1137,12 +1140,18 @@ export class PlanePanel extends FeaturePanel<PlaneFeature> {
   private offsetSection: HTMLElement | null = null;
   private midSection: HTMLElement | null = null;
   private angleSection: HTMLElement | null = null;
+  private tangentSection: HTMLElement | null = null;
+  private edgeSection: HTMLElement | null = null;
+  private pointSection: HTMLElement | null = null;
 
   get title() {
     if (this.editingId) return this.f.name;
     switch (this.f.kind ?? 'offset') {
       case 'midplane': return tr("Midplane");
       case 'angle': return tr("Plane at Angle");
+      case 'tangent': return tr("Tangent Plane");
+      case 'twoEdges': return tr("Plane Through Two Edges");
+      case 'threePoints': return tr("Plane Through Three Points");
       default: return tr("Offset Plane");
     }
   }
@@ -1157,10 +1166,53 @@ export class PlanePanel extends FeaturePanel<PlaneFeature> {
     const axis = new SelectionBox(this, tr("Axis"), { edge: true }, toAxis(this.app), (items) => { f.axis = (items[0]?.data as AxisRef) ?? null; this.changed(); }, { single: true, placeholder: tr("Select an edge in the reference plane"), icon: 'axis' });
     if (f.axis) axis.setItems([{ item: axisItem(this.app, f.axis), data: f.axis, label: axisLabel(this.app, f.axis) }]);
 
+    // Tangent plane: a curved face and, optionally, the point it touches.
+    const curved = new SelectionBox(this, tr("Curved face"), { face: true }, toFace(this.app), (items) => {
+      f.face = (items[0]?.data as FaceRef) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Select a cylindrical, conical or spherical face"), icon: 'plane' });
+    if (f.face) curved.setItems([{ item: faceItem(this.app, f.face), data: f.face, label: tr("Curved face") }]);
+    const touch = new SelectionBox(this, tr("Contact point"), { vertex: true }, toVertex, (items) => {
+      f.point = (items[0]?.data as Vec3) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Pick a vertex (defaults to the face centre)"), icon: 'point' });
+    if (f.point) touch.setItems([{ item: { kind: 'vertex', p: f.point }, data: f.point, label: tr("Vertex") }]);
+
+    // Plane through two straight edges.
+    const edgeBoxes = [0, 1].map((i) => {
+      const box = new SelectionBox(this, i === 0 ? tr("First edge") : tr("Second edge"), { edge: true }, toEdge(this.app), (items) => {
+        const next = [...(f.edges ?? [])];
+        const ref = (items[0]?.data as EdgeRef) ?? null;
+        next[i] = ref as EdgeRef;
+        f.edges = next.filter((e, k) => !!e || k < i);
+        this.changed();
+      }, { single: true, placeholder: tr("Select a straight edge"), icon: 'line' });
+      const stored = f.edges?.[i];
+      if (stored) box.setItems([{ item: edgeItem(this.app, stored), data: stored, label: tr("Edge") }]);
+      return box;
+    });
+
+    // Plane through three points.
+    const pointBoxes = [0, 1, 2].map((i) => {
+      const box = new SelectionBox(this, tr("Point {0}", [i + 1]), { vertex: true }, toVertex, (items) => {
+        const next = [...(f.points ?? [])];
+        const p = (items[0]?.data as Vec3) ?? null;
+        next[i] = p as Vec3;
+        f.points = next.filter((q, k) => !!q || k < i);
+        this.changed();
+      }, { single: true, placeholder: tr("Pick a vertex"), icon: 'point' });
+      const stored = f.points?.[i];
+      if (stored) box.setItems([{ item: { kind: 'vertex', p: stored }, data: stored, label: tr("Vertex") }]);
+      return box;
+    });
+
     const type = selectField(tr("Plane type"), kind, [
       { value: 'offset' as const, label: tr("Offset") },
       { value: 'midplane' as const, label: tr("Midplane") },
       { value: 'angle' as const, label: tr("Plane at Angle") },
+      { value: 'tangent' as const, label: tr("Tangent Plane") },
+      { value: 'twoEdges' as const, label: tr("Plane Through Two Edges") },
+      { value: 'threePoints' as const, label: tr("Plane Through Three Points") },
     ], (v) => {
       f.kind = v;
       if (v === 'angle' && f.angle == null) f.angle = 45;
@@ -1175,8 +1227,12 @@ export class PlanePanel extends FeaturePanel<PlaneFeature> {
     this.angleField = angle;
     const offsetFlip = checkbox(tr("Flip offset"), f.flip, (v) => { f.flip = v; this.syncOffset(); syncFlips(); this.changed(); });
     const reverseAngle = checkbox(tr("Reverse direction"), f.flip, (v) => { f.flip = v; syncFlips(); this.changed(); });
+    const flipBox = () => checkbox(tr("Reverse direction"), f.flip, (v) => { f.flip = v; syncFlips(); this.changed(); });
+    const flipTangent = flipBox();
+    const flipEdges = flipBox();
+    const flipPoints = flipBox();
     const syncFlips = () => {
-      for (const el of [offsetFlip, reverseAngle]) {
+      for (const el of [offsetFlip, reverseAngle, flipTangent, flipEdges, flipPoints]) {
         const box = el.querySelector<HTMLInputElement>('input');
         if (box) box.checked = f.flip;
       }
@@ -1186,16 +1242,28 @@ export class PlanePanel extends FeaturePanel<PlaneFeature> {
     this.offsetSection = section(tr("Offset"), [offset, offsetFlip]);
     this.midSection = section(tr("Second Reference"), [second.el]);
     this.angleSection = section(tr("Axis and Angle"), [axis.el, angle, reverseAngle]);
+    this.tangentSection = section(tr("Tangency"), [curved.el, touch.el, flipTangent]);
+    this.edgeSection = section(tr("Edges"), [...edgeBoxes.map((b) => b.el), flipEdges, h('p', { class: 'field-label' }, tr("The plane runs through the first edge and along the second."))]);
+    this.pointSection = section(tr("Points"), [...pointBoxes.map((b) => b.el), flipPoints]);
 
     const sync = () => {
       const k = f.kind ?? 'offset';
       this.offsetSection!.hidden = k !== 'offset';
       this.midSection!.hidden = k !== 'midplane';
       this.angleSection!.hidden = k !== 'angle';
+      this.tangentSection!.hidden = k !== 'tangent';
+      this.edgeSection!.hidden = k !== 'twoEdges';
+      this.pointSection!.hidden = k !== 'threePoints';
+      firstSection.hidden = k === 'tangent' || k === 'twoEdges' || k === 'threePoints';
       syncFlips();
+      // The viewport picks go to the box of the visible section (the panel
+      // filters itself through its active box).
+      const active = k === 'tangent' ? curved : k === 'twoEdges' ? edgeBoxes[0] : k === 'threePoints' ? pointBoxes[0] : first;
+      this.activeBox = active;
+      for (const b of this.boxes) b.setActive(b === active);
     };
     sync();
-    return [section(tr("Definition"), [type]), firstSection, this.offsetSection, this.midSection, this.angleSection];
+    return [section(tr("Definition"), [type]), firstSection, this.offsetSection, this.midSection, this.angleSection, this.tangentSection, this.edgeSection, this.pointSection];
   }
 
   private offsetNumber(): number {
@@ -1266,8 +1334,11 @@ export class PlanePanel extends FeaturePanel<PlaneFeature> {
 
   preview() {
     const f = this.f;
-    if (!f.ref) return null;
     const kind = f.kind ?? 'offset';
+    if (kind === 'tangent') return f.face ? f : null;
+    if (kind === 'twoEdges') return (f.edges ?? []).filter(Boolean).length >= 2 ? f : null;
+    if (kind === 'threePoints') return (f.points ?? []).filter(Boolean).length >= 3 ? f : null;
+    if (!f.ref) return null;
     if (kind === 'midplane') return f.ref2 ? f : null;
     if (kind === 'angle') return f.axis ? f : null;
     return f;
@@ -1275,8 +1346,26 @@ export class PlanePanel extends FeaturePanel<PlaneFeature> {
 
   protected validate() {
     const f = this.f;
-    if (!f.ref) return tr("Select a plane or planar face");
     const kind = f.kind ?? 'offset';
+    if (kind === 'tangent') {
+      if (!f.face) return tr("Select a curved face to be tangent to");
+      if (f.face.sig.type === 'plane') return tr("The selected face is planar. Use an offset plane instead");
+      return null;
+    }
+    if (kind === 'twoEdges') {
+      const edges = (f.edges ?? []).filter(Boolean);
+      if (edges.length < 2) return tr("Select two straight edges");
+      if (edges.some((e) => e.sig.type !== 'line')) return tr("Both edges must be straight");
+      return null;
+    }
+    if (kind === 'threePoints') {
+      const pts = (f.points ?? []).filter(Boolean);
+      if (pts.length < 3) return tr("Select three points");
+      const [p1, p2, p3] = pts;
+      const n = cross(sub(p2, p1), sub(p3, p1));
+      return len(n) < 1e-9 ? tr("The three points lie on one line") : null;
+    }
+    if (!f.ref) return tr("Select a plane or planar face");
     if (kind === 'midplane' && !f.ref2) return tr("Select a second parallel plane or face");
     if (kind === 'angle') {
       if (!f.axis) return tr("Select the axis to rotate about");
@@ -1405,11 +1494,25 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
       });
       const x = newPlane(id, name, refs[0] ?? null, kind === 'offset' ? size : 0);
       x.kind = kind;
+      const picked = (k: SelItem['kind']) => sel.filter((it) => it.kind === k);
       if (kind === 'angle') {
         x.angle = 45;
         if (edges[0]) x.axis = { kind: 'edge', edge: edges[0] };
       }
       if (kind === 'midplane') x.ref2 = refs[1] ?? null;
+      if (kind === 'tangent') {
+        // A curved face to be tangent to, and a vertex for the contact point.
+        const face = picked('face').find((it) => app.faces[(it as { index: number }).index]?.type !== 'plane');
+        if (face) x.face = faceRef(app.faces[(face as { index: number }).index]);
+        const vertex = picked('vertex')[0] as { p: Vec3 } | undefined;
+        if (vertex) x.point = vertex.p;
+      }
+      if (kind === 'twoEdges') {
+        x.edges = edges.filter((e) => e.sig.type === 'line').slice(0, 2);
+      }
+      if (kind === 'threePoints') {
+        x.points = picked('vertex').slice(0, 3).map((it) => (it as { p: Vec3 }).p);
+      }
       f = x;
       break;
     }

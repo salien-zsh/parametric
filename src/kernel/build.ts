@@ -13,7 +13,7 @@
 
 import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
-import { add, dist, dot, frameFrom, len, normalize, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
+import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
   AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
@@ -682,6 +682,41 @@ export class ModelBuilder {
 
   private applyPlane(f: PlaneFeature, st: State) {
     const kind = f.kind ?? 'offset';
+
+    // Two straight edges: the plane through the first edge and along the second
+    // (its normal is the cross product of the two directions).
+    if (kind === 'twoEdges') {
+      const refs = f.edges ?? [];
+      if (refs.length < 2) throw new FeatureError(tr("Select two straight edges"));
+      const edges = this.edgesOf(st);
+      const e1 = edges[this.resolveEdge(refs[0], st)].desc;
+      const e2 = edges[this.resolveEdge(refs[1], st)].desc;
+      if (e1.type !== 'line' || e2.type !== 'line') throw new FeatureError(tr("Both edges must be straight"));
+      const n = cross(e1.dir!, e2.dir!);
+      if (len(n) < 1e-9) throw new FeatureError(tr("The two edges are parallel"));
+      st.frames.set(f.id, frameFrom(e1.a, e1.dir!, scale(normalize(n), f.flip ? -1 : 1)));
+      return;
+    }
+
+    // Three points: the plane through them.
+    if (kind === 'threePoints') {
+      const pts = f.points ?? [];
+      if (pts.length < 3) throw new FeatureError(tr("Select three points"));
+      const [p1, p2, p3] = pts;
+      const n = cross(sub(p2, p1), sub(p3, p1));
+      if (len(n) < 1e-9) throw new FeatureError(tr("The three points lie on one line"));
+      st.frames.set(f.id, frameFrom(p1, sub(p2, p1), scale(normalize(n), f.flip ? -1 : 1)));
+      return;
+    }
+
+    // Tangent plane: touches a curved face at a point (its centre by default).
+    if (kind === 'tangent') {
+      if (!f.face) throw new FeatureError(tr("Select a curved face to be tangent to"));
+      const d = st.faces[this.resolveFace(f.face, st)].desc;
+      st.frames.set(f.id, this.tangentFrame(d, f.point ?? null, f.flip));
+      return;
+    }
+
     const base = this.resolvePlane(f.ref, st);
     if (kind === 'midplane') {
       const other = this.resolvePlane(f.ref2 ?? null, st);
@@ -708,6 +743,33 @@ export class ModelBuilder {
     }
     const off = num(f.offset) * (f.flip ? -1 : 1);
     st.frames.set(f.id, { ...base, o: add(base.o, scale(base.n, off)) });
+  }
+
+  /**
+   * A plane tangent to a curved face at a point: the face's axis or centre
+   * gives the outward normal, the point (its centre by default) where the
+   * plane touches the surface. The plane's X axis follows a cylinder's axis.
+   */
+  private tangentFrame(d: SurfDesc, at: Vec3 | null, flip: boolean): Frame {
+    if (d.type === 'plane') throw new FeatureError(tr("The selected face is planar. Use an offset plane instead"));
+    const sign = flip ? -1 : 1;
+    const p = at ?? d.center;
+    if (d.type === 'sphere') {
+      const radial = sub(p, d.center);
+      const n = len(radial) < 1e-9 ? d.d : normalize(radial);
+      return frameFrom(add(d.center, scale(n, d.r)), perpendicular(n), scale(n, sign));
+    }
+    // Cylinders, cones and tori: the normal is radial from the face axis.
+    const axisPoint = d.p;
+    const dir = normalize(d.d);
+    const rel = sub(p, axisPoint);
+    const axial = scale(dir, dot(rel, dir));
+    const radial = sub(rel, axial);
+    const away = len(radial) < 1e-9 ? perpendicular(dir) : normalize(radial);
+    const radius = d.r > 1e-9 ? d.r : len(radial);
+    const n = scale(away, sign);
+    const touch = add(axisPoint, add(axial, scale(away, radius)));
+    return frameFrom(touch, dir, n);
   }
 
   /** Distance from a plane point along dir to just past the far side of the body. */

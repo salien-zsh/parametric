@@ -1,12 +1,12 @@
 {
   "files": 80,
-  "edits": 11,
-  "uniqueKeys": 1758,
+  "edits": 0,
+  "uniqueKeys": 1798,
   "perFile": [
     {
       "file": "src/app/actions.ts",
       "edits": 0,
-      "skipped": 366
+      "skipped": 375
     },
     {
       "file": "src/app/app.ts",
@@ -66,7 +66,7 @@
     {
       "file": "src/app/panels.ts",
       "edits": 0,
-      "skipped": 241
+      "skipped": 271
     },
     {
       "file": "src/app/pm.ts",
@@ -151,7 +151,7 @@
     {
       "file": "src/app/workspace-dialogs.ts",
       "edits": 0,
-      "skipped": 105
+      "skipped": 106
     },
     {
       "file": "src/assistant/agent.ts",
@@ -171,7 +171,7 @@
     {
       "file": "src/assistant/features.ts",
       "edits": 0,
-      "skipped": 13
+      "skipped": 17
     },
     {
       "file": "src/assistant/host.ts",
@@ -211,7 +211,7 @@
     {
       "file": "src/assistant/tools.ts",
       "edits": 0,
-      "skipped": 238
+      "skipped": 241
     },
     {
       "file": "src/assistant/units.ts",
@@ -231,7 +231,7 @@
     {
       "file": "src/kernel/build.ts",
       "edits": 0,
-      "skipped": 136
+      "skipped": 143
     },
     {
       "file": "src/kernel/client.ts",
@@ -270,8 +270,8 @@
     },
     {
       "file": "src/model/features.ts",
-      "edits": 4,
-      "skipped": 119
+      "edits": 0,
+      "skipped": 123
     },
     {
       "file": "src/model/ids.ts",
@@ -290,13 +290,13 @@
     },
     {
       "file": "src/model/pt.ts",
-      "edits": 4,
-      "skipped": 0
+      "edits": 0,
+      "skipped": 4
     },
     {
       "file": "src/model/shaft.ts",
-      "edits": 3,
-      "skipped": 0
+      "edits": 0,
+      "skipped": 3
     },
     {
       "file": "src/platform/ai.ts",

@@ -31,6 +31,7 @@ function axis(v: unknown): boolean {
 
 const patternDir = (v: unknown) => object(v) && axis(v.ref);
 const positive = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0;
+const vector3 = (v: unknown) => Array.isArray(v) && v.length === 3 && v.every((x) => typeof x === 'number' && Number.isFinite(x));
 
 function shaftSegment(v: unknown): boolean {
   return object(v) && positive(v.diameter) && positive(v.length);
@@ -66,7 +67,10 @@ export function validFeature(f: Feature): boolean {
       return list(r.seeds, id) && plane(r.plane);
     case 'plane': {
       const kind = r.kind ?? 'offset';
-      if (kind !== 'offset' && kind !== 'midplane' && kind !== 'angle') return false;
+      if (!['offset', 'midplane', 'angle', 'tangent', 'twoEdges', 'threePoints'].includes(String(kind))) return false;
+      if (kind === 'tangent') return named(r.face) && (r.point == null || vector3(r.point));
+      if (kind === 'twoEdges') return list(r.edges, named) && (r.edges as unknown[]).length >= 2;
+      if (kind === 'threePoints') return list(r.points, vector3) && (r.points as unknown[]).length >= 3;
       return plane(r.ref) && plane(r.ref2) && axis(r.axis);
     }
     case 'linearPattern':

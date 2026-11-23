@@ -364,6 +364,10 @@ export function dependencies(f: Feature): Id[] {
     visitPlane(f.ref);
     visitPlane(f.ref2);
     visitAxis(f.axis);
+    // A tangent plane and a plane through two edges stay attached to the faces
+    // and edges they were made from.
+    if (f.face) visitName(f.face.name);
+    for (const e of f.edges ?? []) visitName(e.name);
   }
   if (f.type === 'hole' && f.toFace) visitName(f.toFace.name);
   if (f.type === 'mirror') { visitPlane(f.plane); f.seeds.forEach((s) => out.add(s)); }

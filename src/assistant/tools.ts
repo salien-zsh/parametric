@@ -274,15 +274,19 @@ const TOOLS: ToolDef[] = [
   featureTool('mirror', tr("Mirror features (or the whole body when features is empty) about a plane."), {
     features: NAMES(tr("Feature ids to mirror; empty or omitted mirrors the whole body")), plane: PLANE,
   }, ['plane']),
-  featureTool('plane', tr("Add a reference plane: offset from a plane or planar face, halfway between two parallel planes (midplane), or rotated about an edge lying in the reference plane (plane at angle). Use it to sketch at a height, as a mirror plane or as a section plane."), {
+  featureTool('plane', tr("Add a reference plane: offset from a plane or planar face, halfway between two parallel planes (midplane), rotated about an edge lying in the reference plane (plane at angle), tangent to a curved face (tangent), through two straight edges, or through three points. Use it to sketch at a height, as a mirror plane or as a section plane."), {
     reference: PLANE,
-    kind: S(tr("Plane type (default offset)"), { enum: ['offset', 'midplane', 'angle'] }),
+    kind: S(tr("Plane type (default offset)"), { enum: ['offset', 'midplane', 'angle', 'tangent', 'two_edges', 'three_points'] }),
     offset: PARAM(tr("Offset distance along the normal (offset)")),
     second_reference: PLANE,
     axis: AXIS,
     angle: PARAM(tr("Rotation angle in degrees (plane at angle)")),
-    reverse: B(tr("Offset the other way, or rotate the other way")),
-  }, ['reference']),
+    face: S(tr("Name of the curved face a tangent plane touches (tangent)")),
+    point: { type: 'array', items: { type: 'number' }, minItems: 3, maxItems: 3, description: tr("World point the tangent plane touches at (tangent); the face centre when omitted") },
+    edges: NAMES(tr("Two straight edge names (plane through two edges)")),
+    points: { type: 'array', items: { type: 'array', items: { type: 'number' }, minItems: 3, maxItems: 3 }, minItems: 3, maxItems: 3, description: tr("Three world points (plane through three points)") },
+    reverse: B(tr("Offset the other way, rotate or flip the plane's normal the other way")),
+  }, []),
   featureTool('loft', tr("Loft through two or more closed profile sketches (on different parallel or angled planes) in order."), {
     profiles: NAMES(tr("Profile sketch ids in order")), cut: B(tr("Remove material")), ruled: B(tr("Straight sections between profiles")),
   }, ['profiles']),

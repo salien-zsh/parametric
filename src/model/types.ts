@@ -312,7 +312,7 @@ export interface MirrorFeature extends FeatureBase {
 }
 
 /** How a reference plane is defined. Files written before plane types have only ref/offset and are offset planes. */
-export type PlaneKind = 'offset' | 'midplane' | 'angle';
+export type PlaneKind = 'offset' | 'midplane' | 'angle' | 'tangent' | 'twoEdges' | 'threePoints';
 
 export interface PlaneFeature extends FeatureBase {
   type: 'plane';
@@ -326,6 +326,12 @@ export interface PlaneFeature extends FeatureBase {
   /** Plane at angle: the axis to rotate about, and the angle in degrees. */
   axis?: AxisRef | null;
   angle?: Param;
+  /** Tangent plane: the curved face it touches, and where it touches it (defaults to the face centre). */
+  face?: FaceRef | null;
+  point?: Vec3 | null;
+  /** Plane through two edges (both straight) or through three points. */
+  edges?: EdgeRef[];
+  points?: Vec3[];
 }
 
 export interface LoftFeature extends FeatureBase {
