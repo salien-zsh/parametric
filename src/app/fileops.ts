@@ -217,11 +217,26 @@ export class FileOps {
       return true;
     }
     if (v !== 'discard') return false;
+    // A panel still open would otherwise keep the part "edited" after the
+    // document itself was discarded, and every later close would be blocked
+    // by its unsaved values. Its changes are dropped, as the answer says.
+    if (this.app.panel?.edited) {
+      await this.app.closePanel(false);
+      if (documentVersion !== this.documentVersion || signal.aborted) return false;
+    }
     // Discarded on purpose: do not offer it for recovery next time.
     clearTimeout(this.recoveryTimer);
     this.recoveryTimer = 0;
     await this.clearRecoveryCopies();
-    return documentVersion === this.documentVersion && !signal.aborted;
+    if (documentVersion !== this.documentVersion || signal.aborted) return false;
+    // The work is gone, so the part is no longer unsaved. Without this the
+    // window's beforeunload handler kept the old part open: in the desktop
+    // app choosing "Don't save" on close left the window open with no reply.
+    if (this.app.store.dirty) {
+      this.app.store.dirty = false;
+      this.app.store.emit('saved');
+    }
+    return true;
   }
 
   async newPart() {
