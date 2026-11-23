@@ -261,6 +261,11 @@ describe('document store', () => {
     expect(dependencies(fillet).sort()).toEqual(['e1', 'e2', 'e3', 'p4']);
     const shell: Feature = { id: 'sh', name: 'Shell1', type: 'shell', faces: [face('f9:f:e1:side:l1|e2:cap0')], thickness: 1, outward: false };
     expect(dependencies(shell)).toContain('f9');
+    const hole = {
+      id: 'h1', name: 'Hole1', type: 'hole', sketch: 's2', kind: 'simple', diameter: 4, end: 'toObject', depth: 1,
+      cbDiameter: 8, cbDepth: 1, csDiameter: 8, csAngle: 90, toFace: face('e2:cap1'), flip: false,
+    } as Feature;
+    expect(dependencies(hole)).toContain('e2');
   });
 
   it('counts both references and the axis of a reference plane', () => {

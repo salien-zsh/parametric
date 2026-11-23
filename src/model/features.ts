@@ -249,6 +249,7 @@ export function dependencies(f: Feature): Id[] {
     visitPlane(f.ref2);
     visitAxis(f.axis);
   }
+  if (f.type === 'hole' && f.toFace) visitName(f.toFace.name);
   if (f.type === 'mirror') { visitPlane(f.plane); f.seeds.forEach((s) => out.add(s)); }
   if (f.type === 'draft') { visitPlane(f.neutral); f.faces.forEach((r) => visitName(r.name)); }
   if (f.type === 'linearPattern' || f.type === 'circularPattern') f.seeds.forEach((s) => out.add(s));
