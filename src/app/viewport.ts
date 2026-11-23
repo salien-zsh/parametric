@@ -60,6 +60,8 @@ interface PlaneVis {
   item: SelItem;
   frame: Frame;
   half: number;
+  /** False for the plane a panel is previewing: it is drawn, never picked. */
+  pick?: boolean;
 }
 
 const DRAG_PX = 4;
@@ -485,6 +487,7 @@ export class Viewport {
     if (f.plane) {
       let best: PlaneVis | null = null, bestT = Infinity;
       for (const p of this.planes) {
+        if (p.pick === false) continue;
         const t = rayPlaneT(p.frame, ray.o, ray.d);
         if (t == null || t < 0) continue;
         const w = add(ray.o, scale(ray.d, t));
@@ -587,6 +590,19 @@ export class Viewport {
       if (!fr || f.suppressed) continue;
       if (f.hidden && !isShown(item)) continue;
       visible.push({ key: f.id, item, frame: onPlane(fr), half: radius });
+    }
+    // A plane still being created (or a new type being previewed) is not in the
+    // document yet: draw its preview from the rebuild, but do not let it be
+    // picked as the reference of itself.
+    const preview = app.panel?.preview();
+    if (preview?.type === 'plane' && app.frames[preview.id] && !visible.some((p) => p.key === preview.id)) {
+      visible.push({
+        key: preview.id,
+        item: { kind: 'plane', ref: { kind: 'feature', id: preview.id } },
+        frame: onPlane(app.frames[preview.id]),
+        half: radius,
+        pick: false,
+      });
     }
     this.planes = visible;
     const triPos: number[] = [], triCol: number[] = [];
