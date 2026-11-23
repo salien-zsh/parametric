@@ -55,6 +55,8 @@
   --cap: #d97c6a;
   --plane-fill: rgba(64, 128, 230, 0.10);
   --plane-edge: #6f9be0;
+  /* Sketch / plane grid lines (alpha is applied by the renderer). */
+  --grid: #97a3b3;
   --sketch-under: #2463d1;
   --sketch-full: #14181d;
   --sketch-over: #d22d2d;
@@ -131,6 +133,8 @@
   --cap: #c46f60;
   --plane-fill: rgba(110, 160, 255, 0.10);
   --plane-edge: #6f9be0;
+  /* Sketch / plane grid lines (alpha is applied by the renderer). */
+  --grid: #737d8a;
   --sketch-under: #6aa4ff;
   --sketch-full: #f1f3f6;
   --sketch-over: #ff6b62;

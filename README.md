@@ -22,6 +22,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - The dimension edit box can bind a driving dimension directly to an fx parameter; choosing a parameter writes `=Name`, and switching part configurations re-solves the sketch at each configured value.
 - A constraint solver with live dragging and definition status: blue geometry can still move, black is fully defined, red conflicts. The status bar shows the remaining degrees of freedom.
 - Sketch fillet, trim, extend, offset, mirror, construction geometry.
+- A planar grid on the sketch plane and on visible reference planes, with a spacing that adapts to the zoom. Turn it on or off under **View › Hide/Show › Grid**, and snap points to its crossings from the sketch palette.
 - External geometry: Convert Entities projects model edges, faces and vertices into the sketch, and a sketch point or curve can be constrained to a model edge or vertex directly. Projected geometry stays linked to the model: when an earlier feature changes, it moves with the model and the sketch geometry constrained to it follows.
 
 **Features**
@@ -32,6 +33,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - Fillet, chamfer (equal distance, two distances, distance and angle), shell, draft.
 - Holes: simple, counterbore, double counterbore, countersink, counterdrill, spotface and tapped, with a Fusion-style workflow that confirms positions before previewing. The Positions panel supports exact X/Y coordinates, face-centre holes and snapping to edges, vertices and circular-edge centres.
 - Linear patterns (one or two directions), circular patterns and mirroring.
+- On-model value handles: a plane's offset, an extrusion's depth, a revolve's angle, a fillet's radius and a chamfer's distance can be dragged or typed directly beside the geometry, Fusion-style, and the PropertyManager field follows the handle.
 - Reference planes, STEP import.
 - Open SolidWorks parts (.sldprt, SolidWorks 2003 and later) without SolidWorks: the exact solid is read from the file and becomes an imported body you can keep modeling on. The SolidWorks feature tree is not carried over.
 - References to faces and edges are stored by name, so fillets and sketches on faces survive dimension changes.
@@ -80,7 +82,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 
 1. Pick **Front Plane** (or any plane or flat face) and click **Sketch**.
 2. Draw with the sketch tools, then add dimensions with **Smart Dimension** (D).
-3. Click **Extruded Boss** (or another feature). The finished sketch becomes the profile.
+3. Click **Extruded Boss** (or another feature). The finished sketch becomes the profile. Drag the value box on the model, or type into it, to set the depth or radius and watch the preview update.
 4. Double-click a feature in the tree, or a face in the graphics area, to change it.
 
 Navigation: middle or right drag rotates, Ctrl + middle drag or Shift + right drag pans, the wheel zooms at the cursor, F fits the view, Ctrl+1 to Ctrl+8 select standard views and Space opens the view orientation menu. On touch screens, drag with one finger to rotate and use two fingers to pan and zoom. Press F1 for all shortcuts.

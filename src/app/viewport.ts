@@ -9,6 +9,7 @@ import { BASE_FRAMES } from '../model/planes';
 import { consumedSketches } from '../model/features';
 import { cssColor } from '../platform/theme';
 import { Camera, VIEWS, VIEW_LABELS, type ViewName } from '../render/camera';
+import { gridSpacing, planeGrid } from '../render/grid';
 import { STATE_HOVER, STATE_SELECTED, type PickHit } from '../render/renderer';
 import { SketchIndex, tessellate } from '../sketch/geom';
 import { h } from '../ui/dom';
@@ -86,6 +87,9 @@ export class Viewport {
   showPlanes = false;
   showOrigin = false;
   showSketches = true;
+  /** Draw the planar grid on visible reference planes. */
+  showGrid = true;
+  private lastGridStep = 0;
   invertZoom = false;
 
   constructor(private app: App, root: HTMLElement) {
@@ -598,6 +602,27 @@ export class Viewport {
     r.setTris('planes', triPos.length ? { positions: new Float32Array(triPos), colors: new Uint8Array(triCol), depth: 'test', order: 0 } : null);
     r.setLines('planes', linePos.length ? { positions: new Float32Array(linePos), colors: new Uint8Array(lineCol), width: 1.2, depth: 'test', order: 0, clip: false } : null);
 
+    // A readable square grid on every visible plane: the same adaptive step as
+    // the sketch grid, so a plane shows the scale of the model at any zoom.
+    const step = gridSpacing(this.camera.pixelSize);
+    this.lastGridStep = step;
+    if (this.showGrid && visible.length) {
+      const minor: number[] = [], major: number[] = [];
+      for (const p of visible) {
+        const g = planeGrid(p.frame, [0, 0], p.half, step);
+        for (const v of g.minor) minor.push(v);
+        for (const v of g.major) major.push(v);
+      }
+      const c = cssColor('--grid').map((v) => Math.round(v * 255));
+      const colors: number[] = [];
+      for (let i = 0; i < minor.length / 3; i++) colors.push(c[0], c[1], c[2], 80);
+      for (let i = 0; i < major.length / 3; i++) colors.push(c[0], c[1], c[2], 150);
+      const positions = minor.concat(major);
+      r.setLines('plane-grid', positions.length ? {
+        positions: new Float32Array(positions), colors: new Uint8Array(colors), width: 1, depth: 'test', bias: 1e-4, order: 1,
+      } : null);
+    } else r.setLines('plane-grid', null);
+
     this.drawOrigin();
     if (!hoverOnly || this.sketchHoverKey() !== this.drawnSketchHover) this.drawSketches();
   }
@@ -621,6 +646,8 @@ export class Viewport {
     if (px === this.originPx) return;
     this.drawOrigin();
     if (Math.abs(Math.log(px / this.sketchPx)) > Math.log(1.5)) this.drawSketches();
+    // Zooming far enough changes the grid step: replace the old grid.
+    if (gridSpacing(px) !== this.lastGridStep) this.drawReferenceGeometry();
   }
 
   private originPx = 0;

@@ -6,10 +6,12 @@
 import type { BuildResult } from '../kernel/protocol';
 import type { ParamKind } from '../model/features';
 import type { Feature, Id, Param, UnitSystem } from '../model/types';
+import type { Vec3 } from '../math/vec';
 import { UNIT_SYSTEMS, formatEditable, formatNumber } from '../model/units';
 import { evaluate } from '../model/expr';
 import { h, nextDomId } from '../ui/dom';
 import { icon } from '../ui/icons';
+import type { MenuItem } from '../ui/menu';
 import { attachTooltip } from '../ui/overlay';
 import type { SelItem } from './selection';
 import { tr } from '../i18n';
@@ -34,6 +36,22 @@ export interface UnitContext {
   variables: () => Map<string, number>;
 }
 
+/** A value box on the model, like the one Fusion shows beside a handle. */
+export interface CanvasValue {
+  /** World point the value belongs to (the leader dot). */
+  anchor: Vec3;
+  /** Direction the value grows in; null for a vertical screen drag. */
+  axis?: Vec3 | null;
+  /** Value in model units (mm or degrees). */
+  value: number;
+  kind: 'length' | 'angle';
+  label: string;
+  min?: number;
+  max?: number;
+  onChange: (value: number) => void;
+  menu?: () => MenuItem[];
+}
+
 export abstract class PropertyPanel {
   abstract title: string;
   icon = 'settings';
@@ -55,6 +73,11 @@ export abstract class PropertyPanel {
 
   /** Feature to preview (resolved by the app), or null for none. */
   preview(): Feature | null {
+    return null;
+  }
+
+  /** Value handle drawn on the model for this panel, or null for none. */
+  canvasValue(): CanvasValue | null {
     return null;
   }
 
@@ -197,6 +220,14 @@ export function parseParam(text: string, kind: ParamKind, ctx: UnitContext, allo
 
 type PendingValueMap = (value: Param, num: number) => Param;
 const numberFieldSettlers = new WeakMap<HTMLInputElement, (ctx?: UnitContext, map?: PendingValueMap) => void>();
+/** Rewrites a field from outside (an on-model value handle) without firing onChange. */
+const numberFieldWriters = new WeakMap<HTMLInputElement, (value: Param, ctx: UnitContext) => void>();
+
+/** Shows `value` in a field made by numberField, e.g. while a handle is dragged. */
+export function setNumberFieldValue(field: HTMLElement, value: Param, ctx: UnitContext) {
+  const input = field.querySelector<HTMLInputElement>('input');
+  if (input) numberFieldWriters.get(input)?.(value, ctx);
+}
 
 /** Settles delayed edits in their original context and retires controls being replaced. */
 export function settleNumberFields(root: HTMLElement, ctx: UnitContext, map?: PendingValueMap) {
@@ -284,6 +315,13 @@ export function numberField(o: NumberFieldOptions): HTMLElement {
     cancelPending();
     if (pending && ctx) commit(false, ctx, map);
     retired = true;
+  });
+  numberFieldWriters.set(input, (value, ctx) => {
+    if (retired) return;
+    cancelPending();
+    current = value;
+    input.value = paramText(value, o.kind, ctx);
+    mark();
   });
   const scheduleCommit = () => {
     cancelPending();

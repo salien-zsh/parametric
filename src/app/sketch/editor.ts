@@ -4,13 +4,15 @@
 // the modify box for editing dimension values.
 
 import type { Frame, Vec2, Vec3 } from '../../math/vec';
-import { dist2, toLocal, toWorld } from '../../math/vec';
+import { add, dist2, rayPlaneT, scale, toLocal, toWorld } from '../../math/vec';
 import type { Id, Param, RelationType, SkConstraint, SkCurve, SkDimension, SkEntity, SketchFeature } from '../../model/types';
 import { isDimension } from '../../model/types';
 import { UNIT_SYSTEMS, formatEditable, formatNumber } from '../../model/units';
 import { evaluate, evaluateVariables, variableReferenceChanges } from '../../model/expr';
 import { changeFeatureUnits } from '../../model/document';
 import { ORIGIN_ID, SketchIndex, distanceToCurve, pointIdsOf, sketchBounds, tessellate } from '../../sketch/geom';
+import { gridSpacing, planeGrid } from '../../render/grid';
+import { cssColor } from '../../platform/theme';
 import { type SolveResult, solveSketch } from '../../sketch/solver';
 import { type AddedRelations, RELATION_LABELS, addRelations, availableRelations, cleanupConstraints, deleteItems, idFactory, makeRelations, measureDimension, nextDimName, usedPoints } from '../../sketch/ops';
 import { externalPointIds, hasExternal, isExternal, projectEdgeInto, projectVertexInto } from '../../sketch/external';
@@ -311,6 +313,7 @@ export class SketchEditor implements ViewportTool {
       exclude: t?.exclude?.(),
       disabled: !!e?.ctrl || t?.snaps === false,
       tol: this.px * 9,
+      grid: this.app.settings.snapToGrid ? gridSpacing(this.px) : undefined,
     });
   }
 
@@ -953,11 +956,39 @@ export class SketchEditor implements ViewportTool {
     return free ? css.sketchUnder : css.sketchFull;
   }
 
+  /**
+   * The plane grid under the sketch: an adaptive square grid centred on the
+   * view, so it reads like paper at any zoom. Drawn with depth testing so the
+   * body still hides the part of the plane behind it.
+   */
+  private drawGrid(fr: Frame) {
+    const r = this.app.renderer;
+    if (!this.app.settings.showGrid) { r.setLines('sk-grid', null); return; }
+    const cam = r.camera;
+    const step = gridSpacing(this.px);
+    const view = cam.ray(cam.width / 2, cam.height / 2);
+    const t = rayPlaneT(fr, view.o, view.d);
+    const center: Vec2 = t != null ? toLocal(fr, add(view.o, scale(view.d, t))) : [0, 0];
+    // Enough to cover the viewport from this distance.
+    const half = Math.max(cam.pixelSize * Math.max(cam.width, cam.height) * 0.7, step * 4);
+    const g = planeGrid(fr, center, half, step);
+    if (!g.minor.length && !g.major.length) { r.setLines('sk-grid', null); return; }
+    const c = cssColor('--grid').map((v) => Math.round(v * 255));
+    const colors: number[] = [];
+    for (let i = 0; i < g.minor.length / 3; i++) colors.push(c[0], c[1], c[2], 80);
+    for (let i = 0; i < g.major.length / 3; i++) colors.push(c[0], c[1], c[2], 150);
+    const positions = g.minor.concat(g.major);
+    r.setLines('sk-grid', {
+      positions: new Float32Array(positions), colors: new Uint8Array(colors), width: 1, depth: 'test', bias: 2e-4, order: 0,
+    });
+  }
+
   render() {
     const sk = this.sketch;
     if (!sk || this.disposed) return;
     const r = this.app.renderer;
     const fr = this.frame;
+    this.drawGrid(fr);
     const ix = new SketchIndex(sk.entities);
     const selected = new Set(this.selectedIds(['sk']));
     const hoverId = this.hovered?.id;

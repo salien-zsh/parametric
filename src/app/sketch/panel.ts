@@ -144,6 +144,12 @@ export class SketchPanel extends PropertyPanel {
     if (model) out.push(h('div', { class: 'pm-msg info' }, tr('{0} model item(s) selected. Use Convert Entities to project them into this sketch, linked to the model.', [model])));
     const lost = sk.entities.filter((e) => e.ext && ed.lostExternal.has(e.id)).length;
     if (lost) out.push(h('div', { class: 'pm-msg error' }, tr('{0} projected entities (red) lost their model edge and stay where they were. Delete or unlink them, or project the edge again.', [lost])));
+    // Fusion-style sketch palette: the plane grid can be shown and snapped to
+    // while the sketch is edited.
+    out.push(section(tr("Grid"), [
+      checkbox(tr("Show grid"), app.settings.showGrid, (v) => app.changeSettings({ showGrid: v })),
+      checkbox(tr("Snap to grid"), app.settings.snapToGrid, (v) => app.changeSettings({ snapToGrid: v })),
+    ]));
     return out;
   }
 }

@@ -400,6 +400,36 @@ a.icon-btn { text-decoration: none; }
 .dim-label.bad { color: var(--sketch-over); }
 .dim-label.expr::before { content: 'Σ '; color: var(--accent); }
 .dim-label:hover, .dim-label.selected { color: var(--sketch-selected); }
+
+/* On-model value box (Fusion-style): a drag grip, the value, and a small menu. */
+.cv-leader { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; overflow: visible; }
+.cv-line { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 2; opacity: 0.85; }
+.cv-dot {
+  position: absolute; left: 0; top: 0; width: 9px; height: 9px; border-radius: 50%;
+  transform: translate(-50%, -50%); background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--panel) 90%, transparent);
+  pointer-events: auto; cursor: grab; z-index: 6;
+}
+.cv-dot:active { cursor: grabbing; }
+.cv-value {
+  position: absolute; z-index: 7; display: flex; align-items: center; height: 26px;
+  background: color-mix(in srgb, var(--panel) 96%, transparent); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22); color: var(--text); font: var(--fs-sm) var(--font); user-select: none;
+}
+.cv-value.dragging { border-color: var(--accent); }
+.cv-value .cv-grip {
+  display: grid; place-items: center; width: 16px; height: 24px; color: var(--text-3); background: var(--panel-2);
+  border-right: 1px solid var(--border); border-radius: 3px 0 0 3px; cursor: ns-resize; flex: 0 0 auto;
+}
+.cv-value .cv-grip:hover { color: var(--accent); background: var(--hover); }
+.cv-value .cv-input {
+  width: 76px; height: 24px; padding: 0 4px; border: 0; background: transparent; color: var(--text);
+  font: inherit; text-align: right; outline: none; border-radius: 2px;
+}
+.cv-value .cv-input:focus { background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--focus); text-align: left; }
+.cv-value .cv-input.invalid { box-shadow: inset 0 0 0 1px var(--danger); color: var(--danger); }
+.cv-value .cv-menu { width: 22px; height: 24px; display: grid; place-items: center; background: none; border: 0; border-left: 1px solid var(--border); color: var(--text-3); border-radius: 0 3px 3px 0; cursor: pointer; }
+.cv-value .cv-menu:hover { background: var(--hover); color: var(--text); }
+.cv-value .cv-menu[aria-expanded='true'] { background: var(--active); color: var(--text); }
 .rel-badge {
   position: absolute; transform: translate(-50%, -50%); width: 18px; height: 18px; display: grid; place-items: center; pointer-events: auto; cursor: pointer;
   border-radius: 3px; background: color-mix(in srgb, var(--viewport) 82%, transparent); border: 1px solid var(--border-strong); color: var(--text-2);

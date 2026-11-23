@@ -31,6 +31,7 @@ import { sketchDefinitionStatus } from './sketch/panel';
 import { FeatureTree } from './tree';
 import { DrawingPanel, DrawingWorkspace } from './drawing';
 import { Viewport, type VPEvent } from './viewport';
+import { CanvasValueHandle } from './canvas-value';
 import { type Location } from '../platform/files';
 import { DEFAULT_SETTINGS, normalizeSettings, type Settings } from './settings';
 import { tr } from '../i18n';
@@ -78,6 +79,8 @@ export class App {
   tree!: FeatureTree;
   hooks!: AppHooks;
   panel: PropertyPanel | null = null;
+  /** Fusion-style value box beside the feature being edited. */
+  private valueHandle: CanvasValueHandle | null = null;
   sketchEditor: SketchEditor | null = null;
   location: Location | null = null;
   private documentLifetime = new AbortController();
@@ -506,12 +509,18 @@ export class App {
 
   applySettings(s: unknown) {
     const quality = this.settings.quality;
+    const grid = this.settings.showGrid;
+    const snapGrid = this.settings.snapToGrid;
     this.settings = normalizeSettings(s, this.settings);
     if (quality !== this.settings.quality) this.requestRebuild();
+    // The sketch palette shows both grid switches: keep them in step when the
+    // View menu changes them.
+    if (this.sketchEditor && (grid !== this.settings.showGrid || snapGrid !== this.settings.snapToGrid)) this.refreshSketchPanel();
     const v = this.viewport;
     v.showPlanes = this.settings.showPlanes;
     v.showOrigin = this.settings.showOrigin;
     v.showSketches = this.settings.showSketches;
+    v.showGrid = this.settings.showGrid;
     v.invertZoom = this.settings.invertZoom;
     if (this.sketchEditor) {
       this.sketchEditor.showRelations = this.settings.showRelations;
@@ -1153,6 +1162,7 @@ export class App {
     }
     this.selection.revalidate(res.faces, res.edges);
     this.panel?.onBuild(res);
+    if (this.panel) this.syncCanvasValue();
     if (this.panel && res.previewError) this.panel.setMessage('error', res.previewError);
     else if (this.panel && res.previewWarning) this.panel.setMessage('warn', res.previewWarning);
     else if (this.panel && !res.previewError) this.panel.setMessage(null);
@@ -1437,6 +1447,7 @@ export class App {
   onCameraChange() {
     this.sketchEditor?.onCamera();
     this.viewport.onCamera();
+    this.valueHandle?.position();
   }
 
   // ---------- panels ----------
@@ -1457,6 +1468,7 @@ export class App {
     this.viewport.refreshStates();
     this.toggleLeftPane(true);
     this.requestRebuild(true);
+    this.syncCanvasValue();
     this.commands.changed();
   }
 
@@ -1477,6 +1489,7 @@ export class App {
     } else p.cancel();
     p.dispose();
     this.panel = null;
+    this.clearCanvasValue();
     if (ok) this.selection.clear();
     this.updateFlyout();
     this.renderer.setPreview(null);
@@ -1501,6 +1514,24 @@ export class App {
 
   get inSketch(): boolean {
     return !!this.sketchEditor;
+  }
+
+  /**
+   * Keeps the on-model value box in step with the open panel: shown when the
+   * panel offers a value, updated in place (not re-created) so typing in it is
+   * not interrupted by a rebuild.
+   */
+  syncCanvasValue() {
+    const spec = this.panel?.canvasValue() ?? null;
+    if (!spec) { this.clearCanvasValue(); return; }
+    if (!this.valueHandle) this.valueHandle = new CanvasValueHandle(this, spec);
+    else this.valueHandle.set(spec);
+    this.valueHandle.position();
+  }
+
+  clearCanvasValue() {
+    this.valueHandle?.dispose();
+    this.valueHandle = null;
   }
 
   private renderConfirmCorner() {
@@ -1639,6 +1670,7 @@ export class App {
 
   exitModes() {
     if (this.panel) { this.panel.cancel(); this.panel.dispose(); this.panel = null; this.renderer.setPreview(null); }
+    this.clearCanvasValue();
     if (this.sketchEditor) this.exitSketch(true);
     this.shell.confirm.hidden = true;
   }

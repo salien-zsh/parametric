@@ -1,7 +1,7 @@
 // PropertyManager panels for creating and editing features.
 
 import type { Frame, Vec3 } from '../math/vec';
-import { dot, sub, toLocal } from '../math/vec';
+import { add, dot, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
   newMirror, newPlane, newRevolve, newShell, newSketch, newSweep, FEATURE_LABELS, featureIcon, THREAD_PRESETS,
@@ -9,6 +9,7 @@ import {
 import { BASE_PLANE_NAMES } from '../model/planes';
 import { changeFeatureUnits } from '../model/document';
 import { evaluateVariables, variableReferenceChanges } from '../model/expr';
+import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
   AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneRef, RevolveFeature,
@@ -17,7 +18,7 @@ import type {
 import { h } from '../ui/dom';
 import type { App } from './app';
 import {
-  PropertyPanel, SelectionBox, type SelBoxItem, checkbox, flipButton, numberField, paramText, section, selectField, settleNumberFields,
+  PropertyPanel, SelectionBox, type CanvasValue, type SelBoxItem, checkbox, flipButton, numberField, paramText, section, selectField, setNumberFieldValue, settleNumberFields,
 } from './pm';
 import { type SelItem, edgeRef, faceRef } from './selection';
 import { tr } from '../i18n';
@@ -221,12 +222,14 @@ abstract class FeaturePanel<T extends Feature> extends PropertyPanel {
 
 export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
   helpText = '';
+  private depthField: HTMLElement | null = null;
   render(): HTMLElement[] {
     const f = this.f;
     const ctx = this.ctx();
     const sketch = this.sketchBox(tr("Profile sketch"), () => f.sketch, (id) => { f.sketch = id ?? ''; });
     const endOpts = [{ value: 'blind' as const, label: tr("Blind") }, { value: 'throughAll' as const, label: tr("Through All") }, { value: 'midPlane' as const, label: tr("Mid Plane") }];
-    const depth = numberField({ label: tr("Depth"), icon: 'ruler', value: f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.depth = v; this.changed(); } });
+    const depth = numberField({ label: tr("Depth"), icon: 'ruler', value: f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.depth = v; this.syncDepth(); this.changed(); } });
+    this.depthField = depth;
     depth.hidden = f.end === 'throughAll';
     // A draft linked to an equation ("=Angle") is on too.
     const hasDraft = String(f.draft).trim().startsWith('=') || Number(f.draft) > 0;
@@ -265,18 +268,59 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
   protected validate() {
     return this.f.sketch ? null : tr("Select a sketch to extrude");
   }
+
+  private depthNumber(): number {
+    try {
+      return this.app.store.evalParam(this.f.depth, 'length');
+    } catch {
+      return 0;
+    }
+  }
+
+  private syncDepth() {
+    if (this.depthField) setNumberFieldValue(this.depthField, this.f.depth, this.ctx());
+  }
+
+  /**
+   * Fusion-style handle at the end of the extrusion: drag along the direction
+   * to change the depth, or type it. Through All has no distance to show.
+   */
+  canvasValue(): CanvasValue | null {
+    const f = this.f;
+    if (!f.sketch || f.end === 'throughAll') return null;
+    const sk = this.app.store.feature(f.sketch);
+    if (sk?.type !== 'sketch') return null;
+    const fr = this.app.frameOfSketch(sk) ?? this.app.frames[f.sketch] ?? null;
+    if (!fr) return null;
+    const dir = scale(fr.n, (f.cut ? -1 : 1) * (f.flip ? -1 : 1));
+    const depth = this.depthNumber();
+    // Place the handle at the middle of the sketch, then at the end of the
+    // extrusion, like the arrow Fusion shows.
+    const b = sketchBounds(new SketchIndex(sk.entities));
+    const center: Vec3 = b ? toWorld(fr, [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2]) : fr.o;
+    const anchor = add(center, scale(dir, f.end === 'midPlane' ? depth / 2 : depth));
+    return {
+      anchor, axis: dir, value: depth, kind: 'length', label: tr("Depth"), min: 1e-6,
+      onChange: (v) => { f.depth = v; this.syncDepth(); this.changed(); },
+      menu: () => [
+        { label: tr("Reverse direction"), icon: 'reset', run: () => { f.flip = !f.flip; this.changed(); } },
+      ],
+    };
+  }
 }
 
 // ---------- revolve ----------
 
 export class RevolvePanel extends FeaturePanel<RevolveFeature> {
+  private angleField: HTMLElement | null = null;
   render(): HTMLElement[] {
     const f = this.f;
     const ctx = this.ctx();
     const sketch = this.sketchBox(tr("Profile sketch"), () => f.sketch, (id) => { f.sketch = id ?? ''; });
     const axis = new SelectionBox(this, tr("Axis of revolution"), { edge: true, face: true }, toAxis(this.app), (items) => { f.axis = (items[0]?.data as AxisRef) ?? null; this.changed(); }, { single: true, placeholder: tr("Uses the sketch centerline (or pick an edge)"), icon: 'axis' });
     if (f.axis) axis.setItems([{ item: axisItem(this.app, f.axis), data: f.axis, label: axisLabel(this.app, f.axis) }]);
-    const angle = numberField({ label: tr("Angle"), icon: 'revolve', value: f.angle, kind: 'angle', ctx, min: 1e-6, onChange: (v) => { f.angle = v; this.changed(); } });
+    const angle = numberField({ label: tr("Angle"), icon: 'revolve', value: f.angle, kind: 'angle', ctx, min: 1e-6, onChange: (v) => { f.angle = v; this.syncAngle(); this.changed(); } });
+    this.angleField = angle;
     return [
       section(tr("Profile"), [sketch.el]),
       section(tr("Axis"), [axis.el]),
@@ -290,6 +334,33 @@ export class RevolvePanel extends FeaturePanel<RevolveFeature> {
 
   protected validate() {
     return this.f.sketch ? null : tr("Select a sketch to revolve");
+  }
+
+  private angleNumber(): number {
+    try {
+      return this.app.store.evalParam(this.f.angle, 'angle');
+    } catch {
+      return 0;
+    }
+  }
+
+  private syncAngle() {
+    if (this.angleField) setNumberFieldValue(this.angleField, this.f.angle, this.ctx());
+  }
+
+  canvasValue(): CanvasValue | null {
+    const f = this.f;
+    if (!f.sketch) return null;
+    const sk = this.app.store.feature(f.sketch);
+    const fr = sk?.type === 'sketch' ? this.app.frameOfSketch(sk) : this.app.frames[f.sketch] ?? null;
+    if (!fr) return null;
+    return {
+      anchor: fr.o, axis: fr.x, value: this.angleNumber(), kind: 'angle', label: tr("Angle"), min: 1e-6,
+      onChange: (v) => { f.angle = v; this.syncAngle(); this.changed(); },
+      menu: () => [
+        { label: tr("Reverse direction"), icon: 'reset', run: () => { f.flip = !f.flip; this.changed(); } },
+      ],
+    };
   }
 }
 
@@ -309,13 +380,35 @@ function edgeFaceBox(panel: PropertyPanel, app: App, label: string, f: { edges: 
 }
 
 export class FilletPanel extends FeaturePanel<FilletFeature> {
+  private radiusField: HTMLElement | null = null;
   render(): HTMLElement[] {
     const f = this.f;
     const box = edgeFaceBox(this, this.app, tr("Items to fillet"), f, () => this.changed());
-    return [section(tr("Fillet Parameters"), [
-      box.el,
-      numberField({ label: tr("Radius"), icon: 'fillet', value: f.radius, kind: 'length', ctx: this.ctx(), min: 1e-6, onChange: (v) => { f.radius = v; this.changed(); } }),
-    ])];
+    const radius = numberField({ label: tr("Radius"), icon: 'fillet', value: f.radius, kind: 'length', ctx: this.ctx(), min: 1e-6, onChange: (v) => { f.radius = v; this.syncRadius(); this.changed(); } });
+    this.radiusField = radius;
+    return [section(tr("Fillet Parameters"), [box.el, radius])];
+  }
+
+  private radiusNumber(): number {
+    try {
+      return this.app.store.evalParam(this.f.radius, 'length');
+    } catch {
+      return 0;
+    }
+  }
+
+  private syncRadius() {
+    if (this.radiusField) setNumberFieldValue(this.radiusField, this.f.radius, this.ctx());
+  }
+
+  canvasValue(): CanvasValue | null {
+    const e = this.f.edges[0], face = this.f.faces[0];
+    const anchor = e?.sig.m ?? face?.sig.c;
+    if (!anchor) return null;
+    return {
+      anchor, axis: null, value: this.radiusNumber(), kind: 'length', label: tr("Radius"), min: 1e-6,
+      onChange: (v) => { this.f.radius = v; this.syncRadius(); this.changed(); },
+    };
   }
 
   protected validate() {
@@ -328,6 +421,7 @@ export class FilletPanel extends FeaturePanel<FilletFeature> {
 }
 
 export class ChamferPanel extends FeaturePanel<ChamferFeature> {
+  private distanceField: HTMLElement | null = null;
   render(): HTMLElement[] {
     const f = this.f;
     const ctx = this.ctx();
@@ -337,6 +431,8 @@ export class ChamferPanel extends FeaturePanel<ChamferFeature> {
     const flip = flipButton(tr("Flip direction"), f.flip, (v) => { f.flip = v; this.changed(); });
     const sync = () => { d2.hidden = f.mode !== 'twoDistance'; ang.hidden = f.mode !== 'distanceAngle'; flip.hidden = f.mode === 'distance'; };
     sync();
+    const distance = numberField({ label: tr("Distance"), icon: 'ruler', value: f.distance, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.distance = v; this.syncDistance(); this.changed(); } });
+    this.distanceField = distance;
     return [section(tr("Chamfer Parameters"), [
       box.el,
       h('div', { class: 'row' }, flip, h('div', { class: 'grow' }, selectField(tr("Chamfer type"), f.mode, [
@@ -344,9 +440,31 @@ export class ChamferPanel extends FeaturePanel<ChamferFeature> {
         { value: 'twoDistance' as const, label: tr("Distance distance") },
         { value: 'distanceAngle' as const, label: tr("Angle distance") },
       ], (v) => { f.mode = v; sync(); this.changed(); }))),
-      numberField({ label: tr("Distance"), icon: 'ruler', value: f.distance, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.distance = v; this.changed(); } }),
+      distance,
       d2, ang,
     ])];
+  }
+
+  private distanceNumber(): number {
+    try {
+      return this.app.store.evalParam(this.f.distance, 'length');
+    } catch {
+      return 0;
+    }
+  }
+
+  private syncDistance() {
+    if (this.distanceField) setNumberFieldValue(this.distanceField, this.f.distance, this.ctx());
+  }
+
+  canvasValue(): CanvasValue | null {
+    const e = this.f.edges[0], face = this.f.faces[0];
+    const anchor = e?.sig.m ?? face?.sig.c;
+    if (!anchor) return null;
+    return {
+      anchor, axis: null, value: this.distanceNumber(), kind: 'length', label: tr("Distance"), min: 1e-6,
+      onChange: (v) => { this.f.distance = v; this.syncDistance(); this.changed(); },
+    };
   }
 
   protected validate() {
@@ -885,15 +1003,53 @@ export class MirrorPanel extends FeaturePanel<MirrorFeature> {
 // ---------- reference plane ----------
 
 export class PlanePanel extends FeaturePanel<PlaneFeature> {
+  private offsetField: HTMLElement | null = null;
   render(): HTMLElement[] {
     const f = this.f;
     const ref = new SelectionBox(this, tr("First reference"), { plane: true, planarOnly: true }, toPlane(this.app), (items) => { f.ref = (items[0]?.data as PlaneRef) ?? null; this.changed(); }, { single: true, icon: 'plane' });
     if (f.ref) ref.setItems([{ item: planeItem(this.app, f.ref), data: f.ref, label: planeLabel(this.app, f.ref) }]);
+    const offset = numberField({ label: tr("Offset distance"), icon: 'ruler', value: f.offset, kind: 'length', ctx: this.ctx(), onChange: (v) => { f.offset = v; this.syncOffset(); this.changed(); } });
+    this.offsetField = offset;
     return [section(tr("First Reference"), [
       ref.el,
-      numberField({ label: tr("Offset distance"), icon: 'ruler', value: f.offset, kind: 'length', ctx: this.ctx(), onChange: (v) => { f.offset = v; this.changed(); } }),
-      checkbox(tr("Flip offset"), f.flip, (v) => { f.flip = v; this.changed(); }),
+      offset,
+      checkbox(tr("Flip offset"), f.flip, (v) => { f.flip = v; this.syncOffset(); this.changed(); }),
     ])];
+  }
+
+  private offsetNumber(): number {
+    try {
+      return this.app.store.evalParam(this.f.offset, 'length');
+    } catch {
+      return 0;
+    }
+  }
+
+  private syncOffset() {
+    if (this.offsetField) setNumberFieldValue(this.offsetField, this.f.offset, this.ctx());
+  }
+
+  /** The signed offset of the plane: the value Fusion shows beside the plane. */
+  canvasValue(): CanvasValue | null {
+    const f = this.f;
+    if (!f.ref) return null;
+    const base = this.app.frameOfPlane(f.ref);
+    if (!base) return null;
+    const sign = f.flip ? -1 : 1;
+    const value = this.offsetNumber() * sign;
+    // Like the plane fill, the handle sits near the model rather than at the
+    // plane's origin, which may be far outside the visible plane.
+    const b = this.app.bbox;
+    const center: Vec3 = b ? scale(add(b.min, b.max), 0.5) : [0, 0, 0];
+    const onBase = sub(center, scale(base.n, dot(sub(center, base.o), base.n)));
+    return {
+      anchor: add(onBase, scale(base.n, value)), axis: scale(base.n, sign), value, kind: 'length', label: tr("Offset distance"),
+      onChange: (v) => { f.offset = Math.abs(v); f.flip = v < -1e-9; this.syncOffset(); this.changed(); },
+      menu: () => [
+        { label: tr("Flip offset"), icon: 'reset', run: () => { f.flip = !f.flip; this.syncOffset(); this.changed(); } },
+        { label: tr("Reset offset"), icon: 'plane', run: () => { f.offset = 0; f.flip = false; this.syncOffset(); this.changed(); } },
+      ],
+    };
   }
 
   protected validate() {

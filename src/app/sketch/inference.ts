@@ -7,7 +7,7 @@ import type { Id, SkCurve, SketchFeature } from '../../model/types';
 import { type Vec2, dist2 } from '../../math/vec';
 import { ORIGIN_ID, SketchIndex, distanceToCurve, pointIdsOf } from '../../sketch/geom';
 
-export type SnapKind = 'none' | 'point' | 'origin' | 'mid' | 'on' | 'h' | 'v' | 'alignX' | 'alignY' | 'center';
+export type SnapKind = 'none' | 'point' | 'origin' | 'mid' | 'on' | 'h' | 'v' | 'alignX' | 'alignY' | 'center' | 'grid';
 
 export interface Snap {
   p: Vec2;
@@ -25,6 +25,8 @@ export interface SnapOptions {
   disabled?: boolean;
   /** Tolerance in sketch units (pixel radius times pixel size). */
   tol: number;
+  /** Grid step to snap to (sketch units), when snapping to the grid is on. */
+  grid?: number;
 }
 
 export function snapPoint(sk: SketchFeature, raw: Vec2, o: SnapOptions): Snap {
@@ -90,6 +92,16 @@ export function snapPoint(sk: SketchFeature, raw: Vec2, o: SnapOptions): Snap {
       if (dY < ad) { ad = dY; ax = { p: [raw[0], e.y], raw, kind: 'alignY', guide: [e.x, e.y] }; }
     }
     if (ax) return ax;
+  }
+  // 6. Grid crossings: exact positions on the drawn plane grid. No relation is
+  // added; the point simply starts where the grid says. A horizontal or
+  // vertical inference from the previous point is kept, with the free
+  // coordinate on the grid.
+  if (o.grid && o.grid > 0) {
+    const g = o.grid;
+    if (kind === 'h') return { p: [Math.round(raw[0] / g) * g, p[1]], raw, kind };
+    if (kind === 'v') return { p: [p[0], Math.round(raw[1] / g) * g], raw, kind };
+    return { p: [Math.round(raw[0] / g) * g, Math.round(raw[1] / g) * g], raw, kind: 'grid' };
   }
   return { p, raw, kind, guide };
 }
