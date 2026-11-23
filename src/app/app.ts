@@ -81,6 +81,15 @@ export class App {
   panel: PropertyPanel | null = null;
   /** Fusion-style value box beside the feature being edited. */
   private valueHandle: CanvasValueHandle | null = null;
+  /** An assembly component whose part is open for editing (Fusion's in-place part edit). */
+  componentEdit: {
+    assembly: import('../model/types').PartDocument;
+    location: Location | null;
+    componentId: Id;
+    created: boolean;
+    assemblyDirty: boolean;
+  } | null = null;
+  private componentBanner: HTMLElement | null = null;
   sketchEditor: SketchEditor | null = null;
   location: Location | null = null;
   private documentLifetime = new AbortController();
@@ -682,6 +691,7 @@ export class App {
   // ---------- document ----------
 
   newDocument(name?: string) {
+    if (this.componentEdit) this.finishComponentEdit(false);
     this.closeDrawing();
     this.stopJointMotion(false);
     this.exitModes();
@@ -696,6 +706,7 @@ export class App {
   }
 
   newAssembly(name?: string) {
+    if (this.componentEdit) this.finishComponentEdit(false);
     this.closeDrawing();
     this.stopJointMotion(false);
     this.exitModes();
@@ -720,6 +731,132 @@ export class App {
   openComponent(id: Id) {
     if (!this.component(id)) return;
     void import('./assembly').then(({ AssemblyComponentPanel }) => this.openPanel(new AssemblyComponentPanel(this, id)));
+  }
+
+  get inComponentEdit(): boolean {
+    return !!this.componentEdit;
+  }
+
+  /** Fusion's New Part in an assembly: an empty in-place part, open for sketching. */
+  newComponentPart() {
+    if (!this.isAssembly || this.componentEdit) return;
+    const components = this.store.doc.components ?? [];
+    const used = new Set(components.map((c) => c.name));
+    let n = 1;
+    while (used.has(`Part${n}`)) n++;
+    const name = `Part${n}`;
+    const id = this.store.nextId('c');
+    const part = newDocument(name, this.settings.defaultUnits);
+    const wasDirty = this.store.dirty;
+    this.store.change(tr("New component part"), (doc) => {
+      doc.components ??= [];
+      doc.components.push({
+        id,
+        name,
+        part,
+        transform: { position: [0, 0, 0], rotation: [0, 0, 0] },
+        visible: true,
+        fixed: doc.components.length === 0,
+      });
+    });
+    this.selection.set([{ kind: 'component', id }]);
+    this.editComponentPart(id, true, wasDirty);
+    toast({ kind: 'success', message: tr("{0} created. Sketch or build its features, then finish the part.", [name]) });
+  }
+
+  /**
+   * Opens a component's part for editing on its own (Fusion's Activate Component
+   * / Edit Part). The assembly document is kept aside and the part returns to
+   * the component when the edit is finished.
+   */
+  editComponentPart(id: Id, created = false, assemblyDirty = this.store.dirty) {
+    if (this.componentEdit || !this.isAssembly) return;
+    const component = this.component(id);
+    if (!component) return;
+    this.closeDrawing();
+    this.componentEdit = {
+      assembly: this.store.doc,
+      location: this.location,
+      componentId: id,
+      created,
+      assemblyDirty,
+    };
+    this.exitModes();
+    this.location = null;
+    this.store.load(structuredClone(component.part));
+    this.selection.clear();
+    this.lastBuildKey = '';
+    this.fitOnNextBuild = true;
+    this.requestRebuild(true);
+    this.showComponentBanner();
+  }
+
+  /** Returns to the assembly, writing the edited part into its component. */
+  finishComponentEdit(apply = true): boolean {
+    const edit = this.componentEdit;
+    if (!edit) return false;
+    this.closeDrawing();
+    if (this.sketchEditor) this.exitSketch(true);
+    const edited = this.store.doc;
+    const partName = edited.name;
+    this.componentEdit = null;
+    this.hideComponentBanner();
+    this.store.load(edit.assembly);
+    this.location = edit.location;
+    this.store.dirty = edit.assemblyDirty;
+    if (apply) {
+      this.store.change(tr("Edit component part"), (doc) => {
+        const component = doc.components?.find((c) => c.id === edit.componentId);
+        if (component) component.part = edited;
+      });
+    } else if (edit.created) {
+      this.store.change(tr("Discard new part"), (doc) => {
+        doc.components = (doc.components ?? []).filter((c) => c.id !== edit.componentId);
+      });
+      this.store.dirty = edit.assemblyDirty;
+    }
+    if (apply || !edit.created) this.selection.set([{ kind: 'component', id: edit.componentId }]);
+    else this.selection.clear();
+    this.lastBuildKey = '';
+    this.fitOnNextBuild = true;
+    this.requestRebuild(true);
+    this.syncChrome();
+    this.setStatus(apply ? tr("Finished editing {0} in the assembly.", [partName]) : tr("Discarded changes to {0}.", [partName]));
+    return true;
+  }
+
+  /** Leaves a component part without writing it back, after confirming unsaved work. */
+  async cancelComponentEdit(): Promise<boolean> {
+    const edit = this.componentEdit;
+    if (!edit) return false;
+    if (this.store.dirty) {
+      const discard = await confirmDialog(
+        tr("Discard changes to {0}?", [this.store.doc.name]),
+        tr("The part's changes will not be saved into the assembly."),
+        tr("Discard"),
+        true,
+      );
+      if (!discard || !this.componentEdit) return false;
+    }
+    return this.finishComponentEdit(false);
+  }
+
+  private showComponentBanner() {
+    this.hideComponentBanner();
+    const edit = this.componentEdit;
+    if (!edit) return;
+    const finish = h('button', { class: 'btn primary small', type: 'button' }, tr("Finish Part"));
+    finish.addEventListener('click', () => this.finishComponentEdit(true));
+    const cancel = h('button', { class: 'btn small', type: 'button' }, tr("Cancel Part"));
+    cancel.addEventListener('click', () => void this.cancelComponentEdit());
+    this.componentBanner = h('div', { class: 'component-banner', role: 'status' },
+      h('span', { class: 'txt' }, tr("Editing {0} in {1}", [this.store.doc.name, edit.assembly.name])), finish, cancel);
+    this.shell.viewport.append(this.componentBanner);
+  }
+
+  private hideComponentBanner() {
+    this.componentBanner?.remove();
+    this.componentBanner = null;
   }
 
   openMate(id: Id) {
@@ -895,6 +1032,7 @@ export class App {
   }
 
   loadDocument(doc: import('../model/types').PartDocument, location: Location | null) {
+    if (this.componentEdit) this.finishComponentEdit(false);
     this.closeDrawing();
     this.stopJointMotion(false);
     this.exitModes();

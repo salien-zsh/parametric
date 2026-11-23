@@ -35,8 +35,9 @@ export function validFeature(f: Feature): boolean {
   const r = f as unknown as Record<string, unknown>;
   switch (f.type) {
     case 'extrude':
-    case 'hole':
       return sketchId(r.sketch);
+    case 'hole':
+      return sketchId(r.sketch) && (r.toFace == null || named(r.toFace));
     case 'revolve':
       return sketchId(r.sketch) && axis(r.axis);
     case 'fillet':

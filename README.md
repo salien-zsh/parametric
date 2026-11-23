@@ -15,7 +15,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 ## Features
 
 **Sketching**
-- Lines, centerlines, corner and center rectangles, circles (center or 3 points), arcs (centerpoint, tangent, 3 point), polygons, straight slots, splines and points.
+- Lines, centerlines, corner, center and three-point rectangles, circles (center or 3 points), arcs (centerpoint, tangent, 3 point), polygons, straight, overall and center-point slots, splines and points.
 - Inference while drawing: snapping to points, midpoints, curves and the origin, horizontal and vertical directions, and alignment guides. Matching relations are added automatically.
 - Geometric constraints (relations): coincident, horizontal, vertical, parallel, perpendicular, tangent, equal, concentric, midpoint, collinear, symmetric and fix. Pick one in the Constrain group of the Sketch tab and click the geometry it applies to, or select geometry first and choose from the constraints that fit.
 - Smart Dimension: distances (aligned, horizontal, vertical), point to line, parallel lines, angles, radius and diameter, chosen from what you select and where you place the label. Driven (reference) dimensions.
@@ -31,7 +31,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - Revolved boss and cut (full or partial, mid plane).
 - Swept and lofted boss and cut.
 - Fillet, chamfer (equal distance, two distances, distance and angle), shell, draft.
-- Holes: simple, counterbore, double counterbore, countersink, counterdrill, spotface and tapped, with a Fusion-style workflow that confirms positions before previewing. The Positions panel supports exact X/Y coordinates, face-centre holes and snapping to edges, vertices and circular-edge centres.
+- Holes: simple, counterbore, double counterbore, countersink, counterdrill, spotface and tapped, with a Fusion-style workflow that confirms positions before previewing. The Positions panel supports exact X/Y coordinates, face-centre holes and snapping to edges, vertices and circular-edge centres. A hole can end at a distance, through the body, or at a selected planar face (**To Object**).
 - Linear patterns (one or two directions), circular patterns and mirroring.
 - On-model value handles: a plane's offset, an extrusion's depth, a revolve's angle, a fillet's radius and a chamfer's distance can be dragged or typed directly beside the geometry, Fusion-style, and the PropertyManager field follows the handle.
 - Reference planes: offset from a plane or face, halfway between two parallel references (midplane), or at an angle about an edge lying in the plane. The offset and angle can be edited on the model with the value handle. STEP import.
@@ -57,6 +57,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 
 **Assemblies**
 - Create a new assembly and insert saved `.parametric` parts as independent components.
+- **New Part** in an assembly creates an empty in-place part and opens it for sketching and modeling; **Finish Part** writes it back into the component, and a double-click on a component opens its part again.
 - The assembly design tree shows every component; component properties edit its name, visibility, XYZ position and XYZ rotation, with full undo/redo.
 - Ground components and choose origin, X/Y/Z axis, or XY/XZ/YZ plane connectors for assembly mates. Supported mates are coincident, distance, angle, parallel, perpendicular and flush, with mate chains propagated through the assembly.
 - Add rigid, revolute, slider, cylindrical, planar, ball or pin-slot joints. Cylindrical, planar, ball and pin-slot joints expose a second axis and value with independent motion limits.

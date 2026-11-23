@@ -78,7 +78,7 @@ export class CanvasValueHandle {
     }, icon('grip', 14));
     this.input = h('input', {
       class: 'cv-input', type: 'text', inputmode: 'decimal', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off',
-      spellcheck: 'false', 'aria-label': spec.label,
+      spellcheck: 'false', 'aria-label': tr("{0} on the model", [spec.label]),
     }) as HTMLInputElement;
     this.menuBtn = h('button', {
       class: 'cv-menu', type: 'button', 'aria-label': tr("Value options"), title: tr("Value options"), 'aria-haspopup': 'menu', 'aria-expanded': 'false',
@@ -98,7 +98,7 @@ export class CanvasValueHandle {
     if (this.disposed) return;
     const old = this.spec;
     this.spec = spec;
-    this.input.setAttribute('aria-label', spec.label);
+    this.input.setAttribute('aria-label', tr("{0} on the model", [spec.label]));
     this.el.setAttribute('aria-label', spec.label);
     this.input.inputMode = spec.min !== undefined && spec.min >= 0 ? 'decimal' : 'text';
     // Never overwrite what is being typed or dragged.

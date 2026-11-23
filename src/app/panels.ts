@@ -608,6 +608,14 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       input.removeAttribute('aria-invalid');
     };
     const depth = numberField({ label: tr("Depth"), value: f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.depth = v; this.changed(); } });
+    const stopFace = new SelectionBox(this, tr("Stop at face"), { face: true, planarOnly: true }, toFace(this.app, true), (items) => {
+      f.toFace = (items[0]?.data as FaceRef) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Select the planar face to stop at"), icon: 'plane' });
+    if (f.toFace) {
+      const index = this.app.faces.findIndex((x) => x.name === f.toFace!.name);
+      stopFace.setItems([{ item: faceItem(this.app, f.toFace), data: f.toFace, label: index >= 0 ? faceLabel(this.app, index) : tr("Face") }]);
+    }
     const tip = selectField(tr("Drill point"), f.tip ?? 'flat', [
       { value: 'flat' as const, label: tr("Flat") },
       { value: 'drill' as const, label: tr("Drill Point") },
@@ -626,9 +634,11 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       tapDrill.hidden = !tapped;
       threadPitch.hidden = !customThread;
       diameter.hidden = customThread ? false : tapped;
-      depth.hidden = f.end === 'throughAll';
-      tip.hidden = f.end === 'throughAll';
-      tipAngle.hidden = f.end === 'throughAll' || (f.tip ?? 'flat') !== 'drill';
+      const blind = f.end === 'blind';
+      depth.hidden = !blind;
+      stopFace.el.hidden = f.end !== 'toObject';
+      tip.hidden = !blind;
+      tipAngle.hidden = !blind || (f.tip ?? 'flat') !== 'drill';
     };
     sync();
 
@@ -684,8 +694,13 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     ]);
     const endSection = section(tr("End Condition"), [
       h('div', { class: 'row' }, flipButton(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); }), h('div', { class: 'grow' },
-        selectField(tr("End condition"), f.end, [{ value: 'throughAll' as const, label: tr("Through All") }, { value: 'blind' as const, label: tr("Blind") }], (v) => { f.end = v; sync(); this.changed(); }))),
+        selectField(tr("End condition"), f.end, [
+          { value: 'throughAll' as const, label: tr("Through All") },
+          { value: 'blind' as const, label: tr("Blind") },
+          { value: 'toObject' as const, label: tr("To Object") },
+        ], (v) => { f.end = v; sync(); this.changed(); }))),
       depth,
+      stopFace.el,
       tip, tipAngle,
     ]);
     this.parameterSections = [typeSection, endSection];
@@ -905,6 +920,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     if (!this.f.sketch) return tr("Place at least one hole position on a planar face or in a sketch");
     if (this.positionCount() === 0) return tr("Add at least one hole position");
     if (!this.positionsReady) return tr("Confirm the hole positions before creating the hole");
+    if (this.f.end === 'toObject' && !this.f.toFace) return tr("Select the face to stop at");
     return null;
   }
 

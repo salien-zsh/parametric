@@ -284,6 +284,8 @@ export class FileOps {
   /** Save to the current location, or ask where for a new document. */
   async save(silent = false): Promise<boolean> {
     const app = this.app;
+    // Saving an in-place component part saves the assembly it belongs to.
+    if (app.inComponentEdit) app.finishComponentEdit(true);
     if (app.sketchEditor) app.exitSketch(true);
     const documentVersion = this.documentVersion;
     if (this.queuedSave?.documentVersion === documentVersion) return this.queuedSave.result;
@@ -331,6 +333,7 @@ export class FileOps {
 
   async saveAs() {
     const app = this.app;
+    if (app.inComponentEdit) app.finishComponentEdit(true);
     const documentVersion = this.documentVersion;
     const name = await promptDialog(tr("Save As"), tr("Part name"), app.store.doc.name, (v) => (v.trim() ? null : tr("Enter a name")), app.documentSignal);
     if (name == null || documentVersion !== this.documentVersion) return;

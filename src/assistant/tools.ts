@@ -239,14 +239,15 @@ const TOOLS: ToolDef[] = [
     thickness: PARAM(tr("Wall thickness")),
     outward: B(tr("Add the wall outside the current surfaces instead of inside")),
   }, ['thickness']),
-  featureTool('hole', 'Drill simple, counterbored, double-counterbored, countersunk, counterdrilled, spotfaced or tapped holes at stand-alone sketch points, into the material against the sketch normal. Give an existing sketch with points, or "on" with "points" to create the position sketch in the same step.', {
+  featureTool('hole', 'Drill simple, counterbored, double-counterbored, countersunk, counterdrilled, spotfaced or tapped holes at stand-alone sketch points, into the material against the sketch normal. Give an existing sketch with points, or "on" with "points" to create the position sketch in the same step. The hole can end at a distance, through the body, or at a planar face ("to_object" with "to_face").', {
     sketch: S(tr("Existing sketch whose stand-alone points are the hole centres")),
     on: PLANE,
     points: ARR(POINT, 'Hole centres (with "on"): sketch [x, y] or world [x, y, z]'),
     kind: S(tr("Hole type (default simple)"), { enum: ['simple', 'counterbore', 'double_counterbore', 'countersink', 'counterdrill', 'spotface', 'tapped'] }),
     diameter: PARAM(tr("Hole diameter")),
-    end: S(tr("Depth type (default through_all, or blind when depth is given)"), { enum: ['blind', 'through_all'] }),
+    end: S(tr("Depth type (default through_all, or blind when depth is given; to_object stops at to_face)"), { enum: ['blind', 'through_all', 'to_object'] }),
     depth: PARAM(tr("Depth for blind holes")),
+    to_face: S(tr("Planar face the hole stops at (to_object)")),
     cb_diameter: PARAM(tr("Counterbore diameter")), cb_depth: PARAM(tr("Counterbore depth")),
     cb2_diameter: PARAM(tr("Second counterbore diameter")), cb2_depth: PARAM(tr("Second counterbore depth")),
     cs_diameter: PARAM(tr("Countersink diameter at the surface")), cs_angle: PARAM(tr("Countersink included angle (e.g. 90 or 82)")),

@@ -44,7 +44,8 @@ function choice<T extends string>(v: unknown, options: Record<string, T>, what: 
 
 const END = { blind: 'blind', through_all: 'throughAll', throughall: 'throughAll', mid_plane: 'midPlane', midplane: 'midPlane', symmetric: 'midPlane' } as const;
 const END2 = { blind: 'blind', through_all: 'throughAll', throughall: 'throughAll' } as const;
-const END_OUT: Record<string, string> = { blind: 'blind', throughAll: 'through_all', midPlane: 'mid_plane' };
+const HOLE_END = { ...END2, to_object: 'toObject', toobject: 'toObject', object: 'toObject' } as const;
+const END_OUT: Record<string, string> = { blind: 'blind', throughAll: 'through_all', midPlane: 'mid_plane', toObject: 'to_object' };
 const HOLE_KIND = {
   simple: 'simple', counterbore: 'counterbore', double_counterbore: 'doubleCounterbore', countersink: 'countersink',
   counterdrill: 'counterdrill', spotface: 'spotface', tapped: 'tapped',
@@ -175,9 +176,11 @@ export class FeatureCodec {
             tip: 'drill', tipAngle: 118,
           });
         }
-        if (has('end')) f.end = choice(a.end, END2, 'end');
+        if (has('end')) f.end = choice(a.end, HOLE_END, 'end');
         else if (has('depth') && f.end === 'throughAll') f.end = 'blind';
         if (has('depth')) f.depth = len('depth');
+        if (has('to_face')) f.toFace = refs.faceRefs([a.to_face], 'to_face')[0] ?? null;
+        if (f.end === 'toObject' && !f.toFace) throw new ToolError(tr("to_face is required when end is to_object"));
         if (has('cb_diameter')) f.cbDiameter = len('cb_diameter');
         if (has('cb_depth')) f.cbDepth = len('cb_depth');
         if (has('cb2_diameter')) f.cb2Diameter = len('cb2_diameter');
@@ -308,7 +311,8 @@ export class FeatureCodec {
       case 'chamfer': return { edges: f.edges.map((e) => e.name), faces: f.faces.map((x) => x.name), mode: CHAMFER_OUT[f.mode], distance: L(f.distance), distance2: L(f.distance2), angle: A(f.angle), flip: f.flip };
       case 'shell': return { faces_to_remove: f.faces.map((x) => x.name), thickness: L(f.thickness), outward: f.outward };
       case 'hole': return {
-        sketch: f.sketch, kind: f.kind, diameter: L(f.diameter), end: END_OUT[f.end], depth: f.end === 'throughAll' ? undefined : L(f.depth),
+        sketch: f.sketch, kind: f.kind, diameter: L(f.diameter), end: END_OUT[f.end], depth: f.end === 'blind' ? L(f.depth) : undefined,
+        to_face: f.end === 'toObject' ? f.toFace?.name : undefined,
         ...(f.kind === 'counterbore' ? { cb_diameter: L(f.cbDiameter), cb_depth: L(f.cbDepth) } : {}),
         ...(f.kind === 'doubleCounterbore' ? {
           cb_diameter: L(f.cbDiameter), cb_depth: L(f.cbDepth),

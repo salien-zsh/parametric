@@ -25,7 +25,7 @@ import { shareDialog } from './share';
 import { PropertyPanel, section } from './pm';
 import type { SketchEditor, SkTool } from './sketch/editor';
 import {
-  centerArcTool, circleTool, dimensionTool, extendTool, lineTool, perimeterCircleTool, pointTool, polygonTool, rectangleTool,
+  centerArcTool, circleTool, dimensionTool, extendTool, lineTool, perimeterCircleTool, pointTool, polygonTool, rectangleTool, threePointRectangleTool,
   sketchFilletTool, slotTool, splineTool, tangentArcTool, threePointArcTool, trimTool,
 } from './sketch/tools';
 import { h } from '../ui/dom';
@@ -40,6 +40,7 @@ const SKETCH_TOOLS: Record<string, { label: string; shortcut?: string; desc: str
   centerline: { label: tr("Centerline"), desc: tr("Sketch construction lines used as axes and for symmetry."), make: (ed) => lineTool(ed, true) },
   rectangle: { label: tr("Corner Rectangle"), shortcut: 'R', desc: tr("Sketch a rectangle from two corners."), make: (ed) => rectangleTool(ed) },
   centerRectangle: { label: tr("Center Rectangle"), desc: tr("Sketch a rectangle from its centre."), make: (ed) => rectangleTool(ed, true) },
+  rectangle3Point: { label: tr("Three Point Rectangle"), desc: tr("Sketch a rectangle from one edge and its width."), make: (ed) => threePointRectangleTool(ed) },
   circle: { label: tr("Circle"), shortcut: 'C', desc: tr("Sketch a circle from its centre and radius."), make: (ed) => circleTool(ed) },
   perimeterCircle: { label: tr("Perimeter Circle"), desc: tr("Sketch a circle through three points."), make: (ed) => perimeterCircleTool(ed) },
   centerArc: { label: tr("Centerpoint Arc"), desc: tr("Sketch an arc from its centre, start and end."), make: (ed) => centerArcTool(ed) },
@@ -47,6 +48,8 @@ const SKETCH_TOOLS: Record<string, { label: string; shortcut?: string; desc: str
   arc3: { label: tr("3 Point Arc"), desc: tr("Sketch an arc through its ends and a point on it."), make: (ed) => threePointArcTool(ed) },
   polygon: { label: tr("Polygon"), desc: tr("Sketch a regular polygon."), make: (ed) => polygonTool(ed) },
   slot: { label: tr("Straight Slot"), desc: tr("Sketch a slot with rounded ends."), make: (ed) => slotTool(ed) },
+  slotOverall: { label: tr("Overall Slot"), desc: tr("Sketch a slot from its two overall ends."), make: (ed) => slotTool(ed, 'overall') },
+  slotCenter: { label: tr("Center Point Slot"), desc: tr("Sketch a slot from its centre and one end."), make: (ed) => slotTool(ed, 'center') },
   spline: { label: tr("Spline"), desc: tr("Sketch a smooth curve through points."), make: (ed) => splineTool(ed) },
   point: { label: tr("Point"), desc: tr("Sketch points, for example to place holes."), make: (ed) => pointTool(ed) },
   smartDimension: { label: tr("Smart Dimension"), shortcut: 'D', desc: tr("Add a dimension; its type depends on what you select and where you place it."), make: (ed) => dimensionTool(ed) },
@@ -132,21 +135,43 @@ export function registerCommands(app: App, files: FileOps) {
 
   c.register(
     // ---- file ----
-    { id: 'new', label: tr("New"), icon: 'new', shortcut: 'Control+N', description: tr("Start a new part."), run: () => { void files.newPart(); } },
+    { id: 'new', label: tr("New"), icon: 'new', shortcut: 'Control+N', description: tr("Start a new part."), enabled: () => !app.inComponentEdit, run: () => { void files.newPart(); } },
     {
       id: 'newAssembly', label: tr("New Assembly"), icon: 'part',
       description: tr("Start an assembly with multiple placed parts."),
+      enabled: () => !app.inComponentEdit,
       run: async () => { if (await files.confirmDiscard(tr("start a new assembly"))) app.newAssembly(); },
     },
-    { id: 'open', label: tr("Open..."), icon: 'open', shortcut: 'Ctrl+O', description: tr("Open a saved part."), run: () => files.open() },
-    { id: 'openDevice', label: tr("Open from Device..."), icon: 'upload', description: tr("Open a part file, or a STEP or SolidWorks file, from this device."), run: () => files.openFromDevice() },
+    { id: 'open', label: tr("Open..."), icon: 'open', shortcut: 'Ctrl+O', description: tr("Open a saved part."), enabled: () => !app.inComponentEdit, run: () => files.open() },
+    { id: 'openDevice', label: tr("Open from Device..."), icon: 'upload', description: tr("Open a part file, or a STEP or SolidWorks file, from this device."), enabled: () => !app.inComponentEdit, run: () => files.openFromDevice() },
     { id: 'save', label: tr("Save"), icon: 'save', shortcut: 'Ctrl+S', description: tr("Save the part."), run: () => { void files.save(); } },
-    { id: 'saveAs', label: tr("Save As..."), icon: 'save', shortcut: 'Ctrl+Shift+S', run: () => files.saveAs() },
-    { id: 'downloadPart', label: tr("Download Part File"), icon: 'download', description: tr("Download the part file to this device."), run: () => files.exportAs('part') },
+    { id: 'saveAs', label: tr("Save As..."), icon: 'save', shortcut: 'Ctrl+Shift+S', enabled: () => !app.inComponentEdit, run: () => files.saveAs() },
+    { id: 'downloadPart', label: tr("Download Part File"), icon: 'download', description: tr("Download the part file to this device."), enabled: () => !app.inComponentEdit, run: () => files.exportAs('part') },
     { id: 'exportStep', label: tr("Export STEP..."), icon: 'export', keywords: tr("stp export cad"), description: tr("Export the solid as a STEP file."), enabled: hasBody, run: () => files.exportAs('step') },
     { id: 'exportStl', label: tr("Export STL..."), icon: 'export', keywords: tr("3d print mesh"), description: tr("Export the solid as an STL mesh for 3D printing."), enabled: hasBody, run: () => files.exportAs('stl') },
     { id: 'importStep', label: tr("Import..."), icon: 'import', keywords: tr("stp step sldprt solidworks import"), description: tr("Insert a STEP file or SolidWorks part as a solid body."), enabled: isPart, run: () => files.importStep() },
-    { id: 'insertComponent', label: tr("Insert Component..."), icon: 'import', keywords: tr("assembly insert part place component"), description: tr("Place a saved Parametric part in this assembly."), enabled: () => app.isAssembly, run: () => files.insertComponent() },
+    { id: 'insertComponent', label: tr("Insert Component..."), icon: 'import', keywords: tr("assembly insert part place component"), description: tr("Place a saved Parametric part in this assembly."), enabled: () => app.isAssembly && !app.inComponentEdit, run: () => files.insertComponent() },
+    {
+      id: 'newAssemblyPart', label: tr("New Part"), icon: 'part',
+      keywords: tr("assembly new part in place empty component"),
+      description: tr("Create an empty part in this assembly and open it for editing."),
+      enabled: () => app.isAssembly && !app.inComponentEdit,
+      run: () => app.newComponentPart(),
+    },
+    {
+      id: 'editComponentPart', label: tr("Edit Part"), icon: 'part',
+      keywords: tr("assembly edit part in place component"),
+      description: tr("Open the selected component's part for editing in place."),
+      enabled: () => app.isAssembly && !app.inComponentEdit && !!app.selection.ofKind('component')[0],
+      run: () => { const component = app.selection.ofKind('component')[0]; if (component) app.editComponentPart(component.id); },
+    },
+    {
+      id: 'finishComponentEdit', label: tr("Finish Part"), icon: 'check',
+      description: tr("Write the part back into the assembly and return to it."),
+      enabled: () => app.inComponentEdit,
+      run: () => { app.finishComponentEdit(true); },
+    },
+    { id: 'cancelComponentEdit', label: tr("Cancel Part"), icon: 'close', enabled: () => app.inComponentEdit, run: () => void app.cancelComponentEdit() },
     { id: 'rename', label: tr("Rename..."), icon: 'edit', run: () => files.rename() },
     {
       id: 'assistant', label: tr("Assistant"), icon: 'assistant', shortcut: 'Ctrl+J', keywords: tr("ai chat copilot design help agent claude"),
@@ -461,7 +486,7 @@ export const RIBBON: RibbonTab[] = [
       [{ cmd: 'hole' }, { cmd: 'fillet', menu: ['fillet', 'chamfer'] }, { cmd: 'linearPattern', menu: ['linearPattern', 'circularPattern', 'mirror'] }],
       [{ stack: [{ cmd: 'chamfer' }, { cmd: 'shell' }, { cmd: 'draft' }] }, { stack: [{ cmd: 'circularPattern' }, { cmd: 'mirror' }] }],
       [{ cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle'] }, { cmd: 'importStep' }],
-      [{ cmd: 'newAssembly' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'openDrawing' }],
+      [{ cmd: 'newAssembly' }, { cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'openDrawing' }],
       [{ cmd: 'fixComponent' }, { cmd: 'addMate' }, { cmd: 'addJoint' }, { cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
     ],
   },
@@ -471,8 +496,8 @@ export const RIBBON: RibbonTab[] = [
       [{ cmd: 'sketch' }],
       [
         { stack: [{ cmd: 'tool:line' }, { cmd: 'tool:centerline' }, { cmd: 'tool:point' }] },
-        { stack: [{ cmd: 'tool:rectangle' }, { cmd: 'tool:centerRectangle' }, { cmd: 'tool:polygon' }] },
-        { stack: [{ cmd: 'tool:circle' }, { cmd: 'tool:perimeterCircle' }, { cmd: 'tool:slot' }] },
+        { stack: [{ cmd: 'tool:rectangle' }, { cmd: 'tool:centerRectangle' }, { cmd: 'tool:rectangle3Point' }, { cmd: 'tool:polygon' }] },
+        { stack: [{ cmd: 'tool:circle' }, { cmd: 'tool:perimeterCircle' }, { cmd: 'tool:slot', menu: ['tool:slot', 'tool:slotOverall', 'tool:slotCenter'] }] },
         { stack: [{ cmd: 'tool:centerArc' }, { cmd: 'tool:tangentArc' }, { cmd: 'tool:arc3' }] },
         { stack: [{ cmd: 'tool:spline' }, { cmd: 'tool:sketchFillet' }] },
       ],
@@ -547,7 +572,7 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
     },
     {
       label: tr("Insert"), items: () => [
-        m('sketch'), m('insertComponent'), m('addMate'), m('addJoint'), sep,
+        m('sketch'), m('insertComponent'), m('newAssemblyPart'), m('addMate'), m('addJoint'), sep,
         { label: tr("Boss/Base"), icon: 'extrude', submenu: () => [m('extrude'), m('revolve'), m('sweep'), m('loft')] },
         { label: tr("Cut"), icon: 'extrudeCut', submenu: () => [m('extrudeCut'), m('revolveCut'), m('sweepCut'), m('loftCut')] },
         { label: tr("Features"), icon: 'fillet', submenu: () => [m('fillet'), m('chamfer'), m('hole'), m('shell'), m('draft')] },
@@ -558,7 +583,7 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
     },
     {
       label: tr("Tools"), items: () => [
-        { label: tr("Sketch Entities"), icon: 'line', submenu: () => ['line', 'centerline', 'rectangle', 'centerRectangle', 'circle', 'perimeterCircle', 'centerArc', 'tangentArc', 'arc3', 'polygon', 'slot', 'spline', 'point'].map((t) => m(`tool:${t}`)) },
+        { label: tr("Sketch Entities"), icon: 'line', submenu: () => ['line', 'centerline', 'rectangle', 'centerRectangle', 'rectangle3Point', 'circle', 'perimeterCircle', 'centerArc', 'tangentArc', 'arc3', 'polygon', 'slot', 'slotOverall', 'slotCenter', 'spline', 'point'].map((t) => m(`tool:${t}`)) },
         { label: tr("Sketch Tools"), icon: 'trim', submenu: () => [m('tool:sketchFillet'), m('tool:trim'), m('tool:extend'), m('offset'), m('mirrorEntities'), m('convertEntities'), m('construction')] },
         { label: tr("Dimensions and Constraints"), icon: 'smartDimension', submenu: () => [m('tool:smartDimension'), sep, ...CONSTRAINTS.map((t) => m(`constraint:${t}`))] },
         { label: tr("Evaluate"), icon: 'measure', submenu: () => [m('measure'), m('massProperties'), m('sectionView')] },
@@ -612,6 +637,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
     if (!component) return [];
     return [
       { label: tr("Component Properties..."), icon: 'part', run: () => app.openComponent(id) },
+      { label: tr("Edit Part"), icon: 'part', run: () => app.editComponentPart(id) },
       {
         label: component.visible ? tr("Hide") : tr("Show"),
         icon: component.visible ? 'eyeOff' : 'eye',
@@ -693,8 +719,8 @@ export function quickActions(app: App): { cmd: string }[] {
     if (app.selection.ofKind('assemblyJoint').length) return [{ cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'zoomFit' }];
     if (components.length === 2) return [{ cmd: 'addMate' }, { cmd: 'openDrawing' }, { cmd: 'zoomFit' }];
     return components.length
-      ? [{ cmd: 'editComponent' }, { cmd: 'addJoint' }, { cmd: 'fixComponent' }, { cmd: 'openDrawing' }]
-      : [{ cmd: 'insertComponent' }, { cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'zoomFit' }];
+      ? [{ cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'addJoint' }, { cmd: 'fixComponent' }, { cmd: 'openDrawing' }]
+      : [{ cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'zoomFit' }];
   }
   const it = app.selection.items[0];
   if (!it) return [];

@@ -243,6 +243,7 @@ export interface ShellFeature extends FeatureBase {
 
 export type HoleKind = 'simple' | 'counterbore' | 'doubleCounterbore' | 'countersink' | 'counterdrill' | 'spotface' | 'tapped';
 export type HoleTip = 'flat' | 'drill';
+export type HoleEnd = 'blind' | 'throughAll' | 'toObject';
 
 export interface HoleFeature extends FeatureBase {
   type: 'hole';
@@ -250,8 +251,10 @@ export interface HoleFeature extends FeatureBase {
   sketch: Id;
   kind: HoleKind;
   diameter: Param;
-  end: 'blind' | 'throughAll';
+  end: HoleEnd;
   depth: Param;
+  /** To Object: the planar face the hole stops at. */
+  toFace?: FaceRef | null;
   cbDiameter: Param;
   cbDepth: Param;
   csDiameter: Param;

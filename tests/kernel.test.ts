@@ -525,6 +525,30 @@ describe('feature regeneration', () => {
     }
   });
 
+  it('stops a hole at a selected planar face', async () => {
+    const b = new ModelBuilder();
+    const base: Feature[] = [sketch('S1', rect(-20, -20, 20, 20)), extrude('E1', 'S1', 20)];
+    const r0 = await b.build(req(base));
+    const caps = r0.faces.filter((f) => f.name.startsWith('E1:cap'));
+    const top = caps.find((f) => (f.normal?.[2] ?? 0) > 0.99)!;
+    const bottom = caps.find((f) => (f.normal?.[2] ?? 0) < -0.99)!;
+    const ref = (f: typeof top) => ({ name: f.name, sig: { type: 'plane', c: f.center, n: f.normal, area: f.area } });
+    const pos = sketch('S2', [{ id: 'hp', t: 'point', x: 0, y: 0 }], { kind: 'face', face: ref(top) });
+    const hole = (toFace: ReturnType<typeof ref> | null, end: 'toObject' | 'blind' = 'toObject'): Feature => ({
+      id: 'H', name: 'H', type: 'hole', sketch: 'S2', kind: 'simple', diameter: 4, end, depth: 5,
+      cbDiameter: 8, cbDepth: 1, csDiameter: 8, csAngle: 90, toFace, tip: 'flat', flip: false,
+    });
+    let r = await b.build(req([...base, pos, hole(ref(bottom))]));
+    expect(r.status[3]).toMatchObject({ ok: true });
+    expect(32000 - volume(b)).toBeCloseTo(Math.PI * 4 * 20, 1);
+
+    const side = r0.faces.find((f) => f.type === 'plane' && Math.abs(f.normal?.[2] ?? 0) < 1e-6)!;
+    r = await b.build(req([...base, pos, hole(ref(side))]));
+    expect(r.status[3]).toMatchObject({ ok: false, error: expect.stringMatching(/parallel/) });
+    r = await b.build(req([...base, pos, hole(null)]));
+    expect(r.status[3]).toMatchObject({ ok: false, error: expect.stringMatching(/Select the face/) });
+  });
+
   it('cuts spotfaced and tapped holes and reports cosmetic thread representation', async () => {
     const b = new ModelBuilder();
     const base: Feature[] = [sketch('S1', rect(-20, -20, 20, 20)), extrude('E1', 'S1', 3)];

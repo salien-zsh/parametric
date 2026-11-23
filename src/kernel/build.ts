@@ -1062,7 +1062,21 @@ export class ModelBuilder {
     const r = cutDiameter / 2;
     if (r <= 0) throw new FeatureError(tr("Diameter must be greater than zero"));
     if (f.kind === 'tapped' && cutDiameter >= nominalDiameter) throw new FeatureError(tr("The tap drill diameter must be smaller than the thread diameter"));
-    const depth = f.end === 'throughAll' ? this.throughAllDepth(st, frame.o, scale(frame.n, f.flip ? 1 : -1)) : num(f.depth);
+    const cutDir = scale(frame.n, f.flip ? 1 : -1);
+    let depth: number;
+    if (f.end === 'throughAll') depth = this.throughAllDepth(st, frame.o, cutDir);
+    else if (f.end === 'toObject') {
+      if (!f.toFace) throw new FeatureError(tr("Select the face the hole should stop at"));
+      const i = this.resolveFace(f.toFace, st);
+      const target = st.faces[i].desc;
+      if (target.type !== 'plane') throw new FeatureError(tr("A hole can stop at a planar face only"));
+      const denom = dot(cutDir, target.d);
+      if (Math.abs(denom) < 1e-9) throw new FeatureError(tr("The hole axis is parallel to the face it should stop at"));
+      const distance = dot(sub(target.p, frame.o), target.d) / denom;
+      if (!(distance > 0)) throw new FeatureError(tr("The face to stop at is not in front of the hole"));
+      // A hair past the face so the opening is clean rather than a thin skin.
+      depth = distance + 1e-4;
+    } else depth = num(f.depth);
     if (depth <= 0) throw new FeatureError(tr("Depth must be greater than zero"));
     const tipAngle = num(f.tipAngle ?? 118);
     const tipHalf = (tipAngle * Math.PI) / 360;

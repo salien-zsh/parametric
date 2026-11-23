@@ -294,6 +294,62 @@ test.describe('sketching', () => {
     expect(errors).toEqual([]);
   });
 
+  test('a three point rectangle is a constrained rectangle from an angled edge', async ({ page }) => {
+    const errors = await openApp(page);
+    await startSketch(page);
+    const result = await page.evaluate(() => {
+      const a = (window as unknown as { __parametric: import('../../src/app/app').App }).__parametric;
+      const ed = a.sketchEditor!;
+      a.commands.run('tool:rectangle3Point');
+      const click = (p: [number, number]) => ed.tool!.click!({ p, raw: p, kind: 'none' }, {} as import('../../src/app/viewport').VPEvent);
+      click([0, 0]);
+      click([30, 0]);
+      click([0, 20]);
+      return {
+        status: ed.solve!.status,
+        bad: [...ed.solve!.badConstraints],
+        points: ed.sketch.entities.filter((e) => e.t === 'point').length,
+        lines: ed.sketch.entities.filter((e) => e.t === 'line').length,
+        relations: ed.sketch.constraints.map((c) => c.type),
+      };
+    });
+    expect(result.status).toBe('under');
+    expect(result.bad).toEqual([]);
+    expect(result.points).toBe(4);
+    expect(result.lines).toBe(4);
+    expect(result.relations).toEqual(['parallel', 'parallel', 'perpendicular']);
+    expect(errors).toEqual([]);
+  });
+
+  for (const variant of ['slotOverall', 'slotCenter'] as const) test(`${variant} places the arc centres from its pick points`, async ({ page }) => {
+    const errors = await openApp(page);
+    await startSketch(page);
+    const result = await page.evaluate((variant) => {
+      const a = (window as unknown as { __parametric: import('../../src/app/app').App }).__parametric;
+      const ed = a.sketchEditor!;
+      a.commands.run(`tool:${variant}`);
+      const click = (p: [number, number]) => ed.tool!.click!({ p, raw: p, kind: 'none' }, {} as import('../../src/app/viewport').VPEvent);
+      if (variant === 'slotOverall') { click([0, 0]); click([40, 0]); }
+      else { click([20, 0]); click([40, 0]); }
+      click([20, 5]);
+      const at = (x: number, y: number) => ed.sketch.entities.some((e) => e.t === 'point' && Math.abs(e.x - x) < 1e-6 && Math.abs(e.y - y) < 1e-6);
+      return {
+        status: ed.solve!.status,
+        bad: [...ed.solve!.badConstraints],
+        left: at(5, 0),
+        right: at(35, 0),
+        stray: ed.sketch.entities.filter((e) => e.t === 'point').length,
+      };
+    }, variant);
+    expect(result.status).toBe('under');
+    expect(result.bad).toEqual([]);
+    expect(result.left).toBe(true);
+    expect(result.right).toBe(true);
+    // Two arc centres and four corners; the picked overall/center points are not left behind.
+    expect(result.stray).toBe(6);
+    expect(errors).toEqual([]);
+  });
+
   test('point picking preserves the origin fallback and stable coincident-point order', async ({ page }) => {
     const errors = await openApp(page);
     await startSketch(page);

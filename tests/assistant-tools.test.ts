@@ -84,6 +84,15 @@ describe('assistant tools', () => {
     expect(await h.volume()).toBeCloseTo(40000 - 4 * Math.PI * 9 * 10, 1);
   });
 
+  it('stops an assistant hole at a selected face', async () => {
+    const { h } = await plate();
+    const top = h.faces.find((f) => f.name.endsWith(':cap1'))!.name;
+    const bottom = h.faces.find((f) => (f.normal?.[1] ?? 0) < -0.99)!.name;
+    const r = await h.call('add_hole', { on: top, points: [[0, 10, 0]], diameter: 5, end: 'to_object', to_face: bottom });
+    expect(r.content).toContain('Hole');
+    expect(await h.volume()).toBeCloseTo(40000 - Math.PI * 6.25 * 10, 1);
+  });
+
   it('finds the vertical edges and fillets them', async () => {
     const { h } = await plate();
     const list = await h.call('find_geometry', { kind: 'edges', direction: [0, 1, 0] });

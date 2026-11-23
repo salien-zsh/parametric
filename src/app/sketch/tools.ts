@@ -2,7 +2,7 @@
 // with snapped cursor positions by the sketch editor.
 
 import type { Id, SkArc, SkLine, SketchFeature } from '../../model/types';
-import { type Vec2, angle2, cross2, dist2, norm2, sub2 } from '../../math/vec';
+import { type Vec2, angle2, cross2, dist2, dot2, norm2, sub2 } from '../../math/vec';
 import { ORIGIN_ID, SketchIndex, splineBeziers, bezierPoint, circumcenter } from '../../sketch/geom';
 import { PROJECTED_LOCKED, extendAt, filletCorner, smartDimension, trimAt, zeroDimensionReason } from '../../sketch/ops';
 import { isExternal } from '../../sketch/external';
@@ -122,6 +122,69 @@ export function lineTool(ed: SketchEditor, construction = false): SkTool {
 }
 
 // ---------- Rectangle ----------
+
+/** The four corners of a rectangle from one edge and a third point's width. */
+function threePointCorners(a: Vec2, b: Vec2, c: Vec2): Vec2[] | null {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-9) return null;
+  const u: Vec2 = [dx / len, dy / len];
+  const n: Vec2 = [-u[1], u[0]];
+  const h = dot2([c[0] - a[0], c[1] - a[1]], n);
+  if (Math.abs(h) < 1e-9) return null;
+  return [a, b, [b[0] + n[0] * h, b[1] + n[1] * h], [a[0] + n[0] * h, a[1] + n[1] * h]];
+}
+
+export function threePointRectangleTool(ed: SketchEditor): SkTool {
+  let first: Snap | null = null;
+  let second: Snap | null = null;
+  const commit = (third: Snap) => {
+    const cs = threePointCorners(first!.p, second!.p, third.p);
+    if (!cs) return;
+    const width = Math.hypot(cs[2][0] - cs[1][0], cs[2][1] - cs[1][1]);
+    if (width < ed.px * 2) return;
+    const a = first!, b = second!;
+    first = second = null;
+    ed.setPreview([]);
+    ed.edit(tr("Add three point rectangle"), (sk, newId) => {
+      const ids: Id[] = [
+        ed.commitPoint(sk, a, newId),
+        ed.commitPoint(sk, b, newId),
+        ...cs.slice(2).map((p) => { const id = newId('p'); sk.entities.push({ id, t: 'point', x: p[0], y: p[1] }); return id; }),
+      ];
+      const lines = ids.map((id, i) => {
+        const lid = newId('l');
+        sk.entities.push({ id: lid, t: 'line', a: id, b: ids[(i + 1) % 4] });
+        return lid;
+      });
+      // A parallelogram with one right angle is a rectangle.
+      sk.constraints.push(
+        { id: newId('r'), type: 'parallel', refs: [lines[0], lines[2]] },
+        { id: newId('r'), type: 'parallel', refs: [lines[1], lines[3]] },
+        { id: newId('r'), type: 'perpendicular', refs: [lines[0], lines[1]] },
+      );
+    });
+  };
+  return {
+    id: 'rectangle3Point',
+    label: tr("Three Point Rectangle"),
+    hint: tr("Click two points for one edge, then a third for the width."),
+    from: () => (!second && first ? first.p : null),
+    move(s) {
+      if (!first) return;
+      if (!second) { ed.setPreview([[first.p, s.p]], [first.p]); return; }
+      const cs = threePointCorners(first.p, second.p, s.p);
+      if (cs) ed.setPreview([[...cs, cs[0]]], [first.p, second.p]);
+    },
+    click(s) {
+      if (!first) { first = s; return true; }
+      if (!second) { if (dist2(first.p, s.p) > ed.px * 3) second = s; return true; }
+      commit(s);
+      return true;
+    },
+    cancel() { const was = !!first; first = second = null; ed.setPreview([]); return was; },
+  };
+}
 
 export function rectangleTool(ed: SketchEditor, centered = false): SkTool {
   let first: Snap | null = null;
@@ -511,7 +574,10 @@ export function polygonTool(ed: SketchEditor): SkTool {
 
 // ---------- Slot ----------
 
-export function slotTool(ed: SketchEditor): SkTool {
+export type SlotVariant = 'centers' | 'overall' | 'center';
+
+/** Fusion's three straight-slot placements: by centres, by overall ends, or from a centre point. */
+export function slotTool(ed: SketchEditor, variant: SlotVariant = 'centers'): SkTool {
   let a: Snap | null = null, b: Snap | null = null;
   const shape = (p: Vec2, q: Vec2, w: number) => {
     const u = norm2(sub2(q, p));
@@ -521,34 +587,58 @@ export function slotTool(ed: SketchEditor): SkTool {
     const q1: Vec2 = [q[0] + n[0] * r, q[1] + n[1] * r], q2: Vec2 = [q[0] - n[0] * r, q[1] - n[1] * r];
     return { p1, p2, q1, q2, r, a0: angle2(n) };
   };
+  /** The two arc centres for the picked points and the width. */
+  const centers = (p: Vec2, q: Vec2, w: number): { a: Vec2; b: Vec2 } | null => {
+    const dx = q[0] - p[0], dy = q[1] - p[1];
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-9) return null;
+    if (variant === 'centers') return { a: p, b: q };
+    const r = w / 2;
+    if (len <= w + 1e-9) return null;
+    const u: Vec2 = [dx / len, dy / len];
+    if (variant === 'overall') return { a: [p[0] + u[0] * r, p[1] + u[1] * r], b: [q[0] - u[0] * r, q[1] - u[1] * r] };
+    const half = len - r;
+    return { a: [p[0] - u[0] * half, p[1] - u[1] * half], b: [p[0] + u[0] * half, p[1] + u[1] * half] };
+  };
+  const widthAt = (p: Vec2, q: Vec2, s: Vec2) => {
+    const u = norm2(sub2(q, p));
+    return 2 * Math.abs(cross2(u, sub2(s, p)));
+  };
+  const labels = {
+    centers: { id: 'slot', label: tr("Straight Slot"), hint: tr("Click the two arc centres, then set the width.") },
+    overall: { id: 'slotOverall', label: tr("Overall Slot"), hint: tr("Click the two ends of the slot, then set the width.") },
+    center: { id: 'slotCenter', label: tr("Center Point Slot"), hint: tr("Click the centre, then one end, then set the width.") },
+  }[variant];
   return {
-    id: 'slot',
-    label: tr("Straight Slot"),
-    hint: tr("Click the two arc centres, then set the width."),
+    id: labels.id,
+    label: labels.label,
+    hint: labels.hint,
     from: () => (a && !b ? a.p : null),
     move(s) {
       if (a && !b) ed.setPreview([[a.p, s.p]], [a.p]);
       if (a && b) {
-        const u = norm2(sub2(b.p, a.p));
-        const w = 2 * Math.abs(cross2(u, sub2(s.p, a.p)));
-        const g = shape(a.p, b.p, Math.max(w, ed.px * 4));
-        ed.setPreview([[g.p1, g.q1], [g.p2, g.q2], arcPts(b.p, g.r, g.a0 - Math.PI, Math.PI), arcPts(a.p, g.r, g.a0, Math.PI)], [a.p, b.p]);
+        const w = Math.max(widthAt(a.p, b.p, s.p), ed.px * 4);
+        const cs = centers(a.p, b.p, w);
+        if (!cs) return;
+        const g = shape(cs.a, cs.b, w);
+        ed.setPreview([[g.p1, g.q1], [g.p2, g.q2], arcPts(cs.b, g.r, g.a0 - Math.PI, Math.PI), arcPts(cs.a, g.r, g.a0, Math.PI)], [a.p, b.p]);
       }
     },
     click(s) {
       if (!a) { a = s; return true; }
       if (!b) { if (dist2(a.p, s.p) > ed.px * 3) b = s; return true; }
-      const u = norm2(sub2(b.p, a.p));
-      const w = 2 * Math.abs(cross2(u, sub2(s.p, a.p)));
-      // Too narrow (e.g. a double-click on the second centre): keep waiting for the width.
+      const w = widthAt(a.p, b.p, s.p);
       if (w < ed.px * 2) return true;
+      const cs = centers(a.p, b.p, w);
+      if (!cs) return true;
       const A = a, B = b;
       a = b = null;
       ed.setPreview([]);
-      const g = shape(A.p, B.p, w);
+      const g = shape(cs.a, cs.b, w);
       ed.edit(tr("Add slot"), (sk, newId) => {
-        const ca = ed.commitPoint(sk, A, newId), cb = ed.commitPoint(sk, B, newId);
         const pt = (p: Vec2) => { const id = newId('p'); sk.entities.push({ id, t: 'point', x: p[0], y: p[1] }); return id; };
+        const ca = variant === 'centers' ? ed.commitPoint(sk, A, newId) : pt(cs.a);
+        const cb = variant === 'centers' ? ed.commitPoint(sk, B, newId) : pt(cs.b);
         const p1 = pt(g.p1), p2 = pt(g.p2), q1 = pt(g.q1), q2 = pt(g.q2);
         const l1 = newId('l'), l2 = newId('l'), arcA = newId('a'), arcB = newId('a'), axis = newId('l');
         sk.entities.push(
@@ -561,6 +651,7 @@ export function slotTool(ed: SketchEditor): SkTool {
           { id: newId('r'), type: 'tangent', refs: [l2, arcA] }, { id: newId('r'), type: 'tangent', refs: [l2, arcB] },
           { id: newId('r'), type: 'equal', refs: [arcA, arcB] },
         );
+        const u = norm2(sub2(cs.b, cs.a));
         if (Math.abs(u[1]) < 1e-9) sk.constraints.push({ id: newId('r'), type: 'horizontal', refs: [axis] });
         else if (Math.abs(u[0]) < 1e-9) sk.constraints.push({ id: newId('r'), type: 'vertical', refs: [axis] });
       });

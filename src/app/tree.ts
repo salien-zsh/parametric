@@ -305,7 +305,7 @@ export class FeatureTree {
 
   private onDouble(r: Row) {
     if (r.feature) this.app.editFeature(r.feature.id);
-    else if (r.item?.kind === 'component') this.app.openComponent(r.item.id);
+    else if (r.item?.kind === 'component') this.app.editComponentPart(r.item.id);
     else if (r.item?.kind === 'assemblyMate') this.app.openMate(r.item.id);
     else if (r.item?.kind === 'assemblyJoint') this.app.openJoint(r.item.id);
     else if (r.key === 'part') this.app.commands.run('properties');
