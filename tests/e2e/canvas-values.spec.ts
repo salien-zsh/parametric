@@ -13,7 +13,7 @@ test('a plane offset is edited on the model and the panel follows it', async ({ 
   await app(page);
   await page.getByRole('treeitem', { name: 'Front Plane' }).click();
   await page.evaluate(() => (window as unknown as Handle).__parametric.commands.run('plane'));
-  await expect(page.getByRole('heading', { name: 'Plane' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Offset Plane' })).toBeVisible();
   await expect(valueBox(page)).toBeVisible();
   await expect(valueInput(page)).toHaveValue(/mm$/);
 

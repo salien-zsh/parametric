@@ -52,6 +52,7 @@ const HOLE_KIND = {
 const HOLE_TIP = { flat: 'flat', drill: 'drill', drill_point: 'drill' } as const;
 const CHAMFER_MODE = { distance: 'distance', equal_distance: 'distance', two_distances: 'twoDistance', two_distance: 'twoDistance', distance_angle: 'distanceAngle' } as const;
 const CHAMFER_OUT: Record<string, string> = { distance: 'distance', twoDistance: 'two_distances', distanceAngle: 'distance_angle' };
+const PLANE_KIND = { offset: 'offset', midplane: 'midplane', angle: 'angle', plane_at_angle: 'angle', plane_at_an_angle: 'angle' } as const;
 
 export class FeatureCodec {
   constructor(private u: Units, private refs: Refs) {}
@@ -241,8 +242,15 @@ export class FeatureCodec {
       case 'plane': {
         need('reference');
         const f = out?.type === 'plane' ? out : newPlane(id, name, null, 0);
+        if (has('kind')) f.kind = choice(a.kind, PLANE_KIND, 'kind');
+        if (!base && f.kind === 'midplane' && !has('second_reference')) throw new ToolError(tr("second_reference is required for a midplane"));
+        if (!base && f.kind === 'angle' && !has('axis')) throw new ToolError(tr("axis is required for a plane at angle"));
+        if (f.kind === 'angle' && f.angle == null) f.angle = 45;
         if (has('reference')) f.ref = refs.plane(a.reference, 'reference', f.ref);
+        if (has('second_reference')) f.ref2 = refs.plane(a.second_reference, 'second_reference', f.ref2 ?? null);
+        if (has('axis')) f.axis = refs.axis(a.axis, 'axis', f.axis ?? null);
         if (has('offset')) f.offset = len('offset');
+        if (has('angle')) f.angle = ang('angle');
         if (has('reverse')) f.flip = bool(a.reverse, 'reverse');
         return f;
       }
@@ -325,7 +333,12 @@ export class FeatureCodec {
       };
       case 'circularPattern': return { features: f.seeds, axis: axisSpec(f.axis), count: C(f.count), angle: A(f.angle), equal_spacing: f.equal, reverse: f.flip };
       case 'mirror': return { features: f.seeds, plane: planeSpec(f.plane) };
-      case 'plane': return { reference: planeSpec(f.ref), offset: L(f.offset), reverse: f.flip };
+      case 'plane': {
+        const kind = f.kind ?? 'offset';
+        if (kind === 'midplane') return { kind, reference: planeSpec(f.ref), second_reference: planeSpec(f.ref2 ?? null), reverse: f.flip };
+        if (kind === 'angle') return { kind, reference: planeSpec(f.ref), axis: axisSpec(f.axis ?? null), angle: A(f.angle ?? 45), reverse: f.flip };
+        return { kind, reference: planeSpec(f.ref), offset: L(f.offset), reverse: f.flip };
+      }
       case 'loft': return { profiles: f.profiles, cut: f.cut, ruled: f.ruled };
       case 'sweep': return { profile: f.profile, path: f.path, cut: f.cut };
       case 'draft': return { faces: f.faces.map((x) => x.name), neutral_plane: planeSpec(f.neutral), angle: A(f.angle), reverse: f.flip };

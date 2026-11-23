@@ -13,7 +13,7 @@
 
 import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
-import { add, dist, dot, len, normalize, scale, sub, toLocal, toWorld } from '../math/vec';
+import { add, dist, dot, frameFrom, len, normalize, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
   AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
@@ -672,7 +672,31 @@ export class ModelBuilder {
   // ---- features ----
 
   private applyPlane(f: PlaneFeature, st: State) {
+    const kind = f.kind ?? 'offset';
     const base = this.resolvePlane(f.ref, st);
+    if (kind === 'midplane') {
+      const other = this.resolvePlane(f.ref2 ?? null, st);
+      if (Math.abs(dot(base.n, other.n)) < 1 - 1e-6) throw new FeatureError(tr("The two references of a midplane must be parallel"));
+      // A point on the second plane, measured along the first plane's normal.
+      const gap = dot(sub(other.o, base.o), base.n);
+      st.frames.set(f.id, { ...base, o: add(base.o, scale(base.n, gap / 2)) });
+      return;
+    }
+    if (kind === 'angle') {
+      const ax = this.resolveAxis(f.axis ?? null, st);
+      // Fusion rotates a copy of the reference plane about an axis lying in it.
+      const dir = normalize(ax.d);
+      const offDir = Math.abs(dot(dir, base.n));
+      const offPoint = Math.abs(dot(sub(ax.p, base.o), base.n));
+      if (offDir > 1e-6 || offPoint > 1e-6 * (1 + dist(ax.p, base.o))) {
+        throw new FeatureError(tr("The axis of a plane at angle must lie in the reference plane"));
+      }
+      const angle = num(f.angle ?? 0) * (f.flip ? -1 : 1);
+      const q = qAxisAngle(dir, (angle * Math.PI) / 180);
+      const o = add(ax.p, qRotate(q, sub(base.o, ax.p)));
+      st.frames.set(f.id, frameFrom(o, qRotate(q, base.x), qRotate(q, base.n)));
+      return;
+    }
     const off = num(f.offset) * (f.flip ? -1 : 1);
     st.frames.set(f.id, { ...base, o: add(base.o, scale(base.n, off)) });
   }

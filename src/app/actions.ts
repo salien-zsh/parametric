@@ -1,7 +1,7 @@
 // Command definitions and where they appear: CommandManager tabs, menus,
 // context menus and the selection quick-action toolbar.
 
-import type { Feature, Id, SkDimension } from '../model/types';
+import type { Feature, Id, PlaneKind, SkDimension } from '../model/types';
 import { isDimension } from '../model/types';
 import { consumedSketches } from '../model/features';
 import { VIEWS, type ViewName } from '../render/camera';
@@ -64,8 +64,8 @@ export function registerCommands(app: App, files: FileOps) {
   // A feature panel holds a copy of its feature: OK after a Redo would write
   // that copy back over the redone change, so the panel is cancelled first.
   const redo = () => { if (app.panel?.preview()) void app.closePanel(false); app.store.redo(); };
-  const feature = (type: Feature['type'], label: string, iconName: string, desc: string, opts: { cut?: boolean; needsBody?: boolean; shortcut?: string; keywords?: string } = {}): Command => ({
-    id: opts.cut ? `${type}Cut` : type,
+  const feature = (type: Feature['type'], label: string, iconName: string, desc: string, opts: { cut?: boolean; needsBody?: boolean; shortcut?: string; keywords?: string; id?: string; planeKind?: PlaneKind } = {}): Command => ({
+    id: opts.id ?? (opts.cut ? `${type}Cut` : type),
     label,
     icon: iconName,
     description: desc,
@@ -86,7 +86,7 @@ export function registerCommands(app: App, files: FileOps) {
         void c.run('sketch');
         return;
       }
-      const p = startFeature(app, type, { cut: opts.cut });
+      const p = startFeature(app, type, { cut: opts.cut, planeKind: opts.planeKind });
       if (p) void app.openPanel(p);
     },
   });
@@ -353,7 +353,9 @@ export function registerCommands(app: App, files: FileOps) {
     feature('linearPattern', tr("Linear Pattern"), 'linearPattern', tr("Repeat features along one or two directions."), { needsBody: true, keywords: tr("array repeat") }),
     feature('circularPattern', tr("Circular Pattern"), 'circularPattern', tr("Repeat features around an axis."), { needsBody: true, keywords: tr("polar array") }),
     feature('mirror', tr("Mirror"), 'mirror', tr("Mirror features or the body about a plane."), { needsBody: true, keywords: 'symmetry' }),
-    feature('plane', tr("Plane"), 'plane', tr("Create a reference plane offset from a plane or face."), { keywords: tr("reference geometry datum") }),
+    feature('plane', tr("Offset Plane"), 'plane', tr("Create a reference plane offset from a plane or face."), { planeKind: 'offset', keywords: tr("reference geometry datum") }),
+    feature('plane', tr("Midplane"), 'plane', tr("Create a reference plane halfway between two parallel planes or faces."), { id: 'planeMidplane', planeKind: 'midplane', keywords: tr("reference geometry datum middle symmetry") }),
+    feature('plane', tr("Plane at Angle"), 'plane', tr("Create a reference plane rotated about an edge from a plane or face."), { id: 'planeAngle', planeKind: 'angle', keywords: tr("reference geometry datum angle rotate axis") }),
     // ---- evaluate ----
     { id: 'measure', label: tr("Measure"), icon: 'measure', keywords: tr("distance length angle area"), description: tr("Measure distances, lengths, angles and areas."), enabled: hasBody, run: () => { void app.openPanel(new MeasurePanel(app)); } },
     { id: 'massProperties', label: tr("Mass Properties"), icon: 'massProperties', keywords: tr("volume weight inertia center of mass"), description: tr("Volume, mass, centre of mass and inertia."), enabled: hasBody, run: () => massPropertiesDialog(app) },
@@ -458,7 +460,7 @@ export const RIBBON: RibbonTab[] = [
       [{ cmd: 'extrudeCut' }, { cmd: 'revolveCut' }, { stack: [{ cmd: 'sweepCut' }, { cmd: 'loftCut' }] }],
       [{ cmd: 'hole' }, { cmd: 'fillet', menu: ['fillet', 'chamfer'] }, { cmd: 'linearPattern', menu: ['linearPattern', 'circularPattern', 'mirror'] }],
       [{ stack: [{ cmd: 'chamfer' }, { cmd: 'shell' }, { cmd: 'draft' }] }, { stack: [{ cmd: 'circularPattern' }, { cmd: 'mirror' }] }],
-      [{ cmd: 'plane' }, { cmd: 'importStep' }],
+      [{ cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle'] }, { cmd: 'importStep' }],
       [{ cmd: 'newAssembly' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'openDrawing' }],
       [{ cmd: 'fixComponent' }, { cmd: 'addMate' }, { cmd: 'addJoint' }, { cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
     ],
@@ -550,7 +552,7 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
         { label: tr("Cut"), icon: 'extrudeCut', submenu: () => [m('extrudeCut'), m('revolveCut'), m('sweepCut'), m('loftCut')] },
         { label: tr("Features"), icon: 'fillet', submenu: () => [m('fillet'), m('chamfer'), m('hole'), m('shell'), m('draft')] },
         { label: tr("Pattern/Mirror"), icon: 'linearPattern', submenu: () => [m('linearPattern'), m('circularPattern'), m('mirror')] },
-        { label: tr("Reference Geometry"), icon: 'plane', submenu: () => [m('plane')] },
+        { label: tr("Reference Geometry"), icon: 'plane', submenu: () => [m('plane'), m('planeMidplane'), m('planeAngle')] },
         sep, m('importStep'),
       ],
     },
@@ -661,7 +663,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
   const items: MenuItem[] = [];
   if (sel) {
     const plane = app.selectedPlaneRef();
-    if (plane) items.push({ ...m('sketch'), label: tr("Sketch on This") }, m('normalTo'), m('plane', { label: tr("Offset Plane") }), sep);
+    if (plane) items.push({ ...m('sketch'), label: tr("Sketch on This") }, m('normalTo'), m('plane', { label: tr("Offset Plane") }), m('planeMidplane'), m('planeAngle'), sep);
     if (sel.kind === 'face') {
       const owner = app.store.feature(app.faces[sel.index]?.feature ?? '');
       if (owner) items.push({ label: `Edit ${owner.name}`, icon: 'edit', run: () => app.editFeature(owner.id) });

@@ -32,6 +32,29 @@ describe('feature regeneration', () => {
     expect(names).toContain('E1:cap1');
   });
 
+  it('builds midplanes and planes at an angle from their references', async () => {
+    const offset: Feature = { id: 'P1', name: 'P1', type: 'plane', kind: 'offset', ref: { kind: 'base', plane: 'front' }, offset: 20, flip: false };
+    const mid: Feature = { id: 'M1', name: 'M1', type: 'plane', kind: 'midplane', ref: { kind: 'base', plane: 'front' }, ref2: { kind: 'feature', id: 'P1' }, offset: 0, flip: false };
+    const angled: Feature = { id: 'A1', name: 'A1', type: 'plane', kind: 'angle', ref: { kind: 'base', plane: 'front' }, axis: { kind: 'base', axis: 'x' }, angle: 90, offset: 0, flip: false };
+    const b = new ModelBuilder();
+    const res = await b.build(req([offset, mid, angled]));
+    expect(res.status.every((s) => s.ok)).toBe(true);
+    // Halfway between z = 0 and z = 20.
+    expect(res.frames.M1.o[2]).toBeCloseTo(10, 6);
+    expect(res.frames.M1.n[2]).toBeCloseTo(1, 6);
+    // Front plane rotated 90 degrees about world X: normal leaves +Z for Y.
+    expect(Math.abs(res.frames.A1.n[2])).toBeLessThan(1e-6);
+    expect(Math.abs(res.frames.A1.n[1])).toBeCloseTo(1, 6);
+    expect(res.frames.A1.x[0]).toBeCloseTo(1, 6);
+
+    // Non-parallel references and an axis off the plane are reported.
+    const notParallel: Feature = { id: 'M2', name: 'M2', type: 'plane', kind: 'midplane', ref: { kind: 'base', plane: 'front' }, ref2: { kind: 'base', plane: 'top' }, offset: 0, flip: false };
+    const offPlaneAxis: Feature = { id: 'A2', name: 'A2', type: 'plane', kind: 'angle', ref: { kind: 'base', plane: 'front' }, axis: { kind: 'base', axis: 'z' }, angle: 45, offset: 0, flip: false };
+    const bad = await b.build(req([notParallel, offPlaneAxis]));
+    expect(bad.status[0]).toMatchObject({ ok: false, error: expect.stringMatching(/parallel/) });
+    expect(bad.status[1]).toMatchObject({ ok: false, error: expect.stringMatching(/lie in the reference plane/) });
+  });
+
   it('extrudes a small profile far from the sketch origin without losing it', async () => {
     const b = new ModelBuilder();
     const origin = 100_000_000;

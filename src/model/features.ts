@@ -78,7 +78,10 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
     { path: 'angle', kind: 'angle', label: tr("Angle") },
     { path: 'count', kind: 'count', label: tr("Instances") },
   ],
-  plane: [{ path: 'offset', kind: 'length', label: tr("Offset") }],
+  plane: [
+    { path: 'offset', kind: 'length', label: tr("Offset") },
+    { path: 'angle', kind: 'angle', label: tr("Angle") },
+  ],
   draft: [{ path: 'angle', kind: 'angle', label: tr("Draft angle") }],
 };
 
@@ -179,7 +182,8 @@ export const newCircularPattern = (id: Id, name: string, seeds: Id[]): CircularP
 
 export const newMirror = (id: Id, name: string, seeds: Id[]): MirrorFeature => ({ id, name, type: 'mirror', seeds, plane: null });
 
-export const newPlane = (id: Id, name: string, ref: PlaneRef | null, offset: number): PlaneFeature => ({ id, name, type: 'plane', ref, offset, flip: false });
+export const newPlane = (id: Id, name: string, ref: PlaneRef | null, offset: number): PlaneFeature =>
+  ({ id, name, type: 'plane', kind: 'offset', ref, offset, flip: false });
 
 export const newLoft = (id: Id, name: string, profiles: Id[], cut: boolean): LoftFeature => ({ id, name, type: 'loft', profiles, cut, ruled: false });
 
@@ -240,7 +244,11 @@ export function dependencies(f: Feature): Id[] {
       else if (e.ext?.kind === 'vertex') e.ext.edges.forEach((r) => visitName(r.name));
     }
   }
-  if (f.type === 'plane') visitPlane(f.ref);
+  if (f.type === 'plane') {
+    visitPlane(f.ref);
+    visitPlane(f.ref2);
+    visitAxis(f.axis);
+  }
   if (f.type === 'mirror') { visitPlane(f.plane); f.seeds.forEach((s) => out.add(s)); }
   if (f.type === 'draft') { visitPlane(f.neutral); f.faces.forEach((r) => visitName(r.name)); }
   if (f.type === 'linearPattern' || f.type === 'circularPattern') f.seeds.forEach((s) => out.add(s));

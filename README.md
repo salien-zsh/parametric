@@ -34,7 +34,7 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - Holes: simple, counterbore, double counterbore, countersink, counterdrill, spotface and tapped, with a Fusion-style workflow that confirms positions before previewing. The Positions panel supports exact X/Y coordinates, face-centre holes and snapping to edges, vertices and circular-edge centres.
 - Linear patterns (one or two directions), circular patterns and mirroring.
 - On-model value handles: a plane's offset, an extrusion's depth, a revolve's angle, a fillet's radius and a chamfer's distance can be dragged or typed directly beside the geometry, Fusion-style, and the PropertyManager field follows the handle.
-- Reference planes, STEP import.
+- Reference planes: offset from a plane or face, halfway between two parallel references (midplane), or at an angle about an edge lying in the plane. The offset and angle can be edited on the model with the value handle. STEP import.
 - Open SolidWorks parts (.sldprt, SolidWorks 2003 and later) without SolidWorks: the exact solid is read from the file and becomes an imported body you can keep modeling on. The SolidWorks feature tree is not carried over.
 - References to faces and edges are stored by name, so fillets and sketches on faces survive dimension changes.
 

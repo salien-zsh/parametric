@@ -46,6 +46,22 @@ describe('assistant tools', () => {
     expect(sk.entities.filter((e) => e.t === 'line').map((e) => e.id).sort()).toEqual(['base_d0', 'base_d1', 'base_l0', 'base_l1', 'base_l2', 'base_l3']);
   });
 
+  it('creates midplanes and planes at an angle from their references', async () => {
+    const { h } = await plate();
+    const top = topFace(h);
+    await h.call('add_plane', { kind: 'midplane', reference: 'top', second_reference: top, name: 'Half' });
+    const mid = h.store.doc.features.find((f) => f.name === 'Half')!;
+    expect(mid).toMatchObject({ type: 'plane', kind: 'midplane' });
+    expect(h.frames[mid.id].o[1]).toBeCloseTo(5, 6);
+
+    // A bottom edge lies in the top reference plane (y = 0).
+    const edge = h.edges.find((e) => e.type === 'line' && Math.abs(e.mid[1]) < 1e-4)!;
+    await h.call('add_plane', { kind: 'angle', reference: 'top', axis: edge.name, angle: 30, name: 'Tilt' });
+    const tilt = h.store.doc.features.find((f) => f.name === 'Tilt')!;
+    expect(tilt).toMatchObject({ type: 'plane', kind: 'angle', angle: 30 });
+    expect(Math.abs(h.frames[tilt.id].n[1])).toBeCloseTo(Math.cos(Math.PI / 6), 6);
+  });
+
   it('offers no thin (wall) option, which the kernel does not build, and refuses one', async () => {
     for (const name of ['add_extrude', 'add_revolve']) {
       const spec = toolSpecs().find((t) => t.function.name === name)!;

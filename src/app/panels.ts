@@ -12,7 +12,7 @@ import { evaluateVariables, variableReferenceChanges } from '../model/expr';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
   AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
-  HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneRef, RevolveFeature,
+  HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, RevolveFeature,
   ShellFeature, SketchFeature, SweepFeature, UnitSystem, Variable,
 } from '../model/types';
 import { h } from '../ui/dom';
@@ -1004,17 +1004,69 @@ export class MirrorPanel extends FeaturePanel<MirrorFeature> {
 
 export class PlanePanel extends FeaturePanel<PlaneFeature> {
   private offsetField: HTMLElement | null = null;
+  private angleField: HTMLElement | null = null;
+  private offsetSection: HTMLElement | null = null;
+  private midSection: HTMLElement | null = null;
+  private angleSection: HTMLElement | null = null;
+
+  get title() {
+    if (this.editingId) return this.f.name;
+    switch (this.f.kind ?? 'offset') {
+      case 'midplane': return tr("Midplane");
+      case 'angle': return tr("Plane at Angle");
+      default: return tr("Offset Plane");
+    }
+  }
+
   render(): HTMLElement[] {
     const f = this.f;
-    const ref = new SelectionBox(this, tr("First reference"), { plane: true, planarOnly: true }, toPlane(this.app), (items) => { f.ref = (items[0]?.data as PlaneRef) ?? null; this.changed(); }, { single: true, icon: 'plane' });
-    if (f.ref) ref.setItems([{ item: planeItem(this.app, f.ref), data: f.ref, label: planeLabel(this.app, f.ref) }]);
+    const kind = f.kind ?? 'offset';
+    const first = new SelectionBox(this, tr("First reference"), { plane: true, planarOnly: true }, toPlane(this.app), (items) => { f.ref = (items[0]?.data as PlaneRef) ?? null; this.changed(); }, { single: true, icon: 'plane' });
+    if (f.ref) first.setItems([{ item: planeItem(this.app, f.ref), data: f.ref, label: planeLabel(this.app, f.ref) }]);
+    const second = new SelectionBox(this, tr("Second reference"), { plane: true, planarOnly: true }, toPlane(this.app), (items) => { f.ref2 = (items[0]?.data as PlaneRef) ?? null; this.changed(); }, { single: true, icon: 'plane' });
+    if (f.ref2) second.setItems([{ item: planeItem(this.app, f.ref2), data: f.ref2, label: planeLabel(this.app, f.ref2) }]);
+    const axis = new SelectionBox(this, tr("Axis"), { edge: true }, toAxis(this.app), (items) => { f.axis = (items[0]?.data as AxisRef) ?? null; this.changed(); }, { single: true, placeholder: tr("Select an edge in the reference plane"), icon: 'axis' });
+    if (f.axis) axis.setItems([{ item: axisItem(this.app, f.axis), data: f.axis, label: axisLabel(this.app, f.axis) }]);
+
+    const type = selectField(tr("Plane type"), kind, [
+      { value: 'offset' as const, label: tr("Offset") },
+      { value: 'midplane' as const, label: tr("Midplane") },
+      { value: 'angle' as const, label: tr("Plane at Angle") },
+    ], (v) => {
+      f.kind = v;
+      if (v === 'angle' && f.angle == null) f.angle = 45;
+      sync();
+      this.refreshTitle();
+      this.changed();
+    }, 'plane');
+
     const offset = numberField({ label: tr("Offset distance"), icon: 'ruler', value: f.offset, kind: 'length', ctx: this.ctx(), onChange: (v) => { f.offset = v; this.syncOffset(); this.changed(); } });
     this.offsetField = offset;
-    return [section(tr("First Reference"), [
-      ref.el,
-      offset,
-      checkbox(tr("Flip offset"), f.flip, (v) => { f.flip = v; this.syncOffset(); this.changed(); }),
-    ])];
+    const angle = numberField({ label: tr("Angle"), icon: 'revolve', value: f.angle ?? 45, kind: 'angle', ctx: this.ctx(), min: 0, max: 180, onChange: (v) => { f.angle = v; this.syncAngle(); this.changed(); } });
+    this.angleField = angle;
+    const offsetFlip = checkbox(tr("Flip offset"), f.flip, (v) => { f.flip = v; this.syncOffset(); syncFlips(); this.changed(); });
+    const reverseAngle = checkbox(tr("Reverse direction"), f.flip, (v) => { f.flip = v; syncFlips(); this.changed(); });
+    const syncFlips = () => {
+      for (const el of [offsetFlip, reverseAngle]) {
+        const box = el.querySelector<HTMLInputElement>('input');
+        if (box) box.checked = f.flip;
+      }
+    };
+
+    const firstSection = section(tr("First Reference"), [first.el]);
+    this.offsetSection = section(tr("Offset"), [offset, offsetFlip]);
+    this.midSection = section(tr("Second Reference"), [second.el]);
+    this.angleSection = section(tr("Axis and Angle"), [axis.el, angle, reverseAngle]);
+
+    const sync = () => {
+      const k = f.kind ?? 'offset';
+      this.offsetSection!.hidden = k !== 'offset';
+      this.midSection!.hidden = k !== 'midplane';
+      this.angleSection!.hidden = k !== 'angle';
+      syncFlips();
+    };
+    sync();
+    return [section(tr("Definition"), [type]), firstSection, this.offsetSection, this.midSection, this.angleSection];
   }
 
   private offsetNumber(): number {
@@ -1025,14 +1077,45 @@ export class PlanePanel extends FeaturePanel<PlaneFeature> {
     }
   }
 
+  private angleNumber(): number {
+    try {
+      return this.app.store.evalParam(this.f.angle ?? 0, 'angle');
+    } catch {
+      return 0;
+    }
+  }
+
   private syncOffset() {
     if (this.offsetField) setNumberFieldValue(this.offsetField, this.f.offset, this.ctx());
   }
 
-  /** The signed offset of the plane: the value Fusion shows beside the plane. */
+  /** The type selector renames the open panel (Offset Plane → Midplane...). */
+  private refreshTitle() {
+    const head = this.el.closest('.pm')?.querySelector<HTMLElement>('.pm-head .title');
+    if (head) head.textContent = this.title;
+  }
+
+  private syncAngle() {
+    if (this.angleField) setNumberFieldValue(this.angleField, this.f.angle ?? 45, this.ctx());
+  }
+
+  /** The value Fusion shows beside the plane: offset distance or rotation angle. */
   canvasValue(): CanvasValue | null {
     const f = this.f;
     if (!f.ref) return null;
+    if ((f.kind ?? 'offset') === 'midplane') return null;
+    if ((f.kind ?? 'offset') === 'angle') {
+      if (!f.axis) return null;
+      const fr = this.app.frames[f.id] ?? this.app.frameOfPlane(f.ref);
+      if (!fr) return null;
+      return {
+        anchor: fr.o, axis: null, value: this.angleNumber(), kind: 'angle', label: tr("Angle"), min: 0, max: 180,
+        onChange: (v) => { f.angle = v; this.syncAngle(); this.changed(); },
+        menu: () => [
+          { label: tr("Reverse direction"), icon: 'reset', run: () => { f.flip = !f.flip; this.changed(); } },
+        ],
+      };
+    }
     const base = this.app.frameOfPlane(f.ref);
     if (!base) return null;
     const sign = f.flip ? -1 : 1;
@@ -1052,8 +1135,25 @@ export class PlanePanel extends FeaturePanel<PlaneFeature> {
     };
   }
 
+  preview() {
+    const f = this.f;
+    if (!f.ref) return null;
+    const kind = f.kind ?? 'offset';
+    if (kind === 'midplane') return f.ref2 ? f : null;
+    if (kind === 'angle') return f.axis ? f : null;
+    return f;
+  }
+
   protected validate() {
-    return this.f.ref ? null : tr("Select a plane or planar face");
+    const f = this.f;
+    if (!f.ref) return tr("Select a plane or planar face");
+    const kind = f.kind ?? 'offset';
+    if (kind === 'midplane' && !f.ref2) return tr("Select a second parallel plane or face");
+    if (kind === 'angle') {
+      if (!f.axis) return tr("Select the axis to rotate about");
+      if (!(this.angleNumber() >= 0)) return tr("Enter an angle");
+    }
+    return null;
   }
 
   onBuild() {
@@ -1121,7 +1221,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
 }
 
 /** Creates a new feature panel, pre-filling from the current selection. */
-export function startFeature(app: App, type: Feature['type'], opts: { cut?: boolean } = {}): PropertyPanel | null {
+export function startFeature(app: App, type: Feature['type'], opts: { cut?: boolean; planeKind?: PlaneKind } = {}): PropertyPanel | null {
   const doc = app.store.doc;
   const id = app.store.nextId('f');
   const size = app.typicalSize();
@@ -1160,7 +1260,22 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'circularPattern': f = newCircularPattern(id, name, seeds); break;
     case 'mirror': { const x = newMirror(id, name, seeds); x.plane = app.selectedPlaneRef(); f = x; break; }
-    case 'plane': f = newPlane(id, name, app.selectedPlaneRef(), size); break;
+    case 'plane': {
+      const kind = opts.planeKind ?? 'offset';
+      const refs = sel.flatMap((it) => {
+        const c = toPlane(app)(it);
+        return c ? [c.data as PlaneRef] : [];
+      });
+      const x = newPlane(id, name, refs[0] ?? null, kind === 'offset' ? size : 0);
+      x.kind = kind;
+      if (kind === 'angle') {
+        x.angle = 45;
+        if (edges[0]) x.axis = { kind: 'edge', edge: edges[0] };
+      }
+      if (kind === 'midplane') x.ref2 = refs[1] ?? null;
+      f = x;
+      break;
+    }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
     case 'draft': { const x = newDraft(id, name); x.faces = faces; f = x; break; }

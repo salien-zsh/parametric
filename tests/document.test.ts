@@ -196,6 +196,8 @@ describe('document store', () => {
       { type: 'extrude', depth: 1 },
     ]) expect(load(f), f.type).toThrow(/damaged \(invalid feature references\)/);
     expect(load({ type: 'plane', ref: null, offset: 1 })).not.toThrow();
+    expect(load({ type: 'plane', ref: null, offset: 1, kind: 'midplane' })).not.toThrow();
+    expect(load({ type: 'plane', ref: null, offset: 1, kind: 'nonsense' })).toThrow(/damaged \(invalid feature references\)/);
     expect(load({ type: 'sweep', profile: null, path: null, cut: false })).not.toThrow();
     // A feature saved before its sketch was picked loads, and its rebuild says what is missing.
     expect(load({ type: 'extrude', sketch: '', depth: 1 })).not.toThrow();
@@ -259,6 +261,20 @@ describe('document store', () => {
     expect(dependencies(fillet).sort()).toEqual(['e1', 'e2', 'e3', 'p4']);
     const shell: Feature = { id: 'sh', name: 'Shell1', type: 'shell', faces: [face('f9:f:e1:side:l1|e2:cap0')], thickness: 1, outward: false };
     expect(dependencies(shell)).toContain('f9');
+  });
+
+  it('counts both references and the axis of a reference plane', () => {
+    const mid: Feature = {
+      id: 'p2', name: 'Mid', type: 'plane', kind: 'midplane',
+      ref: { kind: 'feature', id: 'p1' }, ref2: { kind: 'feature', id: 'p3' }, offset: 0, flip: false,
+    };
+    expect(dependencies(mid).sort()).toEqual(['p1', 'p3']);
+    const angled: Feature = {
+      id: 'p4', name: 'Angled', type: 'plane', kind: 'angle',
+      ref: { kind: 'feature', id: 'p1' }, axis: { kind: 'edge', edge: { name: 'e2:cap1|l1', sig: { type: 'line', m: [0, 0, 0], len: 1 } } },
+      angle: 30, offset: 0, flip: false,
+    };
+    expect(dependencies(angled)).toEqual(expect.arrayContaining(['p1', 'e2']));
   });
 
   it('honours the rollback position', () => {

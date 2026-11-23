@@ -308,11 +308,21 @@ export interface MirrorFeature extends FeatureBase {
   plane: PlaneRef | null;
 }
 
+/** How a reference plane is defined. Files written before plane types have only ref/offset and are offset planes. */
+export type PlaneKind = 'offset' | 'midplane' | 'angle';
+
 export interface PlaneFeature extends FeatureBase {
   type: 'plane';
+  kind?: PlaneKind;
   ref: PlaneRef | null;
+  /** Offset plane: distance along the normal. */
   offset: Param;
   flip: boolean;
+  /** Midplane: the second parallel reference. */
+  ref2?: PlaneRef | null;
+  /** Plane at angle: the axis to rotate about, and the angle in degrees. */
+  axis?: AxisRef | null;
+  angle?: Param;
 }
 
 export interface LoftFeature extends FeatureBase {

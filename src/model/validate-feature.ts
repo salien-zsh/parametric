@@ -48,8 +48,11 @@ export function validFeature(f: Feature): boolean {
       return list(r.faces, named) && plane(r.neutral);
     case 'mirror':
       return list(r.seeds, id) && plane(r.plane);
-    case 'plane':
-      return plane(r.ref);
+    case 'plane': {
+      const kind = r.kind ?? 'offset';
+      if (kind !== 'offset' && kind !== 'midplane' && kind !== 'angle') return false;
+      return plane(r.ref) && plane(r.ref2) && axis(r.axis);
+    }
     case 'linearPattern':
       return list(r.seeds, id) && patternDir(r.dir1) && (r.dir2 == null || patternDir(r.dir2));
     case 'circularPattern':

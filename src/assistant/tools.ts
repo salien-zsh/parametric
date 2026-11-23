@@ -273,8 +273,14 @@ const TOOLS: ToolDef[] = [
   featureTool('mirror', tr("Mirror features (or the whole body when features is empty) about a plane."), {
     features: NAMES(tr("Feature ids to mirror; empty or omitted mirrors the whole body")), plane: PLANE,
   }, ['plane']),
-  featureTool('plane', tr("Add a reference plane parallel to a plane or planar face at an offset (along its normal). Use it to sketch at a height or as a mirror plane."), {
-    reference: PLANE, offset: PARAM(tr("Offset distance along the normal")), reverse: B(tr("Offset the other way")),
+  featureTool('plane', tr("Add a reference plane: offset from a plane or planar face, halfway between two parallel planes (midplane), or rotated about an edge lying in the reference plane (plane at angle). Use it to sketch at a height, as a mirror plane or as a section plane."), {
+    reference: PLANE,
+    kind: S(tr("Plane type (default offset)"), { enum: ['offset', 'midplane', 'angle'] }),
+    offset: PARAM(tr("Offset distance along the normal (offset)")),
+    second_reference: PLANE,
+    axis: AXIS,
+    angle: PARAM(tr("Rotation angle in degrees (plane at angle)")),
+    reverse: B(tr("Offset the other way, or rotate the other way")),
   }, ['reference']),
   featureTool('loft', tr("Loft through two or more closed profile sketches (on different parallel or angled planes) in order."), {
     profiles: NAMES(tr("Profile sketch ids in order")), cut: B(tr("Remove material")), ruled: B(tr("Straight sections between profiles")),
