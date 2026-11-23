@@ -140,8 +140,8 @@ export async function configurationsDialog(app: App) {
 export async function projectManagerDialog(app: App, files: FileOps, onPartOpened?: () => void) {
   let selectedProject = '__all';
   let closeDialog: ((value: string | null) => void) | null = null;
-  const projectList = h('div', { class: 'file-list', style: { minWidth: '220px' } });
-  const partHost = h('div', { class: 'grow', style: { minWidth: '0' } });
+  const projectList = h('div', { class: 'file-list' });
+  const partHost = h('div', { class: 'pm-parts' });
   const name = h('input', { class: 'input', placeholder: tr("New project name"), 'aria-label': tr("New project name") }) as HTMLInputElement;
   const folderPath = h('div', { class: 'field-label', style: { flex: '1', minWidth: '180px' } }, tr("No local folder selected"));
   const status = h('div', { class: 'field-label', role: 'status' });
@@ -208,7 +208,8 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
     const project = projects.find((p) => p.id === selectedProject);
     const visible = selectedProject === project?.id && project.path ? [...browserVisible, ...folderEntries] : browserVisible;
     partHost.textContent = '';
-    partHost.append(h('div', { class: 'row' }, h('h3', { class: 'grow', style: { margin: '0' } }, project?.name ?? (selectedProject === '__unassigned' ? tr("Unassigned") : tr("All Local Parts"))),
+    const title = h('h3', { class: 'pm-title' }, project?.name ?? (selectedProject === '__unassigned' ? tr("Unassigned") : tr("All Local Parts")));
+    const actions = h('div', { class: 'pm-actions' },
       project && project.id !== activeProjectId() ? h('button', {
         class: 'btn primary small', type: 'button', onclick: () => { setActiveProject(project.id); draw(); },
       }, icon('check', 14), tr("Set as Current Project")) : null,
@@ -252,7 +253,8 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
           selectedProject = '__all';
           draw();
         },
-      }, icon('trash', 14), tr("Delete")) : null));
+      }, icon('trash', 14), tr("Delete")) : null);
+    partHost.append(h('div', { class: 'pm-project-head' }, title, actions));
     const table = h('table', { class: 'table' }, h('thead', {}, h('tr', {},
       h('th', {}, tr("Part")), h('th', {}, tr("Project")), h('th', {}, tr("Modified")), h('th', {}, tr("Actions")),
     )));
@@ -280,11 +282,11 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
         folderEntries = folderEntries.filter((p) => p !== entry);
         draw();
       });
-      body.append(h('tr', {}, h('td', {}, entry.name), h('td', {}, select), h('td', {}, formatDate(entry.modified)), h('td', {}, open, ' ', del)));
+      body.append(h('tr', {}, h('td', { class: 'pm-part' }, entry.name), h('td', {}, select), h('td', {}, formatDate(entry.modified)), h('td', { class: 'actions' }, open, ' ', del)));
     }
     if (!visible.length) body.append(h('tr', {}, h('td', { colspan: '4' }, tr("No parts in this project."))));
     table.append(body);
-    partHost.append(table);
+    partHost.append(h('div', { class: 'pm-table-scroll' }, table));
     status.textContent = tr("{0} local part(s). Projects organise browser parts and can also open a desktop project folder.", [entries.length + folderEntries.length]);
   };
 
@@ -328,9 +330,8 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
     wide: true,
     signal: app.documentSignal,
     body: [
-      h('div', { class: 'row' }, name, chooseFolder, folderPath, add),
-      h('div', { class: 'row' }, refresh),
-      h('div', { class: 'row', style: { alignItems: 'stretch' } }, projectList, partHost),
+      h('div', { class: 'row pm-new' }, name, chooseFolder, folderPath, add, refresh),
+      h('div', { class: 'pm-split' }, projectList, partHost),
       status,
     ],
     buttons: [{ label: tr("Close"), value: 'close', primary: true }],
