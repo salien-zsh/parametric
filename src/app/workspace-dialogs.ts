@@ -148,6 +148,7 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
   let entries: FileEntry[] = [];
   let folderEntries: FileEntry[] = [];
   let newProjectPath: string | null = null;
+  let selectionTimer = 0;
 
   const openPart = async (entry: FileEntry) => {
     closeDialog?.(null);
@@ -165,12 +166,26 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
       const current = id === currentProjectId;
       const b = h('button', { class: 'file-item', type: 'button', 'aria-pressed': String(selectedProject === id), title: id.startsWith('__') ? '' : tr("Double-click to make this the current project") },
         icon('files', 16), h('span', { class: 'txt' }, h('span', { class: 'n' }, current ? `${label} · ${tr("Current")}` : label), h('span', { class: 'meta' }, tr("{0} part(s)", [count]))));
-      b.addEventListener('click', () => { selectedProject = id; void reload(); });
+      b.addEventListener('click', (event) => {
+        clearTimeout(selectionTimer);
+        if (event.detail > 1 && !id.startsWith('__')) {
+          setActiveProject(id);
+          selectedProject = id;
+          void reload();
+          return;
+        }
+        selectionTimer = window.setTimeout(() => {
+          selectedProject = id;
+          void reload();
+        }, 220);
+      });
       b.addEventListener('dblclick', () => {
-        if (id.startsWith('__')) return;
-        setActiveProject(id);
-        selectedProject = id;
-        void reload();
+        clearTimeout(selectionTimer);
+        if (!id.startsWith('__')) {
+          setActiveProject(id);
+          selectedProject = id;
+          void reload();
+        }
       });
       if (selectedProject === id) b.style.borderColor = 'var(--accent)';
       if (current) b.style.background = 'var(--accent-weak)';
@@ -194,6 +209,16 @@ export async function projectManagerDialog(app: App, files: FileOps, onPartOpene
     const visible = selectedProject === project?.id && project.path ? [...browserVisible, ...folderEntries] : browserVisible;
     partHost.textContent = '';
     partHost.append(h('div', { class: 'row' }, h('h3', { class: 'grow', style: { margin: '0' } }, project?.name ?? (selectedProject === '__unassigned' ? tr("Unassigned") : tr("All Local Parts"))),
+      project && project.id !== activeProjectId() ? h('button', {
+        class: 'btn primary small', type: 'button', onclick: () => { setActiveProject(project.id); draw(); },
+      }, icon('check', 14), tr("Set as Current Project")) : null,
+      project && project.id === activeProjectId() ? h('button', {
+        class: 'btn small', type: 'button', onclick: async () => {
+          closeDialog?.(null);
+          onPartOpened?.();
+          await files.newPart();
+        },
+      }, icon('new', 14), tr("New Part in Project")) : null,
       project ? h('button', {
         class: 'btn small', type: 'button', onclick: async () => {
           const next = await promptDialog(tr("Rename Project"), tr("Project name"), project.name, (value) => value.trim() ? null : tr("Enter a project name."), app.documentSignal);

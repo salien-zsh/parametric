@@ -233,7 +233,7 @@ export class FileOps {
       if (loc) this.app.location = loc;
     }
     await this.clearRecoveryCopies();
-    if (project?.autoSave && this.app.location) await this.save(true);
+    if (this.app.location) await this.save(true);
     return true;
   }
 

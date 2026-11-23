@@ -1298,5 +1298,8 @@
   "Double-click the project to make it current": "双击项目将其设为当前项目",
   "Double-click to make this the current project": "双击设为当前项目",
   "Link this value to an fx parameter": "将此值关联到参数",
-  "Use fx parameter for {0}": "{0} 使用参数"
+  "Use fx parameter for {0}": "{0} 使用参数",
+  "New Part in Project": "在项目中新建零件",
+  "No fx parameters": "无参数",
+  "Set as Current Project": "设为当前项目"
 }

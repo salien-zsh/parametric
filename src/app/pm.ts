@@ -234,7 +234,8 @@ export function numberField(o: NumberFieldOptions): HTMLElement {
     const names = [...o.ctx.variables().keys()].sort((a, b) => a.localeCompare(b));
     fx.textContent = '';
     fx.append(h('option', { value: '' }, 'fx'), ...names.map((name) => h('option', { value: name }, name)));
-    fx.hidden = o.allowExpr === false || !names.length;
+    if (!names.length) fx.append(h('option', { value: '', disabled: true }, tr("No fx parameters")));
+    fx.hidden = o.allowExpr === false;
   };
   const mark = () => {
     input.classList.toggle('expr', typeof current === 'string');
