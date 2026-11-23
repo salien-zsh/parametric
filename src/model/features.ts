@@ -1,9 +1,9 @@
 // Feature factories, display names and parameter metadata.
 
 import type {
-  AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
+  AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
   Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShaftFeature, ShellFeature,
-  SketchFeature, SweepFeature,
+  SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature, SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from './types';
 import { tr } from '../i18n';
 
@@ -29,10 +29,10 @@ export const THREAD_PRESETS: ThreadPreset[] = [
   { id: 'M10x1.5', label: 'M10 × 1.5', nominal: 10, pitch: 1.5, tapDrill: 8.5 },
   { id: 'M12x1.75', label: 'M12 × 1.75', nominal: 12, pitch: 1.75, tapDrill: 10.2 },
   { id: 'M16x2', label: 'M16 × 2.0', nominal: 16, pitch: 2, tapDrill: 14 },
-  { id: '1/4-20', label: '1/4-20 UNC', nominal: 6.35, pitch: 1.27, tapDrill: 5.1 },
-  { id: '5/16-18', label: '5/16-18 UNC', nominal: 7.94, pitch: 1.41, tapDrill: 6.6 },
-  { id: '3/8-16', label: '3/8-16 UNC', nominal: 9.53, pitch: 1.59, tapDrill: 8 },
-  { id: '1/2-13', label: '1/2-13 UNC', nominal: 12.7, pitch: 1.95, tapDrill: 10.8 },
+  { id: '1/4-20', label: tr("1/4-20 UNC"), nominal: 6.35, pitch: 1.27, tapDrill: 5.1 },
+  { id: '5/16-18', label: tr("5/16-18 UNC"), nominal: 7.94, pitch: 1.41, tapDrill: 6.6 },
+  { id: '3/8-16', label: tr("3/8-16 UNC"), nominal: 9.53, pitch: 1.59, tapDrill: 8 },
+  { id: '1/2-13', label: tr("1/2-13 UNC"), nominal: 12.7, pitch: 1.95, tapDrill: 10.8 },
 ];
 
 /** Paths (dot separated) of numeric parameters per feature type. */
@@ -81,6 +81,57 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
   plane: [{ path: 'offset', kind: 'length', label: tr("Offset") }, { path: 'angle', kind: 'angle', label: tr("Angle") }],
   draft: [{ path: 'angle', kind: 'angle', label: tr("Draft angle") }],
   shaft: [{ path: 'endChamfer', kind: 'length', label: tr("End chamfer") }],
+  spurGear: [
+    { path: 'module', kind: 'length', label: tr("Module") },
+    { path: 'teeth', kind: 'count', label: tr("Teeth") },
+    { path: 'pressureAngle', kind: 'angle', label: tr("Pressure angle") },
+    { path: 'faceWidth', kind: 'length', label: tr("Face width") },
+    { path: 'bore', kind: 'length', label: tr("Bore diameter") },
+    { path: 'hubDiameter', kind: 'length', label: tr("Hub diameter") },
+    { path: 'hubLength', kind: 'length', label: tr("Hub length") },
+  ],
+  bevelGear: [
+    { path: 'module', kind: 'length', label: tr("Module") },
+    { path: 'teeth', kind: 'count', label: tr("Teeth") },
+    { path: 'mateTeeth', kind: 'count', label: tr("Mating teeth") },
+    { path: 'faceWidth', kind: 'length', label: tr("Face width") },
+    { path: 'bore', kind: 'length', label: tr("Bore diameter") },
+    { path: 'pressureAngle', kind: 'angle', label: tr("Pressure angle") },
+  ],
+  wormGear: [
+    { path: 'module', kind: 'length', label: tr("Module") },
+    { path: 'wormStarts', kind: 'count', label: tr("Worm starts") },
+    { path: 'wheelTeeth', kind: 'count', label: tr("Wheel teeth") },
+    { path: 'wormDiameter', kind: 'length', label: tr("Worm diameter") },
+    { path: 'wormLength', kind: 'length', label: tr("Worm length") },
+    { path: 'faceWidth', kind: 'length', label: tr("Face width") },
+    { path: 'bore', kind: 'length', label: tr("Bore diameter") },
+  ],
+  vBelt: [
+    { path: 'pulley1', kind: 'length', label: tr("Pulley 1 diameter") },
+    { path: 'pulley2', kind: 'length', label: tr("Pulley 2 diameter") },
+    { path: 'centerDistance', kind: 'length', label: tr("Center distance") },
+    { path: 'beltWidth', kind: 'length', label: tr("Belt width") },
+    { path: 'beltThickness', kind: 'length', label: tr("Belt thickness") },
+    { path: 'grooves', kind: 'count', label: tr("Grooves") },
+  ],
+  syncBelt: [
+    { path: 'toothPitch', kind: 'length', label: tr("Tooth pitch") },
+    { path: 'pulley1', kind: 'count', label: tr("Pulley 1 teeth") },
+    { path: 'pulley2', kind: 'count', label: tr("Pulley 2 teeth") },
+    { path: 'centerDistance', kind: 'length', label: tr("Center distance") },
+    { path: 'beltWidth', kind: 'length', label: tr("Belt width") },
+    { path: 'beltThickness', kind: 'length', label: tr("Belt thickness") },
+  ],
+  sprocket: [
+    { path: 'pitch', kind: 'length', label: tr("Chain pitch") },
+    { path: 'teeth', kind: 'count', label: tr("Teeth") },
+    { path: 'rollerDiameter', kind: 'length', label: tr("Roller diameter") },
+    { path: 'toothWidth', kind: 'length', label: tr("Tooth width") },
+    { path: 'bore', kind: 'length', label: tr("Bore diameter") },
+    { path: 'hubDiameter', kind: 'length', label: tr("Hub diameter") },
+    { path: 'hubLength', kind: 'length', label: tr("Hub length") },
+  ],
 };
 
 const BASE_NAMES: Record<FeatureType, string> = {
@@ -99,6 +150,12 @@ const BASE_NAMES: Record<FeatureType, string> = {
   sweep: tr('Sweep'),
   draft: tr('Draft'),
   shaft: tr('Shaft'),
+  spurGear: tr('Spur Gear'),
+  bevelGear: tr('Bevel Gear'),
+  wormGear: tr('Worm Gear'),
+  vBelt: tr('V-Belt Drive'),
+  syncBelt: tr('Synchronous Belt'),
+  sprocket: tr('Sprocket'),
   import: tr('Imported'),
 };
 
@@ -118,6 +175,12 @@ export const FEATURE_LABELS: Record<FeatureType, string> = {
   sweep: tr('Sweep'),
   draft: tr('Draft'),
   shaft: tr('Shaft'),
+  spurGear: tr('Spur Gear'),
+  bevelGear: tr('Bevel Gear'),
+  wormGear: tr('Worm Gear'),
+  vBelt: tr('V-Belt Drive'),
+  syncBelt: tr('Synchronous Belt'),
+  sprocket: tr('Sprocket'),
   import: tr('Imported Body'),
 };
 
@@ -187,6 +250,42 @@ export const newShaft = (id: Id, name: string): ShaftFeature => ({
   speed: 1450,
   serviceFactor: 1.2,
   allowableShear: 40,
+});
+
+export const newSpurGear = (id: Id, name: string): SpurGearFeature => ({
+  id, name, type: 'spurGear',
+  module: 2, teeth: 24, pressureAngle: 20, faceWidth: 32, bore: 12, hubDiameter: 0, hubLength: 0,
+  material: 'steel45', power: 4, speed: 1450, serviceFactor: 1.2,
+});
+
+export const newBevelGear = (id: Id, name: string): BevelGearFeature => ({
+  id, name, type: 'bevelGear',
+  module: 3, teeth: 20, mateTeeth: 40, faceWidth: 18, bore: 14, pressureAngle: 20,
+  material: 'steel45', power: 3, speed: 1450, serviceFactor: 1.2,
+});
+
+export const newWormGear = (id: Id, name: string): WormGearFeature => ({
+  id, name, type: 'wormGear',
+  module: 2, wormStarts: 1, wheelTeeth: 40, wormDiameter: 20, wormLength: 45, faceWidth: 20, bore: 12,
+  material: 'steel45', power: 3, speed: 1450, serviceFactor: 1.2,
+});
+
+export const newVBelt = (id: Id, name: string): VBeltFeature => ({
+  id, name, type: 'vBelt',
+  pulley1: 100, pulley2: 180, centerDistance: 400, beltWidth: 25, beltThickness: 8, grooves: 2,
+  material: 'steel45', power: 5, speed: 1450, serviceFactor: 1.2,
+});
+
+export const newSyncBelt = (id: Id, name: string): SyncBeltFeature => ({
+  id, name, type: 'syncBelt',
+  toothPitch: 8, pulley1: 24, pulley2: 40, centerDistance: 400, beltWidth: 20, beltThickness: 6,
+  material: 'steel45', power: 5, speed: 1450, serviceFactor: 1.2,
+});
+
+export const newSprocket = (id: Id, name: string): SprocketFeature => ({
+  id, name, type: 'sprocket',
+  pitch: 12.7, teeth: 19, rollerDiameter: 7.92, toothWidth: 7.5, bore: 12, hubDiameter: 0, hubLength: 0,
+  material: 'steel45', power: 3, speed: 500, serviceFactor: 1.2,
 });
 
 export const newLinearPattern = (id: Id, name: string, seeds: Id[], spacing: number): LinearPatternFeature => ({

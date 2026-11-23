@@ -382,6 +382,108 @@ export interface ShaftFeature extends FeatureBase {
   allowableShear: Param;
 }
 
+/**
+ * Power transmission generators (the Mechanical ribbon): gears, worm drives,
+ * belt drives and chain sprockets. Dimensions are millimetres, angles degrees,
+ * power kilowatts and speed rpm; the load fields only size the design report.
+ */
+export interface SpurGearFeature extends FeatureBase {
+  type: 'spurGear';
+  /** Normal module. */
+  module: Param;
+  teeth: Param;
+  pressureAngle: Param;
+  faceWidth: Param;
+  bore: Param;
+  /** Hub outside diameter (0 for none) and its total length. */
+  hubDiameter: Param;
+  hubLength: Param;
+  material: string;
+  power: Param;
+  speed: Param;
+  serviceFactor: Param;
+}
+
+/** A straight bevel gear; mateTeeth sets the 90-degree pitch cone angle. */
+export interface BevelGearFeature extends FeatureBase {
+  type: 'bevelGear';
+  module: Param;
+  teeth: Param;
+  mateTeeth: Param;
+  faceWidth: Param;
+  bore: Param;
+  pressureAngle: Param;
+  material: string;
+  power: Param;
+  speed: Param;
+  serviceFactor: Param;
+}
+
+/** A worm and worm wheel pair at a 90-degree shaft angle. */
+export interface WormGearFeature extends FeatureBase {
+  type: 'wormGear';
+  module: Param;
+  /** Number of worm starts (1 to 4). */
+  wormStarts: Param;
+  wheelTeeth: Param;
+  wormDiameter: Param;
+  wormLength: Param;
+  faceWidth: Param;
+  bore: Param;
+  material: string;
+  power: Param;
+  speed: Param;
+  serviceFactor: Param;
+}
+
+/** A two-sheave V-belt drive: grooved sheaves plus the belt around them. */
+export interface VBeltFeature extends FeatureBase {
+  type: 'vBelt';
+  pulley1: Param;
+  pulley2: Param;
+  centerDistance: Param;
+  /** Total axial belt width. */
+  beltWidth: Param;
+  beltThickness: Param;
+  grooves: Param;
+  material: string;
+  power: Param;
+  speed: Param;
+  serviceFactor: Param;
+}
+
+/** A two-pulley synchronous belt drive; pulley sizes are tooth counts. */
+export interface SyncBeltFeature extends FeatureBase {
+  type: 'syncBelt';
+  /** Tooth pitch of the belt and pulleys (mm). */
+  toothPitch: Param;
+  pulley1: Param;
+  pulley2: Param;
+  centerDistance: Param;
+  beltWidth: Param;
+  beltThickness: Param;
+  material: string;
+  power: Param;
+  speed: Param;
+  serviceFactor: Param;
+}
+
+/** A roller chain sprocket. */
+export interface SprocketFeature extends FeatureBase {
+  type: 'sprocket';
+  pitch: Param;
+  teeth: Param;
+  rollerDiameter: Param;
+  toothWidth: Param;
+  bore: Param;
+  hubDiameter: Param;
+  hubLength: Param;
+  material: string;
+  power: Param;
+  speed: Param;
+  serviceFactor: Param;
+}
+
 export interface ImportFeature extends FeatureBase {
   type: 'import';
   format: 'step' | 'brep';
@@ -406,6 +508,12 @@ export type Feature =
   | SweepFeature
   | DraftFeature
   | ShaftFeature
+  | SpurGearFeature
+  | BevelGearFeature
+  | WormGearFeature
+  | VBeltFeature
+  | SyncBeltFeature
+  | SprocketFeature
   | ImportFeature;
 
 export type FeatureType = Feature['type'];

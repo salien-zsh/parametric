@@ -50,8 +50,14 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - Everything it changes in one message is a single undo step. It runs on Puter AI (Claude Opus 5.5).
 
 **Mechanical**
-- Shaft design in the **Mechanical** tab: build a stepped shaft from a segment table (diameter and length), add 45° end chamfers and an optional keyway, and see the solid update as you type.
-- The same panel checks the shaft in torsion from power, speed, service factor and the material's allowable shear stress: design torque, minimum diameter and the maximum torsional stress as a percentage of the allowable value.
+The **Mechanical** tab holds the power-transmission generators. Every generator rebuilds its solid as you type and reports its sizing next to the fields, using power, speed, the service factor and the material (45 steel, 40Cr, 20CrMnTi, cast iron, 6061 aluminium or a custom allowable stress).
+- **Shaft**: a stepped shaft from a segment table (diameter and length), 45° end chamfers and an optional keyway; checks the design torque, minimum diameter and the torsional stress of every segment.
+- **Spur Gear**: an involute gear from module, tooth count, pressure angle, face width, bore and optional hub; reports the pitch, base and outer diameters, tangential force, pitch-line velocity and the Lewis tooth bending stress against the material.
+- **Bevel Gear**: a straight bevel gear on a 90° shaft angle from the module and the two tooth counts; the teeth are lofted from the back cone to the front so they converge on the apex, and the panel checks the face width against the cone distance and the tooth bending stress.
+- **Worm Gear**: the worm and its wheel at the centre distance that follows from the module and the worm diameter; the worm thread is swept around a helix, the wheel gets its throat, and the panel reports the ratio, lead angle and sliding speed.
+- **V-Belt Drive**: two sheaves with V grooves and the belt around them; reports the ratio, belt length, wrap angle on the small pulley, belt speed and design torque.
+- **Synchronous Belt**: two timing pulleys with trapezoid teeth and the belt around them; reports the pitch diameters, belt length in pitches, teeth in mesh and belt speed.
+- **Sprocket**: a roller chain sprocket from the chain pitch, tooth count and roller diameter; reports the pitch, outer and root diameters, chain speed and tangential force.
 
 **Drawings**
 - A 2D drawing sheet for each part or assembly (Drawing tab in the status bar): front, top, right, left, back, bottom and isometric views projected from the solid, with hidden lines and overall dimensions.

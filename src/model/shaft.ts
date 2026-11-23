@@ -1,3 +1,4 @@
+import { tr } from '../i18n';
 // Mechanical sizing for the shaft generator: torsional stress and the smallest
 // diameter that carries the design torque at the allowable shear stress.
 
@@ -9,11 +10,11 @@ export interface ShaftMaterial {
 }
 
 export const SHAFT_MATERIALS: ShaftMaterial[] = [
-  { id: 'steel45', name: '45 steel', allowableShear: 40 },
+  { id: 'steel45', name: tr("45 steel"), allowableShear: 40 },
   { id: '40cr', name: '40Cr', allowableShear: 55 },
   { id: '20crmnti', name: '20CrMnTi', allowableShear: 60 },
-  { id: 'al6061', name: '6061-T6 aluminium', allowableShear: 20 },
-  { id: 'custom', name: 'Custom', allowableShear: 40 },
+  { id: 'al6061', name: tr("6061-T6 aluminium"), allowableShear: 20 },
+  { id: 'custom', name: tr("Custom"), allowableShear: 40 },
 ];
 
 export interface ShaftSizing {

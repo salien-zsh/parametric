@@ -42,6 +42,10 @@ function shaftKeyway(v: unknown): boolean {
     && positive(v.width) && positive(v.depth) && positive(v.length);
 }
 
+/** A numeric parameter: a literal, or a linked expression string. */
+const numeric = (v: unknown) => (typeof v === 'number' ? Number.isFinite(v) : typeof v === 'string' && v.length > 0);
+const numbers = (r: Record<string, unknown>, keys: string[]) => keys.every((k) => numeric(r[k]));
+
 export function validFeature(f: Feature): boolean {
   const r = f as unknown as Record<string, unknown>;
   switch (f.type) {
@@ -75,6 +79,18 @@ export function validFeature(f: Feature): boolean {
       return (r.profile == null || id(r.profile)) && (r.path == null || id(r.path));
     case 'shaft':
       return list(r.segments, shaftSegment) && shaftKeyway(r.keyway);
+    case 'spurGear':
+      return numbers(r, ['module', 'teeth', 'pressureAngle', 'faceWidth', 'bore', 'hubDiameter', 'hubLength']);
+    case 'bevelGear':
+      return numbers(r, ['module', 'teeth', 'mateTeeth', 'faceWidth', 'bore', 'pressureAngle']);
+    case 'wormGear':
+      return numbers(r, ['module', 'wormStarts', 'wheelTeeth', 'wormDiameter', 'wormLength', 'faceWidth', 'bore']);
+    case 'vBelt':
+      return numbers(r, ['pulley1', 'pulley2', 'centerDistance', 'beltWidth', 'beltThickness', 'grooves']);
+    case 'syncBelt':
+      return numbers(r, ['toothPitch', 'pulley1', 'pulley2', 'centerDistance', 'beltWidth', 'beltThickness']);
+    case 'sprocket':
+      return numbers(r, ['pitch', 'teeth', 'rollerDiameter', 'toothWidth', 'bore', 'hubDiameter', 'hubLength']);
     default:
       return true;
   }

@@ -382,6 +382,12 @@ export function registerCommands(app: App, files: FileOps) {
     feature('plane', tr("Midplane"), 'plane', tr("Create a reference plane halfway between two parallel planes or faces."), { id: 'planeMidplane', planeKind: 'midplane', keywords: tr("reference geometry datum middle symmetry") }),
     feature('plane', tr("Plane at Angle"), 'plane', tr("Create a reference plane rotated about an edge from a plane or face."), { id: 'planeAngle', planeKind: 'angle', keywords: tr("reference geometry datum angle rotate axis") }),
     feature('shaft', tr("Shaft Design"), 'shaft', tr("Design a stepped shaft with segments, end chamfers and a keyway, and check its torsional sizing."), { keywords: tr("mechanical shaft axis step keyway torque power speed") }),
+    feature('spurGear', tr("Spur Gear Design"), 'spurGear', tr("Design an involute spur gear from its module, tooth count and face width, and check the tooth bending stress."), { keywords: tr("mechanical gear involute module teeth transmission") }),
+    feature('bevelGear', tr("Bevel Gear Design"), 'bevelGear', tr("Design a straight bevel gear on a 90-degree shaft angle from its module and tooth counts."), { keywords: tr("mechanical bevel cone gear transmission") }),
+    feature('wormGear', tr("Worm Gear Design"), 'wormGear', tr("Design a worm and wheel pair and check its lead angle and sliding speed."), { keywords: tr("mechanical worm wheel helical transmission") }),
+    feature('vBelt', tr("V-Belt Design"), 'vBelt', tr("Design a two-sheave V-belt drive with grooved sheaves and the belt around them."), { keywords: tr("mechanical belt pulley sheave transmission") }),
+    feature('syncBelt', tr("Synchronous Belt Design"), 'syncBelt', tr("Design a two-pulley synchronous belt drive and check its belt length and teeth in mesh."), { keywords: tr("mechanical timing belt pulley transmission") }),
+    feature('sprocket', tr("Sprocket Design"), 'sprocket', tr("Design a roller chain sprocket and check its pitch diameter and chain speed."), { keywords: tr("mechanical chain sprocket transmission") }),
     // ---- evaluate ----
     { id: 'measure', label: tr("Measure"), icon: 'measure', keywords: tr("distance length angle area"), description: tr("Measure distances, lengths, angles and areas."), enabled: hasBody, run: () => { void app.openPanel(new MeasurePanel(app)); } },
     { id: 'massProperties', label: tr("Mass Properties"), icon: 'massProperties', keywords: tr("volume weight inertia center of mass"), description: tr("Volume, mass, centre of mass and inertia."), enabled: hasBody, run: () => massPropertiesDialog(app) },
@@ -515,8 +521,12 @@ export const RIBBON: RibbonTab[] = [
   },
   {
     id: 'mechanical', label: tr("Mechanical"),
-    groups: [[{ cmd: 'shaft' }]],
-    labels: [tr("Shaft")],
+    groups: [
+      [{ cmd: 'spurGear' }, { cmd: 'bevelGear' }, { cmd: 'wormGear' }],
+      [{ cmd: 'vBelt' }, { cmd: 'syncBelt' }, { cmd: 'sprocket' }],
+      [{ cmd: 'shaft' }],
+    ],
+    labels: [tr("Gears"), tr("Belts and Chains"), tr("Shaft")],
   },
   {
     id: 'evaluate', label: tr("Evaluate"),

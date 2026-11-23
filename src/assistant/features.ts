@@ -352,6 +352,35 @@ export class FeatureCodec {
         keyway: f.keyway ? { segment: f.keyway.segment, width: L(f.keyway.width), depth: L(f.keyway.depth), length: L(f.keyway.length) } : null,
         material: f.material, power: f.power, speed: f.speed, service_factor: f.serviceFactor, allowable_shear: f.allowableShear,
       };
+      case 'spurGear': return {
+        module: L(f.module), teeth: C(f.teeth), pressure_angle: A(f.pressureAngle), face_width: L(f.faceWidth), bore: L(f.bore),
+        hub_diameter: L(f.hubDiameter), hub_length: L(f.hubLength), material: f.material,
+        power: f.power, speed: f.speed, service_factor: f.serviceFactor,
+      };
+      case 'bevelGear': return {
+        module: L(f.module), teeth: C(f.teeth), mate_teeth: C(f.mateTeeth), face_width: L(f.faceWidth), bore: L(f.bore),
+        pressure_angle: A(f.pressureAngle), material: f.material, power: f.power, speed: f.speed, service_factor: f.serviceFactor,
+      };
+      case 'wormGear': return {
+        module: L(f.module), worm_starts: C(f.wormStarts), wheel_teeth: C(f.wheelTeeth), worm_diameter: L(f.wormDiameter),
+        worm_length: L(f.wormLength), face_width: L(f.faceWidth), bore: L(f.bore), material: f.material,
+        power: f.power, speed: f.speed, service_factor: f.serviceFactor,
+      };
+      case 'vBelt': return {
+        pulley1: L(f.pulley1), pulley2: L(f.pulley2), center_distance: L(f.centerDistance), belt_width: L(f.beltWidth),
+        belt_thickness: L(f.beltThickness), grooves: C(f.grooves), material: f.material,
+        power: f.power, speed: f.speed, service_factor: f.serviceFactor,
+      };
+      case 'syncBelt': return {
+        tooth_pitch: L(f.toothPitch), pulley1: C(f.pulley1), pulley2: C(f.pulley2), center_distance: L(f.centerDistance),
+        belt_width: L(f.beltWidth), belt_thickness: L(f.beltThickness), material: f.material,
+        power: f.power, speed: f.speed, service_factor: f.serviceFactor,
+      };
+      case 'sprocket': return {
+        pitch: L(f.pitch), teeth: C(f.teeth), roller_diameter: L(f.rollerDiameter), tooth_width: L(f.toothWidth), bore: L(f.bore),
+        hub_diameter: L(f.hubDiameter), hub_length: L(f.hubLength), material: f.material,
+        power: f.power, speed: f.speed, service_factor: f.serviceFactor,
+      };
       case 'import': return { format: f.format, file: f.fileName };
     }
   }

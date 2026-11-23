@@ -1,17 +1,17 @@
 {
-  "files": 71,
-  "edits": 0,
-  "uniqueKeys": 1396,
+  "files": 80,
+  "edits": 11,
+  "uniqueKeys": 1758,
   "perFile": [
     {
       "file": "src/app/actions.ts",
       "edits": 0,
-      "skipped": 305
+      "skipped": 366
     },
     {
       "file": "src/app/app.ts",
       "edits": 0,
-      "skipped": 135
+      "skipped": 144
     },
     {
       "file": "src/app/apps-panel.ts",
@@ -27,6 +27,11 @@
       "file": "src/app/assistant-host.ts",
       "edits": 0,
       "skipped": 0
+    },
+    {
+      "file": "src/app/canvas-value.ts",
+      "edits": 0,
+      "skipped": 9
     },
     {
       "file": "src/app/commands.ts",
@@ -54,14 +59,19 @@
       "skipped": 74
     },
     {
+      "file": "src/app/panels-pt.ts",
+      "edits": 0,
+      "skipped": 89
+    },
+    {
       "file": "src/app/panels.ts",
       "edits": 0,
-      "skipped": 132
+      "skipped": 241
     },
     {
       "file": "src/app/pm.ts",
       "edits": 0,
-      "skipped": 9
+      "skipped": 12
     },
     {
       "file": "src/app/selection.ts",
@@ -96,7 +106,7 @@
     {
       "file": "src/app/sketch/editor.ts",
       "edits": 0,
-      "skipped": 32
+      "skipped": 35
     },
     {
       "file": "src/app/sketch/inference.ts",
@@ -106,17 +116,17 @@
     {
       "file": "src/app/sketch/panel.ts",
       "edits": 0,
-      "skipped": 37
+      "skipped": 40
     },
     {
       "file": "src/app/sketch/tools.ts",
       "edits": 0,
-      "skipped": 58
+      "skipped": 65
     },
     {
       "file": "src/app/start.ts",
       "edits": 0,
-      "skipped": 42
+      "skipped": 44
     },
     {
       "file": "src/app/taskpane.ts",
@@ -139,6 +149,11 @@
       "skipped": 13
     },
     {
+      "file": "src/app/workspace-dialogs.ts",
+      "edits": 0,
+      "skipped": 105
+    },
+    {
       "file": "src/assistant/agent.ts",
       "edits": 0,
       "skipped": 10
@@ -156,7 +171,7 @@
     {
       "file": "src/assistant/features.ts",
       "edits": 0,
-      "skipped": 9
+      "skipped": 13
     },
     {
       "file": "src/assistant/host.ts",
@@ -196,7 +211,7 @@
     {
       "file": "src/assistant/tools.ts",
       "edits": 0,
-      "skipped": 224
+      "skipped": 238
     },
     {
       "file": "src/assistant/units.ts",
@@ -216,7 +231,7 @@
     {
       "file": "src/kernel/build.ts",
       "edits": 0,
-      "skipped": 103
+      "skipped": 136
     },
     {
       "file": "src/kernel/client.ts",
@@ -227,6 +242,11 @@
       "file": "src/kernel/occ.ts",
       "edits": 0,
       "skipped": 7
+    },
+    {
+      "file": "src/kernel/pt.ts",
+      "edits": 0,
+      "skipped": 36
     },
     {
       "file": "src/kernel/worker.ts",
@@ -250,8 +270,8 @@
     },
     {
       "file": "src/model/features.ts",
-      "edits": 0,
-      "skipped": 53
+      "edits": 4,
+      "skipped": 119
     },
     {
       "file": "src/model/ids.ts",
@@ -269,14 +289,29 @@
       "skipped": 3
     },
     {
+      "file": "src/model/pt.ts",
+      "edits": 4,
+      "skipped": 0
+    },
+    {
+      "file": "src/model/shaft.ts",
+      "edits": 3,
+      "skipped": 0
+    },
+    {
       "file": "src/platform/ai.ts",
       "edits": 0,
       "skipped": 16
     },
     {
+      "file": "src/platform/desktop-api.ts",
+      "edits": 0,
+      "skipped": 0
+    },
+    {
       "file": "src/platform/files.ts",
       "edits": 0,
-      "skipped": 13
+      "skipped": 16
     },
     {
       "file": "src/platform/puter.ts",
@@ -289,9 +324,19 @@
       "skipped": 0
     },
     {
+      "file": "src/platform/workspace-library.ts",
+      "edits": 0,
+      "skipped": 8
+    },
+    {
       "file": "src/render/camera.ts",
       "edits": 0,
       "skipped": 9
+    },
+    {
+      "file": "src/render/grid.ts",
+      "edits": 0,
+      "skipped": 0
     },
     {
       "file": "src/render/renderer.ts",

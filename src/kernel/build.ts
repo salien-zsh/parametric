@@ -15,9 +15,10 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, dist, dot, frameFrom, len, normalize, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
+  AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
-  PlaneRef, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SweepFeature,
+  PlaneRef, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
+  SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from '../model/types';
 import { dependencies } from '../model/features';
 import { BASE_FRAMES } from '../model/planes';
@@ -35,6 +36,7 @@ import {
   hashOf, isEmpty, meshEdgesOf, meshShape, mirrored, planarFaceFrame, plane, pnt, rotated, sameSurface, sharesSurface, subShapes, translated,
   vertexPoint, volumeOf, wrap, xyz,
 } from './occ';
+import { type PtContext, buildBevelGear, buildSpurGear, buildSprocket, buildSyncBelt, buildVBelt, buildWormGear } from './pt';
 import { tr } from '../i18n';
 
 export { BASE_FRAMES };
@@ -390,6 +392,12 @@ export class ModelBuilder {
       case 'sweep': this.applySweep(f, st); return 'tool';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
+      case 'spurGear': this.applyTransmission(f, st); return 'tool';
+      case 'bevelGear': this.applyTransmission(f, st); return 'tool';
+      case 'wormGear': this.applyTransmission(f, st); return 'tool';
+      case 'vBelt': this.applyTransmission(f, st); return 'tool';
+      case 'syncBelt': this.applyTransmission(f, st); return 'tool';
+      case 'sprocket': this.applyTransmission(f, st); return 'tool';
       case 'import': await this.applyImport(f, st, req); return 'body';
     }
   }
@@ -1416,6 +1424,32 @@ export class ModelBuilder {
       tool = cut(tool, rounded);
     }
     const named = this.nameTool(f.id, tool, (_d, i) => `s${i}`);
+    this.applyTool(f.id, st, tool, named, false);
+  }
+
+  /**
+   * Power-transmission generators: gears, worm drives, belt drives and
+   * sprockets. Each builder returns one solid, or a compound of the parts of a
+   * drive (the two sheaves and the belt), which is added like any boss tool.
+   */
+  private applyTransmission(f: SpurGearFeature | BevelGearFeature | WormGearFeature | VBeltFeature | SyncBeltFeature | SprocketFeature, st: State) {
+    const ctx: PtContext = { num, fail: (message: string) => { throw new FeatureError(message); } };
+    let tool: Sh;
+    try {
+      switch (f.type) {
+        case 'spurGear': tool = buildSpurGear(ctx, f); break;
+        case 'bevelGear': tool = buildBevelGear(ctx, f); break;
+        case 'wormGear': tool = buildWormGear(ctx, f); break;
+        case 'vBelt': tool = buildVBelt(ctx, f); break;
+        case 'syncBelt': tool = buildSyncBelt(ctx, f); break;
+        case 'sprocket': tool = buildSprocket(ctx, f); break;
+      }
+    } catch (e) {
+      if (e instanceof FeatureError) throw e;
+      throw new FeatureError(tr("The transmission could not be built from these values"));
+    }
+    if (isEmpty(tool)) throw new FeatureError(tr("The transmission could not be built from these values"));
+    const named = this.nameTool(f.id, tool, (_d, k) => `p${k}`);
     this.applyTool(f.id, st, tool, named, false);
   }
 

@@ -4,11 +4,13 @@
 // selection boxes, checkboxes, selects and segmented buttons.
 
 import type { BuildResult } from '../kernel/protocol';
-import type { ParamKind } from '../model/features';
-import type { Feature, Id, Param, UnitSystem } from '../model/types';
+import { FEATURE_LABELS, featureIcon, type ParamKind } from '../model/features';
+import { changeFeatureUnits } from '../model/document';
+import { evaluate, evaluateVariables, variableReferenceChanges } from '../model/expr';
+import type { App } from './app';
+import type { Feature, Id, Param, UnitSystem, Variable } from '../model/types';
 import type { Vec3 } from '../math/vec';
 import { UNIT_SYSTEMS, formatEditable, formatNumber } from '../model/units';
-import { evaluate } from '../model/expr';
 import { h, nextDomId } from '../ui/dom';
 import { icon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
@@ -521,4 +523,84 @@ export function fmt(v: number, kind: ParamKind, ctx: UnitContext): string {
   if (kind === 'length') return `${formatNumber(v / UNIT_SYSTEMS[ctx.units].scale, ctx.decimals)} ${UNIT_SYSTEMS[ctx.units].length}`;
   if (kind === 'angle') return `${formatNumber(v, 2)}°`;
   return String(v);
+}
+
+/**
+ * A property panel that edits one feature: it works on a copy so Cancel
+ * restores the document, previews the copy while the panel is open, and
+ * converts its parameters when the document units change.
+ */
+export abstract class BaseFeaturePanel<T extends Feature> extends PropertyPanel {
+  f: T;
+  private units: UnitSystem;
+  private variables: Variable[];
+  constructor(protected app: App, f: T, editing: boolean) {
+    super();
+    this.f = structuredClone(f);
+    this.units = app.store.doc.units;
+    this.variables = structuredClone(app.store.doc.variables);
+    this.editingId = editing ? f.id : null;
+    this.icon = featureIcon(f);
+  }
+
+  get title() {
+    return this.editingId ? this.f.name : FEATURE_LABELS[this.f.type];
+  }
+
+  /** The feature as the panel first showed it, to tell whether it was changed. */
+  private initial: string | null = null;
+
+  mount(): HTMLElement {
+    const el = super.mount();
+    this.initial ??= JSON.stringify(this.f);
+    return el;
+  }
+
+  get edited(): boolean {
+    return this.initial !== null && JSON.stringify(this.f) !== this.initial;
+  }
+
+  syncExpressions(): string[] | null {
+    const doc = this.app.store.doc;
+    const references = variableReferenceChanges(this.variables, doc.variables);
+    let unlinked: string[] | null = null;
+    if (doc.units !== this.units || references.size) {
+      const variables = evaluateVariables(this.variables).values;
+      settleNumberFields(this.el, { units: this.units, decimals: doc.decimals, variables: () => variables });
+      unlinked = changeFeatureUnits(this.f, this.units, doc.units, this.variables, doc.variables, references);
+      if (this.initial !== null) {
+        const initial = JSON.parse(this.initial) as T;
+        changeFeatureUnits(initial, this.units, doc.units, this.variables, doc.variables, references);
+        this.initial = JSON.stringify(initial);
+      }
+      this.units = doc.units;
+    }
+    this.variables = structuredClone(doc.variables);
+    return unlinked;
+  }
+
+  preview(): Feature | null {
+    return this.f;
+  }
+
+  /** Re-runs the preview after a parameter change. */
+  protected changed() {
+    this.app.requestRebuild();
+  }
+
+  protected validate(): string | null {
+    return null;
+  }
+
+  ok(): boolean {
+    const err = this.validate();
+    if (err) { this.setMessage('error', err); return false; }
+    if (this.editingId) this.app.replaceFeature(this.f);
+    else this.app.insertFeature(this.f);
+    return true;
+  }
+
+  protected ctx() {
+    return this.app.unitContext();
+  }
 }

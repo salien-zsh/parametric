@@ -4,23 +4,24 @@ import type { Frame, Vec3 } from '../math/vec';
 import { add, dot, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newMirror, newPlane, newRevolve, newShaft, newShell, newSketch, newSweep, FEATURE_LABELS, featureIcon, THREAD_PRESETS,
+  newBevelGear, newMirror, newPlane, newRevolve, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
-import { changeFeatureUnits } from '../model/document';
-import { evaluateVariables, variableReferenceChanges } from '../model/expr';
 import { SHAFT_MATERIALS, sizeShaft } from '../model/shaft';
+import { BaseFeaturePanel } from './pm';
+import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel, WormGearPanel } from './panels-pt';
 import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
   AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, RevolveFeature,
-  ShaftFeature, ShellFeature, SketchFeature, SweepFeature, UnitSystem, Variable,
+  ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
 import { h } from '../ui/dom';
 import type { App } from './app';
 import {
-  PropertyPanel, SelectionBox, type CanvasValue, type SelBoxItem, checkbox, flipButton, numberField, paramText, section, selectField, setNumberFieldValue, settleNumberFields,
+  PropertyPanel, SelectionBox, type CanvasValue, type SelBoxItem, checkbox, flipButton, numberField, paramText, section, selectField, setNumberFieldValue,
 } from './pm';
 import { type SelItem, edgeRef, faceRef } from './selection';
 import { tr } from '../i18n';
@@ -137,80 +138,8 @@ function axisItem(app: App, r: AxisRef): SelItem | null {
 
 // ---------- base ----------
 
-abstract class FeaturePanel<T extends Feature> extends PropertyPanel {
-  f: T;
-  private units: UnitSystem;
-  private variables: Variable[];
-  constructor(protected app: App, f: T, editing: boolean) {
-    super();
-    this.f = structuredClone(f);
-    this.units = app.store.doc.units;
-    this.variables = structuredClone(app.store.doc.variables);
-    this.editingId = editing ? f.id : null;
-    this.icon = featureIcon(f);
-  }
-
-  get title() {
-    return this.editingId ? this.f.name : FEATURE_LABELS[this.f.type];
-  }
-
-  /** The feature as the panel first showed it, to tell whether it was changed. */
-  private initial: string | null = null;
-
-  mount(): HTMLElement {
-    const el = super.mount();
-    this.initial ??= JSON.stringify(this.f);
-    return el;
-  }
-
-  get edited(): boolean {
-    return this.initial !== null && JSON.stringify(this.f) !== this.initial;
-  }
-
-  syncExpressions(): string[] | null {
-    const doc = this.app.store.doc;
-    const references = variableReferenceChanges(this.variables, doc.variables);
-    let unlinked: string[] | null = null;
-    if (doc.units !== this.units || references.size) {
-      const variables = evaluateVariables(this.variables).values;
-      settleNumberFields(this.el, { units: this.units, decimals: doc.decimals, variables: () => variables });
-      unlinked = changeFeatureUnits(this.f, this.units, doc.units, this.variables, doc.variables, references);
-      if (this.initial !== null) {
-        const initial = JSON.parse(this.initial) as T;
-        changeFeatureUnits(initial, this.units, doc.units, this.variables, doc.variables, references);
-        this.initial = JSON.stringify(initial);
-      }
-      this.units = doc.units;
-    }
-    this.variables = structuredClone(doc.variables);
-    return unlinked;
-  }
-
-  preview(): Feature | null {
-    return this.f;
-  }
-
-  /** Re-runs the preview after a parameter change. */
-  protected changed() {
-    this.app.requestRebuild();
-  }
-
-  protected validate(): string | null {
-    return null;
-  }
-
-  ok(): boolean {
-    const err = this.validate();
-    if (err) { this.setMessage('error', err); return false; }
-    if (this.editingId) this.app.replaceFeature(this.f);
-    else this.app.insertFeature(this.f);
-    return true;
-  }
-
-  protected ctx() {
-    return this.app.unitContext();
-  }
-
+/** Adds the sketch picker to the shared feature panel base. */
+abstract class FeaturePanel<T extends Feature> extends BaseFeaturePanel<T> {
   protected sketchBox(label: string, get: () => Id | null, set: (id: Id | null) => void): SelectionBox {
     const box = new SelectionBox(this, label, { feature: true, sketch: true }, toFeature(this.app, isSketch), (items) => { set((items[0]?.data as Id) ?? null); this.changed(); }, { single: true, placeholder: tr("Select a sketch in the design tree"), icon: 'sketchFeature' });
     const id = get();
@@ -1417,6 +1346,13 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'sweep': return new SweepPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
+    case 'spurGear': return new SpurGearPanel(app, f, editing);
+    case 'bevelGear': return new BevelGearPanel(app, f, editing);
+    case 'wormGear': return new WormGearPanel(app, f, editing);
+    case 'vBelt': return new VBeltPanel(app, f, editing);
+    case 'syncBelt': return new SyncBeltPanel(app, f, editing);
+    case 'sprocket': return new SprocketPanel(app, f, editing);
+
     default: return null;
   }
 }
@@ -1481,6 +1417,13 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
     case 'draft': { const x = newDraft(id, name); x.faces = faces; f = x; break; }
     case 'shaft': f = newShaft(id, name); break;
+    case 'spurGear': f = newSpurGear(id, name); break;
+    case 'bevelGear': f = newBevelGear(id, name); break;
+    case 'wormGear': f = newWormGear(id, name); break;
+    case 'vBelt': f = newVBelt(id, name); break;
+    case 'syncBelt': f = newSyncBelt(id, name); break;
+    case 'sprocket': f = newSprocket(id, name); break;
+
     default: return null;
   }
   // Features that add depth are easier to judge in a 3D view.
