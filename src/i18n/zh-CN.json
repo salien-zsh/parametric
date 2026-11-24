@@ -1781,5 +1781,15 @@
   "Thread depth": "牙深",
   "Thread length": "螺纹长度",
   "Threads are cut into cylindrical faces": "螺纹只能加工在圆柱面上",
-  "thread screw bolt tapped helix": "螺纹 螺钉 螺栓 攻丝 螺旋"
+  "thread screw bolt tapped helix": "螺纹 螺钉 螺栓 攻丝 螺旋",
+  "Offset Face": "偏置面",
+  "Offset Face works on planar faces": "偏置面只适用于平面",
+  "Planar face": "平面",
+  "Positive pushes the face out, negative cuts it in.": "正值把面向外推，负值向里切。",
+  "Push a planar face along its normal to add or remove material.": "沿法向推动平面来添加或去除材料。",
+  "Select a planar face to offset": "选择要偏置的平面",
+  "The face could not be offset": "该面无法偏置",
+  "The offset must not be zero": "偏置量不能为零",
+  "There is no body to edit": "没有可编辑的实体",
+  "direct edit push pull face offset": "直接编辑 推拉 面 偏置"
 }

@@ -437,6 +437,17 @@ export interface ThreadFeature extends FeatureBase {
   left: boolean;
 }
 
+/**
+ * Direct modelling: pushes a planar face along its normal. Positive adds
+ * material over the face, negative removes a layer.
+ */
+export interface OffsetFaceFeature extends FeatureBase {
+  type: 'offsetFace';
+  face: FaceRef | null;
+  /** Distance along the face normal (mm); negative cuts in. */
+  offset: Param;
+}
+
 export interface LoftFeature extends FeatureBase {
   type: 'loft';
   profiles: Id[];
@@ -616,6 +627,7 @@ export type Feature =
   | CoilFeature
   | RibFeature
   | ThreadFeature
+  | OffsetFaceFeature
   | AxisFeature
   | PointFeature
   | LoftFeature

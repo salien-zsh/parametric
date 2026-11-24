@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, RibFeature, ThreadFeature,
+  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, OffsetFaceFeature, RibFeature, ThreadFeature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -417,6 +417,7 @@ export class ModelBuilder {
       case 'coil': this.applyCoil(f, st); return 'tool';
       case 'rib': this.applyRib(f, st); return 'tool';
       case 'thread': this.applyThread(f, st); return 'tool';
+      case 'offsetFace': this.applyOffsetFace(f, st); return 'tool';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -1583,6 +1584,28 @@ export class ModelBuilder {
     const tool = this.fuseAll(walls);
     if (isEmpty(tool)) throw new FeatureError(tr("The rib could not be built"));
     this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `r${k}`), f.cut);
+  }
+
+  /**
+   * Direct edit: push a planar face along its normal. Positive adds a slab
+   * over the face, negative cuts a layer out of it.
+   */
+  private applyOffsetFace(f: OffsetFaceFeature, st: State) {
+    if (!f.face) throw new FeatureError(tr("Select a planar face to offset"));
+    if (!st.body) throw new FeatureError(tr("There is no body to edit"));
+    const nf = st.faces[this.resolveFace(f.face, st)];
+    const d = nf.desc;
+    if (d.type !== 'plane') throw new FeatureError(tr("Offset Face works on planar faces"));
+    const off = num(f.offset);
+    if (Math.abs(off) < 1e-9) throw new FeatureError(tr("The offset must not be zero"));
+    const replicadFace = nf.shape as unknown as R.Face;
+    const outer = replicadFace.clone().outerWire();
+    let profile = R.makeFace(outer) as unknown as R.Face;
+    const holes = replicadFace.clone().innerWires();
+    if (holes.length) profile = R.addHolesInFace(profile, holes) as unknown as R.Face;
+    const slab = R.basicFaceExtrusion(profile, new R.Vector(scale(d.d, off))) as unknown as Sh;
+    if (isEmpty(slab)) throw new FeatureError(tr("The face could not be offset"));
+    this.applyTool(f.id, st, slab, this.nameTool(f.id, slab, (_d, k) => `o${k}`), off < 0);
   }
 
   /** A thread: a triangular groove swept along a helix on a cylindrical face and cut in. */

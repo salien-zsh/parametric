@@ -1,7 +1,7 @@
 // Feature factories, display names and parameter metadata.
 
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, CoilFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
+  AxisFeature, AxisRef, BevelGearFeature, CoilFeature, OffsetFaceFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
   Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShaftFeature, ShellFeature,
   PointFeature, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature, SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from './types';
@@ -52,6 +52,7 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
     { path: 'thickness', kind: 'length', label: tr("Thickness") },
     { path: 'depth', kind: 'length', label: tr("Depth") },
   ],
+  offsetFace: [{ path: 'offset', kind: 'length', label: tr("Offset") }],
   thread: [
     { path: 'pitch', kind: 'length', label: tr("Pitch") },
     { path: 'length', kind: 'length', label: tr("Thread length") },
@@ -164,6 +165,7 @@ const BASE_NAMES: Record<FeatureType, string> = {
   coil: tr('Coil'),
   rib: tr('Rib'),
   thread: tr('Thread'),
+  offsetFace: tr('Offset Face'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -194,6 +196,7 @@ export const FEATURE_LABELS: Record<FeatureType, string> = {
   coil: tr('Coil'),
   rib: tr('Rib'),
   thread: tr('Thread'),
+  offsetFace: tr('Offset Face'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -218,6 +221,7 @@ export function featureIcon(f: Feature): string {
     case 'coil': return 'sweep';
     case 'rib': return 'extrude';
     case 'thread': return 'hole';
+    case 'offsetFace': return 'edit';
     case 'import': return 'part';
     default: return f.type;
   }
@@ -323,6 +327,10 @@ export const newPoint = (id: Id, name: string): PointFeature => ({
   id, name, type: 'point', kind: 'vertex', point: null, edge: null, face: null, edge2: null, plane: null,
 });
 
+export const newOffsetFace = (id: Id, name: string): OffsetFaceFeature => ({
+  id, name, type: 'offsetFace', face: null, offset: 2,
+});
+
 export const newThread = (id: Id, name: string): ThreadFeature => ({
   id, name, type: 'thread', face: null, pitch: 2, length: 20, depth: 1.2, left: false,
 });
@@ -419,6 +427,9 @@ export function dependencies(f: Feature): Id[] {
     // and edges they were made from.
     if (f.face) visitName(f.face.name);
     for (const e of f.edges ?? []) visitName(e.name);
+  }
+  if (f.type === 'offsetFace') {
+    if (f.face) visitName(f.face.name);
   }
   if (f.type === 'thread') {
     if (f.face) visitName(f.face.name);
