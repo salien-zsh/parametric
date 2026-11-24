@@ -302,6 +302,16 @@ export function registerCommands(app: App, files: FileOps) {
       run: () => app.hideComponents(app.selection.ofKind('component').filter((c) => app.component(c.id)?.visible).map((c) => c.id)),
     },
     {
+      id: 'selectAll', label: tr("Select All"), icon: 'select', shortcut: 'Ctrl+A',
+      keywords: tr("select all geometry entities components"),
+      description: tr("Select every sketch entity while sketching, or every visible component in an assembly."),
+      enabled: () => !!app.sketchEditor || app.isAssembly,
+      run: () => {
+        if (app.sketchEditor) { app.sketchEditor.selectAllEntities(); return; }
+        app.selection.set((app.store.doc.components ?? []).filter((c) => c.visible).map((c) => ({ kind: 'component' as const, id: c.id })));
+      },
+    },
+    {
       id: 'selectAllComponents', label: tr("Select All Components"), icon: 'select',
       keywords: tr("select all components assembly"),
       description: tr("Select every visible component in the assembly."),
@@ -712,6 +722,7 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
         { label: tr("Display"), icon: 'shadedEdges', submenu: () => ['shadedEdges', 'shaded', 'hiddenRemoved', 'hiddenVisible', 'wireframe'].map((s) => ({ ...m(`style:${s}`), radio: true })) },
         { label: tr("Orientation"), icon: 'viewOrientation', submenu: () => app.viewMenuItems() },
         m('zoomFit'), m('zoomIn'), m('zoomOut'), m('previousView'), m('perspective'), m('sectionView'), sep,
+        { label: tr("Select All"), icon: 'select', shortcut: 'Ctrl+A', run: () => c.run('selectAll') },
         { label: tr("Hide/Show"), icon: 'eye', submenu: () => ['showPlanes', 'showOrigin', 'showSketches', 'showGrid', 'snapGrid', 'showRelations', 'showDimensions'].map((id) => m(id)) },
         { label: tr("Theme"), icon: 'system', submenu: () => [m('theme:system', { radio: true }), m('theme:light', { radio: true }), m('theme:dark', { radio: true })] },
         m('toggleTree'),

@@ -294,6 +294,12 @@ export class SketchEditor implements ViewportTool {
     this.app.refreshSketchPanel(opts.keepNumberField);
   }
 
+  /** Selects every normal (non-construction) sketch entity. */
+  selectAllEntities() {
+    const ids = this.sketch.entities.filter((e) => !e.construction).map((e) => e.id);
+    this.app.selection.set(ids.map((id) => this.selItem(id)));
+  }
+
   private selItem(id: Id) {
     const sk = this.sketch;
     const c = sk.constraints.find((x) => x.id === id);

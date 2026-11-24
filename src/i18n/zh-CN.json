@@ -1811,5 +1811,8 @@
   "Select every visible component in the assembly.": "选中装配中所有可见零部件。",
   "Hide components": "隐藏零部件",
   "hide components assembly visibility": "隐藏 零部件 装配 显示",
-  "Hide the selected components. Show All Components brings them back.": "隐藏所选零部件，“显示全部零部件”可恢复。"
+  "Hide the selected components. Show All Components brings them back.": "隐藏所选零部件，“显示全部零部件”可恢复。",
+  "Select All": "全选",
+  "select all geometry entities components": "全选 几何 实体 零部件",
+  "Select every sketch entity while sketching, or every visible component in an assembly.": "草图中选中全部图元，或装配中选中全部可见零部件。"
 }
