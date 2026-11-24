@@ -4,7 +4,7 @@ import type { Frame, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newAxis, newBevelGear, newCoil, newMirror, newPlane, newPoint, newRevolve, newRib, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBevelGear, newCoil, newMirror, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -14,7 +14,7 @@ import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel
 import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
-  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, RibFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, RibFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
@@ -1649,6 +1649,39 @@ export class SweepPanel extends FeaturePanel<SweepFeature> {
 
 // ---------- factory ----------
 
+export class ThreadPanel extends FeaturePanel<ThreadFeature> {
+  render(): HTMLElement[] {
+    const f = this.f;
+    const ctx = this.ctx();
+    const face = new SelectionBox(this, tr("Cylindrical face"), { face: true }, toFace(this.app), (items) => {
+      f.face = (items[0]?.data as FaceRef) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Select a cylindrical face to thread"), icon: 'hole' });
+    if (f.face) face.setItems([{ item: faceItem(this.app, f.face), data: f.face, label: tr("Face") }]);
+    const pitch = numberField({ label: tr("Pitch"), icon: 'ruler', value: f.pitch, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.pitch = v; this.changed(); } });
+    const length = numberField({ label: tr("Thread length"), icon: 'ruler', value: f.length, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.length = v; this.changed(); } });
+    const depth = numberField({ label: tr("Thread depth"), icon: 'ruler', value: f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.depth = v; this.changed(); } });
+    const left = checkbox(tr("Left-hand winding"), f.left, (v) => { f.left = v; this.changed(); });
+    return [
+      section(tr("Face"), [face.el, h('p', { class: 'field-label' }, tr("The thread is cut into the picked cylindrical face, starting at the face centre and running along its axis."))]),
+      section(tr("Thread"), [pitch, length, depth, left]),
+    ];
+  }
+
+  protected validate() {
+    const f = this.f;
+    if (!f.face) return tr("Select a cylindrical face to thread");
+    if (!(Number(f.pitch) > 0)) return tr("The thread pitch must be greater than zero");
+    if (!(Number(f.length) > 0)) return tr("The thread length must be greater than zero");
+    if (!(Number(f.depth) > 0)) return tr("The thread depth must be greater than zero");
+    return null;
+  }
+
+  preview() {
+    return this.f.face ? this.f : null;
+  }
+}
+
 export class RibPanel extends FeaturePanel<RibFeature> {
   render(): HTMLElement[] {
     const f = this.f;
@@ -1731,6 +1764,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'sweep': return new SweepPanel(app, f, editing);
     case 'coil': return new CoilPanel(app, f, editing);
     case 'rib': return new RibPanel(app, f, editing);
+    case 'thread': return new ThreadPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
     case 'axis': return new AxisPanel(app, f, editing);
@@ -1818,6 +1852,15 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
+    case 'thread': {
+      const x = newThread(id, name);
+      x.face = faces[0] ?? null;
+      x.pitch = Math.max(2, app.store.unitScale);
+      x.depth = Number(x.pitch) * 0.6;
+      x.length = Math.max(size / 4, app.store.unitScale);
+      f = x;
+      break;
+    }
     case 'rib': {
       const x = newRib(id, name, Math.max(size / 20, app.store.unitScale), Math.max(size / 2, app.store.unitScale));
       x.sketch = selSketch;

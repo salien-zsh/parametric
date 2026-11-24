@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, RibFeature,
+  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, RibFeature, ThreadFeature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -416,6 +416,7 @@ export class ModelBuilder {
       case 'sweep': this.applySweep(f, st); return 'tool';
       case 'coil': this.applyCoil(f, st); return 'tool';
       case 'rib': this.applyRib(f, st); return 'tool';
+      case 'thread': this.applyThread(f, st); return 'tool';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -1582,6 +1583,41 @@ export class ModelBuilder {
     const tool = this.fuseAll(walls);
     if (isEmpty(tool)) throw new FeatureError(tr("The rib could not be built"));
     this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `r${k}`), f.cut);
+  }
+
+  /** A thread: a triangular groove swept along a helix on a cylindrical face and cut in. */
+  private applyThread(f: ThreadFeature, st: State) {
+    if (!f.face) throw new FeatureError(tr("Select a cylindrical face to thread"));
+    const desc = st.faces[this.resolveFace(f.face, st)].desc;
+    if (desc.type !== 'cylinder' || !desc.r) throw new FeatureError(tr("Threads are cut into cylindrical faces"));
+    const pitch = num(f.pitch);
+    const length = num(f.length);
+    const depth = num(f.depth);
+    if (!(pitch > 0) || !(length > 0) || !(depth > 0)) throw new FeatureError(tr("The thread pitch, length and depth must be greater than zero"));
+    if (depth >= desc.r * 0.9) throw new FeatureError(tr("The thread depth is too large for this radius"));
+    const axis: Vec3 = [...desc.p];
+    const dir = normalize(desc.d);
+    const helix = R.makeHelix(pitch, length, desc.r, [...axis], [...dir], f.left);
+    const start = helix.startPoint;
+    const s3: Vec3 = [start.x, start.y, start.z];
+    const tan = helix.tangentAt(0);
+    const tangent = normalize([tan.x, tan.y, tan.z]);
+    const radial = normalize(sub(s3, axis));
+    let axial = normalize(cross(tangent, radial));
+    if (dot(axial, dir) < 0) axial = scale(axial, -1);
+    // A 60 degree groove: apex inside the surface, base outside it.
+    const apex = add(s3, scale(radial, -depth));
+    const base1 = add(add(s3, scale(radial, depth * 0.35)), scale(axial, pitch * 0.32));
+    const base2 = add(add(s3, scale(radial, depth * 0.35)), scale(axial, -pitch * 0.32));
+    const profile = R.makePolygon([apex, base1, base2]) as unknown as R.Face;
+    let tool: Sh;
+    try {
+      tool = R.genericSweep(profile.outerWire(), helix, { frenet: true }) as unknown as Sh;
+    } catch {
+      throw new FeatureError(tr("The thread could not be swept. Check the pitch and the thread depth."));
+    }
+    if (isEmpty(tool)) throw new FeatureError(tr("The thread could not be swept. Check the pitch and the thread depth."));
+    this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `t${k}`), true);
   }
 
   private applySweep(f: SweepFeature, st: State) {

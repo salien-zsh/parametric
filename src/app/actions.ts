@@ -443,6 +443,7 @@ export function registerCommands(app: App, files: FileOps) {
     feature('sweep', tr("Swept Cut"), 'sweep', tr("Sweep a profile along a path to remove material."), { cut: true, needsBody: true }),
     feature('coil', tr("Coil"), 'sweep', tr("Sweep a circle into a coil about the profile sketch's origin."), { keywords: tr("spring helix thread spiral") }),
     feature('rib', tr("Rib"), 'extrude', tr("Thicken the sketch lines into ribs along the sketch normal."), { keywords: tr("rib web gusset stiffener") }),
+    feature('thread', tr("Thread"), 'hole', tr("Cut a helical thread into a cylindrical face."), { needsBody: true, keywords: tr("thread screw bolt tapped helix") }),
     feature('loft', tr("Lofted Boss"), 'loft', tr("Blend between two or more profiles."), { keywords: 'blend' }),
     feature('loft', tr("Lofted Cut"), 'loft', tr("Blend between profiles to remove material."), { cut: true, needsBody: true }),
     feature('fillet', tr("Fillet"), 'fillet', tr("Round selected edges."), { needsBody: true, keywords: tr("round radius blend") }),
@@ -577,7 +578,7 @@ export const RIBBON: RibbonTab[] = [
     groups: [
       [{ cmd: 'extrude' }, { cmd: 'revolve' }, { stack: [{ cmd: 'sweep' }, { cmd: 'loft' }, { cmd: 'coil' }, { cmd: 'rib' }] }],
       [{ cmd: 'extrudeCut' }, { cmd: 'revolveCut' }, { stack: [{ cmd: 'sweepCut' }, { cmd: 'loftCut' }] }],
-      [{ cmd: 'hole' }, { cmd: 'fillet', menu: ['fillet', 'chamfer'] }, { cmd: 'linearPattern', menu: ['linearPattern', 'circularPattern', 'mirror'] }],
+      [{ cmd: 'hole', menu: ['hole', 'thread'] }, { cmd: 'fillet', menu: ['fillet', 'chamfer'] }, { cmd: 'linearPattern', menu: ['linearPattern', 'circularPattern', 'mirror'] }],
       [{ stack: [{ cmd: 'chamfer' }, { cmd: 'shell' }, { cmd: 'draft' }] }, { stack: [{ cmd: 'circularPattern' }, { cmd: 'mirror' }] }],
       [{ cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle', 'planeTangent', 'planeTwoEdges', 'planeThreePoints'] },
         { cmd: 'axisCylinder', menu: ['axisCylinder', 'axisTwoPoints', 'axisEdge', 'axisPerpendicular'] },

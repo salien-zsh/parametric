@@ -419,6 +419,24 @@ export interface RibFeature extends FeatureBase {
   cut: boolean;
 }
 
+/**
+ * A thread cut into a cylindrical face: a triangular groove swept along a
+ * helix about the face's axis.
+ */
+export interface ThreadFeature extends FeatureBase {
+  type: 'thread';
+  /** Cylindrical face to thread. */
+  face: FaceRef | null;
+  pitch: Param;
+  /** Threaded length along the axis. */
+  length: Param;
+  /** Radial depth of the thread; about 0.61 x pitch for a 60 degree thread. */
+  depth: Param;
+  /** Start the thread this far along the axis from the face centre. */
+  offset?: Param;
+  left: boolean;
+}
+
 export interface LoftFeature extends FeatureBase {
   type: 'loft';
   profiles: Id[];
@@ -597,6 +615,7 @@ export type Feature =
   | PlaneFeature
   | CoilFeature
   | RibFeature
+  | ThreadFeature
   | AxisFeature
   | PointFeature
   | LoftFeature
