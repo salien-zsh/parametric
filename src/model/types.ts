@@ -203,6 +203,8 @@ export interface ExtrudeFeature extends FeatureBase {
   thin: ThinOptions | null;
   /** Keep only the intersection of the extrusion and the body (Fusion's Intersect). */
   intersect?: boolean;
+  /** Start the extrusion this far from the sketch plane along the direction (Fusion's Start offset). */
+  startOffset?: Param;
   /** Optional sample points (sketch coordinates) choosing which regions to use. */
   contours?: Vec2[];
 }

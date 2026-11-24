@@ -172,6 +172,7 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
     draftAngle.hidden = !hasDraft;
     const outward = checkbox(tr("Draft outward"), f.draftOutward, (v) => { f.draftOutward = v; this.changed(); });
     outward.hidden = !hasDraft;
+    const startOffset = numberField({ label: tr("Start offset"), icon: 'ruler', value: f.startOffset ?? 0, kind: 'length', ctx, onChange: (v) => { f.startOffset = v; this.changed(); } });
     const dir1 = section(tr("Direction 1"), [
       h('div', { class: 'row' }, flipButton(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); }), h('div', { class: 'grow' },
         selectField(tr("End condition"), f.end, endOpts, (v) => {
@@ -180,7 +181,7 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
           dir2sec.hidden = v === 'midPlane';
           this.changed();
         }))),
-      depth,
+      depth, startOffset,
       checkbox(tr("Draft"), hasDraft, (v) => {
         f.draft = v ? 3 : 0;
         draftAngle.hidden = !v;

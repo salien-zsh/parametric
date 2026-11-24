@@ -1848,5 +1848,7 @@
   "reorder feature down tree": "重排 特征 下移 树",
   "Intersect": "相交",
   "There is no body to intersect with": "没有可相交的实体",
-  "The intersect leaves no material": "相交后没有剩余材料"
+  "The intersect leaves no material": "相交后没有剩余材料",
+  "Start offset": "起始偏移",
+  "A start offset cannot be combined with a draft": "起始偏移不能与拔模同时使用"
 }

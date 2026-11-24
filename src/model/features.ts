@@ -38,6 +38,7 @@ export const THREAD_PRESETS: ThreadPreset[] = [
 /** Paths (dot separated) of numeric parameters per feature type. */
 export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: ParamKind; label: string }[]>> = {
   extrude: [
+    { path: 'startOffset', kind: 'length', label: tr("Start offset") },
     { path: 'depth', kind: 'length', label: tr("Depth") },
     { path: 'dir2.depth', kind: 'length', label: tr("Depth (Direction 2)") },
     { path: 'draft', kind: 'angle', label: tr("Draft angle") },

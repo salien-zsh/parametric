@@ -934,9 +934,12 @@ export class ModelBuilder {
       if (!(d2 > 0)) throw new FeatureError(f.dir2.end === 'throughAll' ? noBody : tr("Direction 2 depth must be greater than zero"));
       start = -d2; total = d1 + d2;
     }
-    d1 = total;
+    const startOffset = num(f.startOffset ?? 0);
     const draft = num(f.draft || 0);
     if (draft < 0) throw new FeatureError(tr("The draft angle cannot be negative. Use Draft outward to taper the other way."));
+    if (startOffset && draft) throw new FeatureError(tr("A start offset cannot be combined with a draft"));
+    if (startOffset) start += startOffset;
+    d1 = total;
     const extrudeAll = (from: number, length: number, d: Vec3): Sh => {
       const pieces: Sh[] = [];
       for (const r of regions) {

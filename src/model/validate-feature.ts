@@ -52,7 +52,8 @@ export function validFeature(f: Feature): boolean {
   const r = f as unknown as Record<string, unknown>;
   switch (f.type) {
     case 'extrude':
-      return sketchId(r.sketch) && (r.intersect == null || typeof r.intersect === 'boolean');
+      return sketchId(r.sketch) && (r.intersect == null || typeof r.intersect === 'boolean')
+        && (r.startOffset == null || numeric(r.startOffset));
     case 'hole':
       return sketchId(r.sketch) && (r.toFace == null || named(r.toFace));
     case 'revolve':
