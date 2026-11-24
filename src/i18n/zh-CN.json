@@ -1684,5 +1684,7 @@
   "Section axis": "剖切方向",
   "Look from the other side": "从另一侧观察",
   "Section side": "剖切查看侧",
-  "View scale": "视图比例"
+  "View scale": "视图比例",
+  "Center marks": "中心标记",
+  "Balloons": "零件序号"
 }

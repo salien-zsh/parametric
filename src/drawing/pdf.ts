@@ -203,6 +203,13 @@ export class PdfPage {
     this.ops.push(`${this.x(x)} ${this.y(y + h)} ${(w * PT).toFixed(3)} ${(h * PT).toFixed(3)} re S`);
   }
 
+  /** Stroked circle, drawn as four cubic Beziers. */
+  circle(cx: number, cy: number, r: number, style: StrokeStyle) {
+    const k = 0.5522847498 * r;
+    const d = `M ${cx - r} ${cy} C ${cx - r} ${cy - k} ${cx - k} ${cy - r} ${cx} ${cy - r} C ${cx + k} ${cy - r} ${cx + r} ${cy - k} ${cx + r} ${cy} C ${cx + r} ${cy + k} ${cx + k} ${cy + r} ${cx} ${cy + r} C ${cx - k} ${cy + r} ${cx - r} ${cy + k} ${cx - r} ${cy} Z`;
+    this.path(d, 0, 0, 1, style);
+  }
+
   /** Filled triangle (arrowheads). */
   triangle(a: [number, number], b: [number, number], c: [number, number]) {
     this.ops.push('0 g', `${this.x(a[0])} ${this.y(a[1])} m ${this.x(b[0])} ${this.y(b[1])} l ${this.x(c[0])} ${this.y(c[1])} l h f`);

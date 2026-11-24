@@ -438,3 +438,92 @@ test('adds a section view, hatches the cut and labels it', async ({ page }) => {
   expect(view?.section).toEqual({ axis: 'z', offset: 0, flip: false });
   expect(errors).toEqual([]);
 });
+
+
+test('centre marks follow the holes and can be switched off', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.getByRole('button', { name: /Mounting Bracket/ }).click();
+  await waitForFeature(page, 'Fillet1');
+  await page.getByRole('tab', { name: 'Drawing' }).click();
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(4, { timeout: 30_000 });
+  const count = () => page.evaluate(() => document.querySelector('.paper svg')!.querySelectorAll('line').length);
+  const before = await count();
+  // Select the front view: its controls open in the panel.
+  await page.locator('.relations-list > *').first().locator('button').first().click();
+  const centers = page.getByRole('checkbox', { name: 'Center marks' });
+  await expect(centers).toBeVisible();
+  await expect(centers).toBeChecked();
+  await centers.uncheck();
+  await page.waitForTimeout(600);
+  const after = await count();
+  expect(after).toBeLessThan(before);
+  await centers.check();
+  await page.waitForTimeout(600);
+  expect(await count()).toBe(before);
+  expect(errors).toEqual([]);
+});
+
+test('exports the sheet as DXF', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.getByRole('button', { name: /Mounting Bracket/ }).click();
+  await waitForFeature(page, 'Fillet1');
+  await page.getByRole('tab', { name: 'Drawing' }).click();
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(4, { timeout: 30_000 });
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'DXF', exact: true }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe('Mounting Bracket.dxf');
+  expect(await file.failure()).toBeNull();
+  const { readFileSync } = await import('node:fs');
+  const text = new TextDecoder().decode(readFileSync((await file.path())!));
+  expect(text.startsWith('0\nSECTION')).toBe(true);
+  expect(text).toContain('ENTITIES');
+  expect(text).toContain('LAYER');
+  expect(text).toContain('VIEW');
+  expect(text.trimEnd().endsWith('EOF')).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('assembly drawings number their parts with balloons', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.evaluate(() => {
+    type AnyApp = { __parametric: any };
+    const app = (window as unknown as AnyApp).__parametric;
+    app.newAssembly('BalloonAssembly');
+    const now = Date.now();
+    const part = (name: string, depth: number) => ({
+      format: 'parametric-part', version: 1, kind: 'part', name, units: 'MMGS', decimals: 2, material: null, color: '#b8c4d2',
+      variables: [], rollback: null, blobs: {}, components: [], nextId: 3, created: now, modified: now,
+      features: [{
+        id: 's1', name: 'Sketch1', type: 'sketch', plane: { kind: 'base', plane: 'front' }, constraints: [], entities: [
+          { id: 'p1', t: 'point', x: 0, y: 0 }, { id: 'p2', t: 'point', x: 20, y: 0 }, { id: 'p3', t: 'point', x: 20, y: 10 }, { id: 'p4', t: 'point', x: 0, y: 10 },
+          { id: 'l1', t: 'line', a: 'p1', b: 'p2' }, { id: 'l2', t: 'line', a: 'p2', b: 'p3' }, { id: 'l3', t: 'line', a: 'p3', b: 'p4' }, { id: 'l4', t: 'line', a: 'p4', b: 'p1' },
+        ],
+      }, {
+        id: 'e1', name: 'Extrude1', type: 'extrude', sketch: 's1', cut: false, end: 'blind', depth, flip: false, dir2: null, draft: 0, draftOutward: false, thin: null,
+      }],
+    });
+    app.store.change('Insert components', (doc: any) => {
+      doc.components = [
+        { id: 'c1', name: 'Plate1', part: part('Plate', 5), transform: { position: [0, 0, 0], rotation: [0, 0, 0] }, visible: true, fixed: true },
+        { id: 'c2', name: 'Bracket1', part: part('Bracket', 8), transform: { position: [30, 0, 0], rotation: [0, 0, 0] }, visible: true, fixed: false },
+      ];
+    });
+  });
+  await page.waitForFunction(() => (window as unknown as { __parametric: any }).__parametric.bbox != null);
+  await page.evaluate(() => (window as unknown as { __parametric: any }).__parametric.commands.run('openDrawing'));
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(4, { timeout: 30_000 });
+  const circlesBefore = await page.evaluate(() => document.querySelector('.paper svg')!.querySelectorAll('circle').length);
+  expect(circlesBefore).toBe(0);
+  await page.evaluate(() => {
+    const app = (window as unknown as { __parametric: any }).__parametric;
+    app.store.change('Balloons', (doc: any) => {
+      for (const v of doc.drawing.views) v.balloons = true;
+    });
+  });
+  await page.waitForTimeout(1200);
+  const balloons = await page.evaluate(() => document.querySelector('.paper svg')!.querySelectorAll('circle').length);
+  // One balloon per bill-of-materials item.
+  expect(balloons).toBeGreaterThanOrEqual(2);
+  expect(errors).toEqual([]);
+});

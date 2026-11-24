@@ -735,6 +735,10 @@ export interface DrawingView {
   dims: boolean;
   /** Per-view scale (paper mm per model mm); the sheet scale when missing. */
   scale?: number;
+  /** Draw centre marks on the circular edges that face this view. */
+  centers?: boolean;
+  /** Assembly drawings: number the parts with balloons, matching the bill of materials. */
+  balloons?: boolean;
   /** Section views: the cut plane. */
   section?: DrawingViewSection;
 }

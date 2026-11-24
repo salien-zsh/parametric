@@ -6,7 +6,9 @@ import type { ProjectionResult } from '../kernel/protocol';
 import type { DrawingDoc, DrawingView, DrawingViewKind, SectionAxis, SheetSize } from '../model/types';
 import type { Vec3 } from '../math/vec';
 import { UNIT_SYSTEMS, formatNumber } from '../model/units';
-import { SHEET_LABELS, STANDARD_SCALES, VIEW_DIRS, VIEW_LABELS, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdf, toSvg, type ViewFrame } from '../drawing/sheet';
+import { SHEET_LABELS, STANDARD_SCALES, VIEW_DIRS, VIEW_LABELS, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdf, toSvg, type ViewAnnotations, type ViewFrame } from '../drawing/sheet';
+import { cross, dot, normalize } from '../math/vec';
+import { toDxf } from '../drawing/dxf';
 import { download, safeName } from '../platform/files';
 import { h } from '../ui/dom';
 import { icon } from '../ui/icons';
@@ -142,7 +144,7 @@ export class DrawingWorkspace {
   /** Rebuilds the PropertyManager if what it shows changed (not when a view only moved). */
   private syncPanel() {
     const d = this.doc;
-    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section])]) : '';
+    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section, v.centers, v.balloons])]) : '';
     if (key === this.panelKey) return;
     this.panelKey = key;
     if (this.panelChanging) return;
@@ -212,20 +214,75 @@ export class DrawingWorkspace {
     };
   }
 
-  /** Aggregated assembly components for the drawing's bill of materials. */
-  private bomRows() {
+  /** Visible components grouped for the bill of materials, with their ids. */
+  private bomGroups(): { part: string; material: string; components: string[] }[] {
     const doc = this.app.store.doc;
     if (doc.kind !== 'assembly') return [];
-    const groups = new Map<string, { part: string; quantity: number; material: string }>();
+    const groups = new Map<string, { part: string; material: string; components: string[] }>();
     for (const component of doc.components ?? []) {
       if (!component.visible) continue;
       const material = component.part.material?.name ?? tr("Not specified");
       const key = JSON.stringify([component.part.name, material]);
       const row = groups.get(key);
-      if (row) row.quantity++;
-      else groups.set(key, { part: component.part.name, quantity: 1, material });
+      if (row) row.components.push(component.id);
+      else groups.set(key, { part: component.part.name, material, components: [component.id] });
     }
-    return [...groups.values()].map((row, i) => ({ item: i + 1, ...row }));
+    return [...groups.values()];
+  }
+
+  /** Aggregated assembly components for the drawing's bill of materials. */
+  private bomRows() {
+    return this.bomGroups().map((group, i) => ({ item: i + 1, part: group.part, quantity: group.components.length, material: group.material }));
+  }
+
+  /** Centre marks and balloons for each view, in that view's model space. */
+  private annotations(d: DrawingDoc, projections: Map<string, ProjectionResult>): Map<string, ViewAnnotations> {
+    const out = new Map<string, ViewAnnotations>();
+    const b = this.app.bbox;
+    if (!b) return out;
+    const center: Vec3 = [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
+    const groups = this.bomGroups();
+    for (const v of d.views) {
+      const pr = projections.get(v.id);
+      if (!pr?.bounds) continue;
+      const { dir, x } = viewRequest(v, center);
+      const u = normalize(x);
+      const up = cross(dir, u);
+      const bounds = pr.bounds;
+      const near = (p: [number, number]) => p[0] >= bounds[0] - 8 && p[0] <= bounds[2] + 8 && p[1] >= bounds[1] - 8 && p[1] <= bounds[3] + 8;
+      const circles: ViewAnnotations['circles'] = [];
+      // Existing drawings without the flag still get centre marks (the checkbox shows them on).
+      if (v.centers !== false) {
+        for (const e of this.app.edges) {
+          if (e.type !== 'circle' || !e.center || !e.axis || !e.radius) continue;
+          if (Math.abs(dot(e.axis, dir)) < 0.999) continue;
+          const p: [number, number] = [dot(e.center, u), -dot(e.center, up)];
+          if (near(p)) circles.push({ x: p[0], y: p[1], r: e.radius });
+        }
+      }
+      const balloons: ViewAnnotations['balloons'] = [];
+      if (v.balloons && groups.length) {
+        groups.forEach((group, index) => {
+          // The first visible component of the group stands for the whole group.
+          const componentId = group.components[0];
+          let sum: Vec3 = [0, 0, 0];
+          let count = 0;
+          for (const f of this.app.faces) {
+            const owner = f.component?.split('/')[0];
+            if (owner !== componentId) continue;
+            sum = [sum[0] + f.center[0], sum[1] + f.center[1], sum[2] + f.center[2]];
+            count++;
+          }
+          if (!count) return;
+          const world: Vec3 = [sum[0] / count, sum[1] / count, sum[2] / count];
+          const p: [number, number] = [dot(world, u), -dot(world, up)];
+          if (!near(p)) return;
+          balloons.push({ x: p[0], y: p[1], item: index + 1 });
+        });
+      }
+      if (circles.length || balloons.length) out.set(v.id, { circles, balloons });
+    }
+    return out;
   }
 
   private sheet() {
@@ -235,7 +292,7 @@ export class DrawingWorkspace {
       const c = this.cache.get(v.id);
       if (this.app.bbox && c?.version === this.app.buildVersion && c.kind === v.kind) projections.set(v.id, c.result);
     }
-    return buildSheet(d, projections, this.info());
+    return buildSheet(d, projections, { ...this.info(), annotations: this.annotations(d, projections) });
   }
 
   render() {
@@ -440,7 +497,7 @@ export class DrawingWorkspace {
     const id = `v${n}`;
     this.selected = id;
     this.update((dd) => {
-      dd.views.push({ id, kind, x, y, hidden: kind !== 'isometric' && kind !== 'section', dims: kind !== 'isometric', ...(section ? { section } : {}) });
+      dd.views.push({ id, kind, x, y, hidden: kind !== 'isometric' && kind !== 'section', dims: kind !== 'isometric', centers: kind !== 'isometric', ...(section ? { section } : {}) });
     }, tr("Add view"));
   }
 
@@ -477,6 +534,12 @@ export class DrawingWorkspace {
     if (!(await this.projected())) return;
     const s = this.sheet();
     download(toSvg(s.items, s.w, s.h), `${safeName(this.app.store.doc.name)}.svg`, 'image/svg+xml');
+  }
+
+  async exportDxf() {
+    if (!(await this.projected())) return;
+    const s = this.sheet();
+    download(toDxf(s.items, s.w, s.h), `${safeName(this.app.store.doc.name)}.dxf`, 'application/dxf');
   }
 }
 
@@ -533,7 +596,8 @@ export class DrawingPanel extends PropertyPanel {
       section(tr("Export"), [
         h('div', { class: 'row' },
           h('button', { class: 'btn small', type: 'button', onclick: () => void ws.exportPdf() }, icon('download', 14), 'PDF'),
-          h('button', { class: 'btn small', type: 'button', onclick: () => void ws.exportSvg() }, icon('download', 14), 'SVG')),
+          h('button', { class: 'btn small', type: 'button', onclick: () => void ws.exportSvg() }, icon('download', 14), 'SVG'),
+          h('button', { class: 'btn small', type: 'button', onclick: () => void ws.exportDxf() }, icon('download', 14), 'DXF')),
       ]),
     ];
   }
@@ -590,6 +654,18 @@ export class DrawingPanel extends PropertyPanel {
         if (scaleSel.value === '') delete q.scale;
         else q.scale = Number(scaleSel.value);
       }, tr("View scale")));
+      const centers = checkbox(tr("Center marks"), v.centers !== false, (value) => ws.updateFromPanel((x) => {
+        const q = x.views.find((r) => r.id === v.id);
+        if (q) q.centers = value;
+      }, tr("Center marks")));
+      extra.append(centers);
+      if (this.app.store.doc.kind === 'assembly') {
+        const balloons = checkbox(tr("Balloons"), !!v.balloons, (value) => ws.updateFromPanel((x) => {
+          const q = x.views.find((r) => r.id === v.id);
+          if (q) q.balloons = value;
+        }, tr("Balloons")));
+        extra.append(balloons);
+      }
       extra.append(h('div', { class: 'rel-field' }, h('div', { class: 'field-label' }, tr("View scale")), scaleSel));
       row.append(extra);
     }

@@ -111,8 +111,17 @@ export type Item =
   | { t: 'path'; d: string; tx: number; ty: number; s: number; w: number; dash?: number[]; view?: string }
   | { t: 'line'; x1: number; y1: number; x2: number; y2: number; w: number; dash?: number[] }
   | { t: 'rect'; x: number; y: number; w: number; h: number; sw: number }
+  | { t: 'circle'; x: number; y: number; r: number; sw: number }
   | { t: 'tri'; a: [number, number]; b: [number, number]; c: [number, number] }
   | { t: 'text'; s: string; x: number; y: number; size: number; bold?: boolean; anchor?: 'start' | 'middle' | 'end'; rotate?: number };
+
+/** Per-view 2D annotations in model space, ready to be placed with the view. */
+export interface ViewAnnotations {
+  /** Circular edges facing the view: centre and radius in model millimetres. */
+  circles: { x: number; y: number; r: number }[];
+  /** Assembly balloons: the point to lead to, and the bill-of-materials item. */
+  balloons: { x: number; y: number; item: number }[];
+}
 
 export interface SheetInfo {
   partName: string;
@@ -121,6 +130,8 @@ export interface SheetInfo {
   date: string;
   formatLength: (mm: number) => string;
   bom?: { item: number; part: string; quantity: number; material: string }[];
+  /** Annotations per view id (centre marks, balloons). */
+  annotations?: Map<string, ViewAnnotations>;
 }
 
 export interface ViewFrame {
@@ -178,6 +189,16 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
     const label = viewLabel(scaled, f, hasDims(v), taken.filter((_, j) => j !== i), w, h);
     items.push(label.item);
     taken.push(label.box);
+    // Centre marks and balloons ride with the view's own scale and position.
+    const annotations = info.annotations?.get(v.id);
+    if (annotations?.circles.length) {
+      for (const c of annotations.circles) {
+        const cx = tx + c.x * scale;
+        const cy = ty + c.y * scale;
+        centerMark(items, cx, cy, c.r * scale);
+      }
+    }
+    if (annotations?.balloons.length) balloon(items, annotations.balloons, tx, ty, scale, f, w, h);
     if (hasDims(v)) {
       dimension(items, [fx0, fy1], [fx1, fy1], 'below', info.formatLength(bx1 - bx0));
       dimension(items, [fx0, fy0], [fx0, fy1], 'left', info.formatLength(by1 - by0));
@@ -293,6 +314,55 @@ export function hatchLoops(items: Item[], loops: [number, number][][], spacing =
       items.push({ t: 'line', x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1], w: 0.13 });
     }
   }
+}
+
+/** A centre mark: a small cross plus dashed centre lines across the circle. */
+function centerMark(items: Item[], x: number, y: number, radius: number) {
+  const arm = 3;
+  items.push({ t: 'line', x1: x - arm, y1: y, x2: x + arm, y2: y, w: THIN });
+  items.push({ t: 'line', x1: x, y1: y - arm, x2: x, y2: y + arm, w: THIN });
+  const reach = Math.max(radius + 2, arm + 2);
+  if (reach > arm) {
+    items.push({ t: 'line', x1: x - reach, y1: y, x2: x - arm - 1, y2: y, w: THIN, dash: [2, 1] });
+    items.push({ t: 'line', x1: x + arm + 1, y1: y, x2: x + reach, y2: y, w: THIN, dash: [2, 1] });
+    items.push({ t: 'line', x1: x, y1: y - reach, x2: x, y2: y - arm - 1, w: THIN, dash: [2, 1] });
+    items.push({ t: 'line', x1: x, y1: y + arm + 1, x2: x, y2: y + reach, w: THIN, dash: [2, 1] });
+  }
+}
+
+/**
+ * Balloons for an assembly drawing: a numbered circle just outside each part's
+ * projected centre, with a short leader back to it. The circle is placed away
+ * from the view centre so the leaders fan out instead of piling up.
+ */
+function balloon(
+  items: Item[],
+  parts: { x: number; y: number; item: number }[],
+  tx: number,
+  ty: number,
+  scale: number,
+  frame: ViewFrame,
+  w: number,
+  h: number,
+) {
+  const r = 3;
+  const cx = (frame.x0 + frame.x1) / 2;
+  const cy = (frame.y0 + frame.y1) / 2;
+  parts.forEach((part, i) => {
+    const px = tx + part.x * scale;
+    const py = ty + part.y * scale;
+    if (px < frame.x0 || px > frame.x1 || py < frame.y0 || py > frame.y1) return;
+    const away = 12 + (i % 3) * 5;
+    const ox = px >= cx ? 1 : -1;
+    const oy = py >= cy ? 1 : -1;
+    const bx = Math.max(MARGIN + r, Math.min(w - MARGIN - r, px + ox * away));
+    const by = Math.max(MARGIN + r, Math.min(h - MARGIN - r, py + oy * away));
+    const dx = bx - px, dy = by - py;
+    const len = Math.hypot(dx, dy) || 1;
+    items.push({ t: 'line', x1: bx - (dx / len) * r, y1: by - (dy / len) * r, x2: px, y2: py, w: THIN });
+    items.push({ t: 'circle', x: bx, y: by, r, sw: 0.3 });
+    items.push({ t: 'text', s: String(part.item), x: bx, y: by + 0.9, size: 2.6, anchor: 'middle' });
+  });
 }
 
 /** Overall dimension between two points (horizontal below, vertical left). */
@@ -429,6 +499,9 @@ export function toSvg(items: Item[], w: number, h: number, opts: { background?: 
       case 'tri':
         parts.push(`<path d="M${it.a[0]} ${it.a[1]}L${it.b[0]} ${it.b[1]}L${it.c[0]} ${it.c[1]}Z" fill="${ink}"/>`);
         break;
+      case 'circle':
+        parts.push(`<circle cx="${it.x}" cy="${it.y}" r="${it.r}" fill="none" stroke="${ink}" stroke-width="${it.sw}"/>`);
+        break;
       case 'text': {
         const anchor = it.anchor === 'middle' ? 'middle' : it.anchor === 'end' ? 'end' : 'start';
         const rot = it.rotate ? ` transform="rotate(${it.rotate} ${it.x} ${it.y})"` : '';
@@ -450,6 +523,7 @@ export function toPdf(items: Item[], w: number, h: number, title: string): Uint8
       case 'line': pdf.line(it.x1, it.y1, it.x2, it.y2, { width: it.w, dash: it.dash }); break;
       case 'rect': pdf.rect(it.x, it.y, it.w, it.h, { width: it.sw }); break;
       case 'tri': pdf.triangle(it.a, it.b, it.c); break;
+      case 'circle': pdf.circle(it.x, it.y, it.r, { width: it.sw }); break;
       case 'text': pdf.text(it.s, it.x, it.y, it.size, { bold: it.bold, anchor: it.anchor, rotate: it.rotate ? -it.rotate : undefined }); break;
     }
   }
