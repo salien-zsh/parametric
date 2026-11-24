@@ -33,6 +33,9 @@ test('Zoom to Selection frames the picked geometry', async ({ page }) => {
   await page.waitForTimeout(500);
   const after = await page.evaluate(() => (window as unknown as Handle).__parametric.viewport.camera.state().distance);
   expect(ok).toBe(true);
+  // Discoverable from the View tab as well as the context menu.
+  await page.getByRole('tab', { name: 'View' }).click();
+  await expect(page.getByRole('button', { name: 'Zoom to Selection' }).first()).toBeVisible();
   expect(after).toBeLessThan(before);
   expect(errors).toEqual([]);
 });

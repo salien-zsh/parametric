@@ -664,7 +664,7 @@ export const RIBBON: RibbonTab[] = [
   {
     id: 'view', label: tr("View"),
     groups: [
-      [{ cmd: 'zoomFit' }, { cmd: 'normalTo' }],
+      [{ cmd: 'zoomToSelection' }, { cmd: 'zoomFit' }, { cmd: 'normalTo' }],
       [{ stack: [{ cmd: 'viewFront' }, { cmd: 'viewTop' }, { cmd: 'viewRight' }] }, { stack: [{ cmd: 'viewBack' }, { cmd: 'viewBottom' }, { cmd: 'viewLeft' }] }, { cmd: 'viewIsometric' }],
       [{ stack: [{ cmd: 'style:shadedEdges' }, { cmd: 'style:shaded' }, { cmd: 'style:wireframe' }] }, { stack: [{ cmd: 'style:hiddenRemoved' }, { cmd: 'style:hiddenVisible' }, { cmd: 'perspective' }] }],
     ],
@@ -893,7 +893,7 @@ export function quickActions(app: App): { cmd: string }[] {
     if (app.selection.ofKind('assemblyJoint').length) return [{ cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'zoomFit' }];
     if (components.length === 2) return [{ cmd: 'autoMate' }, { cmd: 'addJoint' }, { cmd: 'mateSuggestions' }, { cmd: 'openDrawing' }];
     return components.length
-      ? [{ cmd: 'editComponent' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { cmd: 'addJoint' }, { cmd: 'autoMate' }, { cmd: 'fixComponent' }]
+      ? [{ cmd: 'editComponent' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { cmd: 'addJoint' }, { cmd: 'zoomToSelection' }, { cmd: 'fixComponent' }]
       : [{ cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'autoMate' }, { cmd: 'mateSuggestions' }, { cmd: 'zoomFit' }];
   }
   const it = app.selection.items[0];
