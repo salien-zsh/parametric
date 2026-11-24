@@ -1808,5 +1808,8 @@
   "Frame the selected faces, edges, vertices or components.": "将所选的面、边、顶点或零部件框满视图。",
   "Select All Components": "选择全部零部件",
   "select all components assembly": "选择 全部 零部件 装配",
-  "Select every visible component in the assembly.": "选中装配中所有可见零部件。"
+  "Select every visible component in the assembly.": "选中装配中所有可见零部件。",
+  "Hide components": "隐藏零部件",
+  "hide components assembly visibility": "隐藏 零部件 装配 显示",
+  "Hide the selected components. Show All Components brings them back.": "隐藏所选零部件，“显示全部零部件”可恢复。"
 }

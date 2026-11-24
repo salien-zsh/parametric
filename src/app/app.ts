@@ -1128,6 +1128,15 @@ export class App {
     if (created.length) this.selection.set(created.map((id) => ({ kind: 'component' as const, id })));
   }
 
+  /** Hides the given components (Fusion's Hide for a selection). */
+  hideComponents(ids: Id[]) {
+    if (!ids.length) return;
+    const hide = new Set(ids);
+    this.store.change(tr("Hide components"), (doc) => {
+      for (const component of doc.components ?? []) if (hide.has(component.id)) component.visible = false;
+    });
+  }
+
   /** Hides every component except the given ones (Fusion's Isolate). */
   isolateComponents(ids: Id[]) {
     if (!ids.length) return;

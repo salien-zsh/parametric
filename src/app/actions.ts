@@ -295,6 +295,13 @@ export function registerCommands(app: App, files: FileOps) {
       },
     },
     {
+      id: 'hideComponents', label: tr("Hide"), icon: 'eyeOff',
+      keywords: tr("hide components assembly visibility"),
+      description: tr("Hide the selected components. Show All Components brings them back."),
+      enabled: () => app.isAssembly && app.selection.ofKind('component').some((c) => app.component(c.id)?.visible),
+      run: () => app.hideComponents(app.selection.ofKind('component').filter((c) => app.component(c.id)?.visible).map((c) => c.id)),
+    },
+    {
       id: 'selectAllComponents', label: tr("Select All Components"), icon: 'select',
       keywords: tr("select all components assembly"),
       description: tr("Select every visible component in the assembly."),
@@ -792,6 +799,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
       { label: tr("Component Pattern..."), icon: 'circularPattern', run: () => c.run('componentPattern') },
       { label: tr("Replace Component..."), icon: 'import', disabled: !c.isEnabled('replaceComponent'), run: () => c.run('replaceComponent') },
       { label: tr("Duplicate Component"), icon: 'copy', run: () => c.run('duplicateComponent') },
+      { label: tr("Hide"), icon: 'eyeOff', run: () => c.run('hideComponents') },
       { label: tr("Isolate"), icon: 'eyeOff', run: () => c.run('isolateComponents') },
       { label: tr("Show All Components"), icon: 'eye', disabled: !c.isEnabled('showAllComponents'), run: () => c.run('showAllComponents') },
       sep,
@@ -875,7 +883,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
       );
     }
     const assemblyItems: MenuItem[] = components.length
-      ? [m('moveComponents'), m('componentPattern'), m('replaceComponent'), m('isolateComponents'), m('showAllComponents'), m('autoMate'), m('addJoint'), m('fixComponent'), sep]
+      ? [m('moveComponents'), m('componentPattern'), m('replaceComponent'), m('hideComponents'), m('isolateComponents'), m('showAllComponents'), m('autoMate'), m('addJoint'), m('fixComponent'), sep]
       : [m('insertComponent'), m('newAssemblyPart'), m('autoMate'), m('mateSuggestions'), m('showAllComponents'), m('motionStudy'), m('interference'), sep];
     items.push(...assemblyItems);
   }

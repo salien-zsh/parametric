@@ -1,17 +1,17 @@
 {
   "files": 82,
   "edits": 0,
-  "uniqueKeys": 2054,
+  "uniqueKeys": 2057,
   "perFile": [
     {
       "file": "src/app/actions.ts",
       "edits": 0,
-      "skipped": 468
+      "skipped": 472
     },
     {
       "file": "src/app/app.ts",
       "edits": 0,
-      "skipped": 150
+      "skipped": 151
     },
     {
       "file": "src/app/apps-panel.ts",
