@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
+  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -414,6 +414,7 @@ export class ModelBuilder {
       case 'mirror': this.applyMirror(f, st); return 'tool';
       case 'loft': this.applyLoft(f, st); return 'tool';
       case 'sweep': this.applySweep(f, st); return 'tool';
+      case 'coil': this.applyCoil(f, st); return 'tool';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -1489,6 +1490,58 @@ export class ModelBuilder {
       if (isEmpty(tool) || flat(tool)) throw new FeatureError(failed);
     }
     this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `l${k}`), f.cut);
+  }
+
+  /**
+   * A coil: a circular profile swept along a helix about the profile sketch's
+   * origin. The profile's distance from that origin is the coil radius.
+   */
+  private applyCoil(f: CoilFeature, st: State) {
+    if (!f.profile) throw new FeatureError(tr("Select the profile sketch"));
+    const sk = st.sketches.get(f.profile);
+    const fr = st.frames.get(f.profile);
+    if (!sk || !fr) throw new FeatureError(tr("The profile sketch is missing or failed to build"));
+    const circles = sk.entities.filter((e) => e.t === 'circle' && !e.construction) as { c: string; r: number }[];
+    if (circles.length !== 1) throw new FeatureError(tr("Coil needs a sketch with one circle"));
+    const circle = circles[0];
+    const ix = new SketchIndex(sk.entities);
+    const centre = ix.pt(circle.c);
+    const helixRadius = Math.hypot(centre[0], centre[1]);
+    if (helixRadius < 1e-6) throw new FeatureError(tr("Draw the circle away from the sketch origin: the origin is the coil axis"));
+    const pitch = num(f.pitch);
+    if (!(pitch > 0)) throw new FeatureError(tr("The pitch must be greater than zero"));
+    const turns = f.byHeight ? num(f.height) / pitch : num(f.revolutions);
+    if (!(turns > 0)) throw new FeatureError(tr("The coil needs at least one turn"));
+    const height = f.byHeight ? num(f.height) : pitch * turns;
+    const helix = R.makeHelix(pitch, height, helixRadius, [...fr.o], [...fr.n], f.left);
+    // Start the swept circle at the helix start, square to its tangent.
+    const start = helix.startPoint;
+    const tan0 = helix.tangentAt(0);
+    const tangent = normalize([tan0.x, tan0.y, tan0.z]);
+    let u = cross(tangent, fr.n);
+    if (len(u) < 1e-9) u = perpendicular(tangent);
+    u = normalize(u);
+    const v = normalize(cross(tangent, u));
+    const radius = circle.r;
+    const points: Vec3[] = [];
+    for (let i = 0; i < 48; i++) {
+      const a = (Math.PI * 2 * i) / 48;
+      const c = Math.cos(a) * radius, s2 = Math.sin(a) * radius;
+      points.push([
+        start.x + u[0] * c + v[0] * s2,
+        start.y + u[1] * c + v[1] * s2,
+        start.z + u[2] * c + v[2] * s2,
+      ]);
+    }
+    const profile = R.makePolygon(points) as unknown as R.Face;
+    let tool: Sh;
+    try {
+      tool = R.genericSweep(profile.outerWire(), helix, { frenet: true }) as unknown as Sh;
+    } catch {
+      throw new FeatureError(tr("The coil could not be swept. Check the profile and the pitch."));
+    }
+    if (isEmpty(tool)) throw new FeatureError(tr("The coil could not be swept. Check the profile and the pitch."));
+    this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `c${k}`), f.cut);
   }
 
   private applySweep(f: SweepFeature, st: State) {

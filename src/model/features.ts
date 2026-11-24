@@ -1,7 +1,7 @@
 // Feature factories, display names and parameter metadata.
 
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
+  AxisFeature, AxisRef, BevelGearFeature, CoilFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
   Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShaftFeature, ShellFeature,
   PointFeature, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature, SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from './types';
@@ -43,6 +43,11 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
     { path: 'draft', kind: 'angle', label: tr("Draft angle") },
   ],
   revolve: [{ path: 'angle', kind: 'angle', label: tr("Angle") }],
+  coil: [
+    { path: 'pitch', kind: 'length', label: tr("Pitch") },
+    { path: 'revolutions', kind: 'count', label: tr("Revolutions") },
+    { path: 'height', kind: 'length', label: tr("Height") },
+  ],
   fillet: [{ path: 'radius', kind: 'length', label: tr("Radius") }],
   chamfer: [
     { path: 'distance', kind: 'length', label: tr("Distance") },
@@ -147,6 +152,7 @@ const BASE_NAMES: Record<FeatureType, string> = {
   mirror: tr('Mirror'),
   plane: tr('Plane'),
   axis: tr('Axis'),
+  coil: tr('Coil'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -174,6 +180,7 @@ export const FEATURE_LABELS: Record<FeatureType, string> = {
   mirror: tr('Mirror'),
   plane: tr('Reference Plane'),
   axis: tr('Axis'),
+  coil: tr('Coil'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -195,6 +202,7 @@ export function featureIcon(f: Feature): string {
     case 'revolve': return f.cut ? 'revolveCut' : 'revolve';
     case 'loft': return 'loft';
     case 'sweep': return 'sweep';
+    case 'coil': return 'sweep';
     case 'import': return 'part';
     default: return f.type;
   }
@@ -300,6 +308,10 @@ export const newPoint = (id: Id, name: string): PointFeature => ({
   id, name, type: 'point', kind: 'vertex', point: null, edge: null, face: null, edge2: null, plane: null,
 });
 
+export const newCoil = (id: Id, name: string): CoilFeature => ({
+  id, name, type: 'coil', profile: null, pitch: 5, revolutions: 5, height: 25, byHeight: false, left: false, cut: false,
+});
+
 export const newLinearPattern = (id: Id, name: string, seeds: Id[], spacing: number): LinearPatternFeature => ({
   id, name, type: 'linearPattern', seeds, dir1: { ref: null, spacing, count: 3, flip: false }, dir2: null,
 });
@@ -330,6 +342,8 @@ export function consumedSketches(f: Feature): Id[] {
       return f.profiles;
     case 'sweep':
       return [f.profile, f.path].filter((x): x is Id => !!x);
+    case 'coil':
+      return f.profile ? [f.profile] : [];
     default:
       return [];
   }

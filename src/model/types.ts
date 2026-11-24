@@ -379,6 +379,29 @@ export interface PointFeature extends FeatureBase {
   plane?: PlaneRef | null;
 }
 
+/**
+ * A coil (helix) swept from a circular profile. The profile's sketch plane
+ * sets the axis through the sketch origin, and the profile's distance from
+ * that origin is the coil radius.
+ */
+export interface CoilFeature extends FeatureBase {
+  type: 'coil';
+  /** Sketch holding one circle, offset from the sketch origin. */
+  profile: Id | null;
+  /** Axial distance per turn. */
+  pitch: Param;
+  /** Number of turns (when sized by revolutions). */
+  revolutions: Param;
+  /** Overall height (when sized by height). */
+  height: Param;
+  /** Size the coil by its height instead of its revolutions. */
+  byHeight: boolean;
+  /** Left-hand winding. */
+  left: boolean;
+  /** Cut the coil out instead of adding it. */
+  cut: boolean;
+}
+
 export interface LoftFeature extends FeatureBase {
   type: 'loft';
   profiles: Id[];
@@ -555,6 +578,7 @@ export type Feature =
   | CircularPatternFeature
   | MirrorFeature
   | PlaneFeature
+  | CoilFeature
   | AxisFeature
   | PointFeature
   | LoftFeature

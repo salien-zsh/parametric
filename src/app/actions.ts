@@ -441,6 +441,7 @@ export function registerCommands(app: App, files: FileOps) {
     feature('revolve', tr("Revolved Cut"), 'revolveCut', tr("Revolve a sketch to remove material."), { cut: true, needsBody: true }),
     feature('sweep', tr("Swept Boss"), 'sweep', tr("Sweep a profile along a path."), { keywords: 'pipe' }),
     feature('sweep', tr("Swept Cut"), 'sweep', tr("Sweep a profile along a path to remove material."), { cut: true, needsBody: true }),
+    feature('coil', tr("Coil"), 'sweep', tr("Sweep a circle into a coil about the profile sketch's origin."), { keywords: tr("spring helix thread spiral") }),
     feature('loft', tr("Lofted Boss"), 'loft', tr("Blend between two or more profiles."), { keywords: 'blend' }),
     feature('loft', tr("Lofted Cut"), 'loft', tr("Blend between profiles to remove material."), { cut: true, needsBody: true }),
     feature('fillet', tr("Fillet"), 'fillet', tr("Round selected edges."), { needsBody: true, keywords: tr("round radius blend") }),
@@ -573,7 +574,7 @@ export const RIBBON: RibbonTab[] = [
   {
     id: 'features', label: tr("Features"),
     groups: [
-      [{ cmd: 'extrude' }, { cmd: 'revolve' }, { stack: [{ cmd: 'sweep' }, { cmd: 'loft' }] }],
+      [{ cmd: 'extrude' }, { cmd: 'revolve' }, { stack: [{ cmd: 'sweep' }, { cmd: 'loft' }, { cmd: 'coil' }] }],
       [{ cmd: 'extrudeCut' }, { cmd: 'revolveCut' }, { stack: [{ cmd: 'sweepCut' }, { cmd: 'loftCut' }] }],
       [{ cmd: 'hole' }, { cmd: 'fillet', menu: ['fillet', 'chamfer'] }, { cmd: 'linearPattern', menu: ['linearPattern', 'circularPattern', 'mirror'] }],
       [{ stack: [{ cmd: 'chamfer' }, { cmd: 'shell' }, { cmd: 'draft' }] }, { stack: [{ cmd: 'circularPattern' }, { cmd: 'mirror' }] }],

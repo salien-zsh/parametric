@@ -4,7 +4,7 @@ import type { Frame, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newAxis, newBevelGear, newMirror, newPlane, newPoint, newRevolve, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBevelGear, newCoil, newMirror, newPlane, newPoint, newRevolve, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -14,7 +14,7 @@ import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel
 import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
-  AxisFeature, AxisKind, AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
@@ -1649,6 +1649,40 @@ export class SweepPanel extends FeaturePanel<SweepFeature> {
 
 // ---------- factory ----------
 
+export class CoilPanel extends FeaturePanel<CoilFeature> {
+  render(): HTMLElement[] {
+    const f = this.f;
+    const ctx = this.ctx();
+    const profile = this.sketchBox(tr("Profile sketch"), () => f.profile, (id) => { f.profile = id; });
+    const pitch = numberField({ label: tr("Pitch"), icon: 'ruler', value: f.pitch, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.pitch = v; this.changed(); } });
+    const revolutions = numberField({ label: tr("Revolutions"), icon: 'count', value: f.revolutions, kind: 'count', ctx, min: 0.1, onChange: (v) => { f.revolutions = v; this.changed(); } });
+    const height = numberField({ label: tr("Height"), icon: 'ruler', value: f.height, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.height = v; this.changed(); } });
+    const byHeight = checkbox(tr("Size by height"), f.byHeight, (v) => { f.byHeight = v; revolutions.hidden = v; height.hidden = !v; this.changed(); });
+    revolutions.hidden = f.byHeight;
+    height.hidden = !f.byHeight;
+    const left = checkbox(tr("Left-hand winding"), f.left, (v) => { f.left = v; this.changed(); });
+    const cut = checkbox(tr("Cut"), f.cut, (v) => { f.cut = v; this.changed(); });
+    return [
+      section(tr("Profile"), [
+        profile.el,
+        h('p', { class: 'field-label' }, tr("Draw the circle away from the sketch origin: the origin is the coil axis, and the distance to the circle is the coil radius.")),
+      ]),
+      section(tr("Coil"), [pitch, byHeight, revolutions, height, left, cut]),
+    ];
+  }
+
+  protected validate() {
+    const f = this.f;
+    if (!f.profile) return tr("Select the profile sketch");
+    if (!(Number(f.pitch) > 0)) return tr("The pitch must be greater than zero");
+    return null;
+  }
+
+  preview() {
+    return this.f.profile ? this.f : null;
+  }
+}
+
 export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel | null {
   switch (f.type) {
     case 'extrude': return new ExtrudePanel(app, f, editing);
@@ -1663,6 +1697,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'plane': return new PlanePanel(app, f, editing);
     case 'loft': return new LoftPanel(app, f, editing);
     case 'sweep': return new SweepPanel(app, f, editing);
+    case 'coil': return new CoilPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
     case 'axis': return new AxisPanel(app, f, editing);
@@ -1687,7 +1722,7 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
   const selSketch = (() => {
     for (const it of sel) if (it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch') return it.id;
     // Default to the most recent unconsumed sketch.
-    const used = new Set(doc.features.flatMap((f) => (f.type === 'extrude' || f.type === 'revolve' || f.type === 'hole' ? [f.sketch] : f.type === 'loft' ? f.profiles : f.type === 'sweep' ? [f.profile, f.path] : [])));
+    const used = new Set(doc.features.flatMap((f) => (f.type === 'extrude' || f.type === 'revolve' || f.type === 'hole' ? [f.sketch] : f.type === 'loft' ? f.profiles : f.type === 'sweep' ? [f.profile, f.path] : f.type === 'coil' ? [f.profile] : [])));
     const built = doc.features.slice(0, app.store.builtCount);
     for (let i = built.length - 1; i >= 0; i--) if (built[i].type === 'sketch' && !used.has(built[i].id)) return built[i].id;
     return null;
@@ -1750,6 +1785,15 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
+    case 'coil': {
+      const x = newCoil(id, name);
+      x.profile = selSketch;
+      x.pitch = Math.max(size / 20, app.store.unitScale);
+      x.revolutions = 5;
+      x.height = Number(x.pitch) * 5;
+      f = x;
+      break;
+    }
     case 'draft': { const x = newDraft(id, name); x.faces = faces; f = x; break; }
     case 'shaft': f = newShaft(id, name); break;
     case 'axis': {

@@ -82,6 +82,11 @@ export function validFeature(f: Feature): boolean {
       return list(r.profiles, id);
     case 'sweep':
       return (r.profile == null || id(r.profile)) && (r.path == null || id(r.path));
+    case 'coil': {
+      return (r.profile == null || id(r.profile))
+        && numeric(r.pitch) && numeric(r.revolutions) && numeric(r.height)
+        && typeof r.byHeight === 'boolean' && typeof r.left === 'boolean' && typeof r.cut === 'boolean';
+    }
     case 'axis': {
       const kind = r.kind ?? 'cylinder';
       if (!['cylinder', 'twoPoints', 'edge', 'perpendicular'].includes(String(kind))) return false;

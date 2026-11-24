@@ -1742,5 +1742,19 @@
   "Replace component": "替换零部件",
   "Swap the selected component's part for another saved part; its position and constraints stay.": "用另一个已保存的零件替换所选零部件的零件，位置与约束保持不变。",
   "replace swap component part assembly": "替换 更换 零部件 零件 装配",
-  "{0} replaced with {1}.": "已将 {0} 替换为 {1}。"
+  "{0} replaced with {1}.": "已将 {0} 替换为 {1}。",
+  "Coil": "螺旋",
+  "Coil needs a sketch with one circle": "螺旋需要一个只含一个圆的草图",
+  "Draw the circle away from the sketch origin: the origin is the coil axis": "把圆画在远离草图原点的位置：原点就是螺旋轴",
+  "Draw the circle away from the sketch origin: the origin is the coil axis, and the distance to the circle is the coil radius.": "把圆画在远离草图原点的位置：草图原点是螺旋轴，原点到圆的距离就是螺旋半径。",
+  "Left-hand winding": "左旋",
+  "Pitch": "螺距",
+  "Revolutions": "圈数",
+  "Select the profile sketch": "选择轮廓草图",
+  "Size by height": "按高度定义",
+  "Sweep a circle into a coil about the profile sketch's origin.": "把圆沿草图原点为轴的螺旋线扫掠成螺旋。",
+  "The coil could not be swept. Check the profile and the pitch.": "螺旋扫掠失败，请检查轮廓与螺距。",
+  "The coil needs at least one turn": "螺旋至少需要一圈",
+  "The pitch must be greater than zero": "螺距必须大于零",
+  "spring helix thread spiral": "弹簧 螺旋 螺纹 螺旋线"
 }
