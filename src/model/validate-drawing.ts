@@ -11,6 +11,8 @@ export function validDrawing(value: unknown): value is DrawingDoc {
   if (!object(value) || typeof value.sheet !== 'string' || !sheets.has(value.sheet)
     || typeof value.landscape !== 'boolean' || !finite(value.scale) || value.scale <= 0
     || typeof value.title !== 'string' || typeof value.drawnBy !== 'string' || typeof value.notes !== 'string'
+    || (value.number != null && typeof value.number !== 'string')
+    || (value.revision != null && typeof value.revision !== 'string')
     || !Array.isArray(value.views)) return false;
   const ids = new Set<string>();
   for (const v of value.views) {

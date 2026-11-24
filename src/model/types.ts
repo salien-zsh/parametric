@@ -864,6 +864,10 @@ export interface DrawingView {
 }
 
 export interface DrawingDoc {
+  /** Drawing (document) number shown in the title block. */
+  number?: string;
+  /** Revision code shown in the title block. */
+  revision?: string;
   sheet: SheetSize;
   landscape: boolean;
   /** Model to paper scale, e.g. 0.5 for 1:2. */

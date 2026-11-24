@@ -71,3 +71,14 @@ describe('DXF export', () => {
     expect(dxf.split('\n').filter((t) => t === 'TEXT').length).toBeGreaterThan(3);
   });
 });
+
+describe('title block fields', () => {
+  it('shows the drawing number and revision', () => {
+    const sheet = buildSheet({ ...doc(), number: 'DWG-001', revision: 'B' }, new Map([['v1', projection]]), info());
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts).toContain('DWG-001');
+    expect(texts).toContain('B');
+    expect(texts).toContain('DWG NO');
+    expect(texts).toContain('REV');
+  });
+});

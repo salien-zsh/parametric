@@ -518,6 +518,8 @@ function titleBlock(items: Item[], w: number, h: number, d: DrawingDoc, info: Sh
   label(tr("UNITS"), c2, y + row); value(info.units, c2, y + row, c1 - c2, 2.8);
   label(tr("DATE"), c1, y + row); value(info.date, c1, y + row, right - c1, 2.8);
   label(tr("DRAWN BY"), x, y + 2 * row); value(d.drawnBy || '', x, y + 2 * row, c2 - x, 2.8);
+  label(tr("DWG NO"), c2, y + 2 * row); value(d.number || '', c2, y + 2 * row, c1 - c2, 2.8);
+  label(tr("REV"), c1, y + 2 * row); value(d.revision || '', c1, y + 2 * row, right - c1, 2.8);
   label(tr("SHEET"), c2, y + 2 * row); value(`${d.sheet}${d.landscape ? '' : tr(" portrait")}`, c2, y + 2 * row, c1 - c2, 2.8);
   label(tr("NOTES"), c1, y + 2 * row); value(d.notes || '', c1, y + 2 * row, right - c1, 2.4);
 }

@@ -683,6 +683,8 @@ export class DrawingPanel extends PropertyPanel {
         field(tr("Title"), d.title || this.app.store.doc.name, (v) => ws.updateFromPanel((x) => { x.title = v; }, tr("Title"))),
         field(tr("Drawn by"), d.drawnBy, (v) => ws.updateFromPanel((x) => { x.drawnBy = v; }, tr("Drawn by"))),
         field(tr("Notes"), d.notes, (v) => ws.updateFromPanel((x) => { x.notes = v; }, tr("Notes"))),
+        field(tr("DWG NO"), d.number ?? '', (v) => ws.updateFromPanel((x) => { x.number = v; }, tr("DWG NO"))),
+        field(tr("REV"), d.revision ?? '', (v) => ws.updateFromPanel((x) => { x.revision = v; }, tr("REV"))),
       ]),
       section(tr("Export"), [
         h('div', { class: 'row' },

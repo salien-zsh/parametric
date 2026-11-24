@@ -68,6 +68,7 @@ The **Mechanical** tab holds the power-transmission generators. Every generator 
 - **Detail views** magnify a circular window of another view (centred on a hole when there is one), clipped to the window and labelled DETAIL A (2:1) with the window's circle drawn.
 - Each view can take its own scale; the selected view's controls (hidden lines, dimensions, section plane, detail window, scale) open in the drawing panel.
 - Centre marks on the circular holes facing a view, and numbered balloons for assembly drawings that match the bill of materials.
+- Title block carries the drawing number and revision beside the title, scale, material, units, date and author.
 - Drawings export to PDF, SVG and DXF (named layers: VIEW, HIDDEN, DIM, TEXT, BORDER, BALLOON).
 - Sheet sizes A4 to A1, Letter and Tabloid, standard scales, drag to arrange views, title block.
 - Assembly drawings include an aggregated bill of materials with item number, part, quantity and material.

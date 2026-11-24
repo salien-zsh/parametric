@@ -1799,5 +1799,7 @@
   "Duplicate Component": "复制零部件",
   "Duplicate components": "复制零部件",
   "Copy the selected components, offset so the copies show, and select them.": "复制所选零部件并偏移放置副本，随后选中副本。",
-  "copy paste duplicate component assembly instance": "复制 粘贴 零部件 装配 实例"
+  "copy paste duplicate component assembly instance": "复制 粘贴 零部件 装配 实例",
+  "DWG NO": "图号",
+  "REV": "版次"
 }
