@@ -546,8 +546,10 @@ function titleBlock(items: Item[], w: number, h: number, d: DrawingDoc, info: Sh
 function bomTable(items: Item[], w: number, h: number, rows: NonNullable<SheetInfo['bom']>) {
   if (!rows.length) return;
   const rowH = 4;
+  // The layout reserves space for at most ten rows (bomReserve), so never draw
+  // more than that or the table climbs into the views above it.
   const room = Math.max(1, Math.floor((h - 2 * MARGIN - TITLE_H - 35) / rowH));
-  const shown = rows.slice(0, room);
+  const shown = rows.slice(0, Math.min(10, room));
   const bottom = h - MARGIN - TITLE_H - 4;
   const top = bottom - (shown.length + 1) * rowH;
   const tableW = Math.min(165, w - 2 * MARGIN - 6);

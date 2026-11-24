@@ -104,3 +104,14 @@ describe('bill of materials', () => {
     expect(texts).toContain('QTY');
   });
 });
+
+describe('bill of materials size', () => {
+  it('caps the table at the ten rows the layout reserves', () => {
+    const bom = Array.from({ length: 20 }, (_, i) => ({ item: i + 1, part: `Part${i + 1}`, quantity: 1, material: 'Steel' }));
+    const sheet = buildSheet(doc(), new Map([['v1', projection]]), info({ bom }));
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts).toContain('Part10');
+    expect(texts).not.toContain('Part11');
+    expect(texts).not.toContain('Part20');
+  });
+});
