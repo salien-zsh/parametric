@@ -71,7 +71,7 @@ The **Mechanical** tab holds the power-transmission generators. Every generator 
 - Title block carries the drawing number and revision beside the title, scale, material, units, date and author.
 - Drawings export to PDF, SVG and DXF (named layers: VIEW, HIDDEN, DIM, TEXT, BORDER, BALLOON).
 - Sheet sizes A4 to A1, Letter and Tabloid, standard scales, drag to arrange views, title block.
-- Assembly drawings include an aggregated bill of materials with item number, part, quantity and material.
+- Assembly drawings include an aggregated bill of materials with item number, part, description (from the part drawing's title), quantity and material.
 - Export to PDF or SVG.
 
 **Assemblies**

@@ -135,7 +135,7 @@ export interface SheetInfo {
   units: string;
   date: string;
   formatLength: (mm: number) => string;
-  bom?: { item: number; part: string; quantity: number; material: string }[];
+  bom?: { item: number; part: string; description?: string; quantity: number; material: string }[];
   /** Annotations per view id (centre marks, balloons). */
   annotations?: Map<string, ViewAnnotations>;
 }
@@ -551,12 +551,13 @@ function bomTable(items: Item[], w: number, h: number, rows: NonNullable<SheetIn
   const bottom = h - MARGIN - TITLE_H - 4;
   const top = bottom - (shown.length + 1) * rowH;
   const tableW = Math.min(165, w - 2 * MARGIN - 6);
-  const cols = [12, tableW - 12 - 15 - 42, 15, 42];
+  const descW = 42;
+  const cols = [12, tableW - 12 - 15 - 42 - descW, 15, 42, descW];
   const xs = [MARGIN];
   for (const c of cols) xs.push(xs[xs.length - 1] + c);
   for (let i = 0; i <= shown.length + 1; i++) {
     const y = top + i * rowH;
-    items.push({ t: 'line', x1: xs[0], y1: y, x2: xs[4], y2: y, w: 0.22 });
+    items.push({ t: 'line', x1: xs[0], y1: y, x2: xs[5], y2: y, w: 0.22 });
   }
   for (const x of xs) items.push({ t: 'line', x1: x, y1: top, x2: x, y2: bottom, w: 0.22 });
   const cell = (text: string, col: number, row: number, bold = false) => {
@@ -569,13 +570,15 @@ function bomTable(items: Item[], w: number, h: number, rows: NonNullable<SheetIn
   };
   cell(tr("ITEM"), 0, 0, true);
   cell(tr("PART"), 1, 0, true);
-  cell(tr("QTY"), 2, 0, true);
-  cell(tr("MATERIAL"), 3, 0, true);
+  cell(tr("DESCRIPTION"), 2, 0, true);
+  cell(tr("QTY"), 3, 0, true);
+  cell(tr("MATERIAL"), 4, 0, true);
   for (const [i, row] of shown.entries()) {
     cell(String(row.item), 0, i + 1);
     cell(row.part, 1, i + 1);
-    cell(String(row.quantity), 2, i + 1);
-    cell(row.material, 3, i + 1);
+    cell(row.description ?? '', 2, i + 1);
+    cell(String(row.quantity), 3, i + 1);
+    cell(row.material, 4, i + 1);
   }
 }
 

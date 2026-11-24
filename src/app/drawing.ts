@@ -237,10 +237,10 @@ export class DrawingWorkspace {
   }
 
   /** Visible components grouped for the bill of materials, with their ids. */
-  private bomGroups(): { part: string; material: string; components: string[]; quantity: number }[] {
+  private bomGroups(): { part: string; material: string; components: string[]; quantity: number; description?: string }[] {
     const doc = this.app.store.doc;
     if (doc.kind !== 'assembly') return [];
-    const groups = new Map<string, { part: string; material: string; components: string[]; quantity: number }>();
+    const groups = new Map<string, { part: string; material: string; components: string[]; quantity: number; description?: string }>();
     for (const component of doc.components ?? []) {
       if (!component.visible) continue;
       const material = component.part.material?.name ?? tr("Not specified");
@@ -249,14 +249,14 @@ export class DrawingWorkspace {
       const copies = componentInstanceCount(doc.componentPatterns, component.id);
       const row = groups.get(key);
       if (row) { row.components.push(component.id); row.quantity += copies; }
-      else groups.set(key, { part: component.part.name, material, components: [component.id], quantity: copies });
+      else groups.set(key, { part: component.part.name, material, components: [component.id], quantity: copies, description: component.part.drawing?.title ?? '' });
     }
     return [...groups.values()];
   }
 
   /** Aggregated assembly components for the drawing's bill of materials. */
   private bomRows() {
-    return this.bomGroups().map((group, i) => ({ item: i + 1, part: group.part, quantity: group.quantity, material: group.material }));
+    return this.bomGroups().map((group, i) => ({ item: i + 1, part: group.part, description: group.description ?? '', quantity: group.quantity, material: group.material }));
   }
 
   /** Centre marks and balloons for each view, in that view's model space. */

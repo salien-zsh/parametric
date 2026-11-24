@@ -92,3 +92,15 @@ describe('sheet notes', () => {
     expect(texts).toContain('Tolerance ISO 2768-m');
   });
 });
+
+describe('bill of materials', () => {
+  it('shows a description column from the part drawing title', () => {
+    const sheet = buildSheet(doc(), new Map([['v1', projection]]), info({
+      bom: [{ item: 1, part: 'Plate', description: 'Base plate', quantity: 2, material: 'Steel' }],
+    }));
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts).toContain('DESCRIPTION');
+    expect(texts).toContain('Base plate');
+    expect(texts).toContain('QTY');
+  });
+});
