@@ -1850,5 +1850,11 @@
   "There is no body to intersect with": "没有可相交的实体",
   "The intersect leaves no material": "相交后没有剩余材料",
   "Start offset": "起始偏移",
-  "A start offset cannot be combined with a draft": "起始偏移不能与拔模同时使用"
+  "A start offset cannot be combined with a draft": "起始偏移不能与拔模同时使用",
+  "To Face": "到面",
+  "To face": "终止面",
+  "Select the face the extrusion should stop at": "选择拉伸终止面",
+  "An extrusion can stop at a planar face only": "拉伸只能终止于平面",
+  "The extrusion direction is parallel to the face it should stop at": "拉伸方向与终止面平行",
+  "The face to stop at is not in front of the sketch. Reverse the direction or pick another face.": "终止面不在草图前方，请反向或另选面。"
 }

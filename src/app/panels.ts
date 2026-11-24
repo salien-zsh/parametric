@@ -162,10 +162,16 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
     const f = this.f;
     const ctx = this.ctx();
     const sketch = this.sketchBox(tr("Profile sketch"), () => f.sketch, (id) => { f.sketch = id ?? ''; });
-    const endOpts = [{ value: 'blind' as const, label: tr("Blind") }, { value: 'throughAll' as const, label: tr("Through All") }, { value: 'midPlane' as const, label: tr("Mid Plane") }];
+    const endOpts = [{ value: 'blind' as const, label: tr("Blind") }, { value: 'throughAll' as const, label: tr("Through All") }, { value: 'midPlane' as const, label: tr("Mid Plane") }, { value: 'toObject' as const, label: tr("To Face") }];
     const depth = numberField({ label: tr("Depth"), icon: 'ruler', value: f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.depth = v; this.syncDepth(); this.changed(); } });
     this.depthField = depth;
-    depth.hidden = f.end === 'throughAll';
+    depth.hidden = f.end !== 'blind';
+    const toFaceBox = new SelectionBox(this, tr("To face"), { face: true }, toFace(this.app), (items) => {
+      f.toFace = (items[0]?.data as FaceRef) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Select the planar face to stop at"), icon: 'face' });
+    if (f.toFace) toFaceBox.setItems([{ item: faceItem(this.app, f.toFace), data: f.toFace, label: tr("Face") }]);
+    toFaceBox.el.hidden = f.end !== 'toObject';
     // A draft linked to an equation ("=Angle") is on too.
     const hasDraft = String(f.draft).trim().startsWith('=') || Number(f.draft) > 0;
     const draftAngle = numberField({ label: tr("Draft angle"), icon: 'draft', value: f.draft || 3, kind: 'angle', ctx, min: 0, onChange: (v) => { f.draft = v; this.changed(); } });
@@ -177,11 +183,12 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
       h('div', { class: 'row' }, flipButton(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); }), h('div', { class: 'grow' },
         selectField(tr("End condition"), f.end, endOpts, (v) => {
           f.end = v;
-          depth.hidden = v === 'throughAll';
+          depth.hidden = v !== 'blind';
+          toFaceBox.el.hidden = v !== 'toObject';
           dir2sec.hidden = v === 'midPlane';
           this.changed();
         }))),
-      depth, startOffset,
+      depth, startOffset, toFaceBox.el,
       checkbox(tr("Draft"), hasDraft, (v) => {
         f.draft = v ? 3 : 0;
         draftAngle.hidden = !v;
@@ -203,7 +210,9 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
   }
 
   protected validate() {
-    return this.f.sketch ? null : tr("Select a sketch to extrude");
+    if (!this.f.sketch) return tr("Select a sketch to extrude");
+    if (this.f.end === 'toObject' && !this.f.toFace) return tr("Select the face the extrusion should stop at");
+    return null;
   }
 
   private depthNumber(): number {
@@ -224,7 +233,7 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
    */
   canvasValue(): CanvasValue | null {
     const f = this.f;
-    if (!f.sketch || f.end === 'throughAll') return null;
+    if (!f.sketch || f.end === 'throughAll' || f.end === 'toObject') return null;
     const sk = this.app.store.feature(f.sketch);
     if (sk?.type !== 'sketch') return null;
     const fr = this.app.frameOfSketch(sk) ?? this.app.frames[f.sketch] ?? null;

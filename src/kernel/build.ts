@@ -923,8 +923,19 @@ export class ModelBuilder {
     const { regions, frame } = this.sketchRegions(f.sketch, st, f.contours);
     const sign = (f.cut ? -1 : 1) * (f.flip ? -1 : 1);
     const dir = scale(frame.n, sign);
-    let d1 = f.end === 'throughAll' ? this.throughAllDepth(st, frame.o, dir, f.cut) : num(f.depth);
+    let d1: number;
     const noBody = tr("There is no body to extrude through in this direction. Reverse the direction or use Blind.");
+    if (f.end === 'toObject') {
+      if (!f.toFace) throw new FeatureError(tr("Select the face the extrusion should stop at"));
+      const target = st.faces[this.resolveFace(f.toFace, st)].desc;
+      if (target.type !== 'plane') throw new FeatureError(tr("An extrusion can stop at a planar face only"));
+      const denom = dot(dir, target.d);
+      if (Math.abs(denom) < 1e-9) throw new FeatureError(tr("The extrusion direction is parallel to the face it should stop at"));
+      const distance = dot(sub(target.p, frame.o), target.d) / denom;
+      if (!(distance > 0)) throw new FeatureError(tr("The face to stop at is not in front of the sketch. Reverse the direction or pick another face."));
+      // A hair past the face so the result is a clean join rather than a skin.
+      d1 = distance + 1e-4;
+    } else d1 = f.end === 'throughAll' ? this.throughAllDepth(st, frame.o, dir, f.cut) : num(f.depth);
     if (d1 <= 0) throw new FeatureError(f.end === 'throughAll' ? noBody : tr("Depth must be greater than zero"));
     let start = 0;
     let total = d1;

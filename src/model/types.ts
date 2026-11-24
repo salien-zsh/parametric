@@ -177,7 +177,7 @@ export interface SketchFeature extends FeatureBase {
   frame?: Frame;
 }
 
-export type EndCondition = 'blind' | 'throughAll' | 'midPlane';
+export type EndCondition = 'blind' | 'throughAll' | 'midPlane' | 'toObject';
 
 export interface ExtrudeDir2 {
   end: 'blind' | 'throughAll';
@@ -205,6 +205,8 @@ export interface ExtrudeFeature extends FeatureBase {
   intersect?: boolean;
   /** Start the extrusion this far from the sketch plane along the direction (Fusion's Start offset). */
   startOffset?: Param;
+  /** To Object: the planar face the extrusion stops at. */
+  toFace?: FaceRef | null;
   /** Optional sample points (sketch coordinates) choosing which regions to use. */
   contours?: Vec2[];
 }
