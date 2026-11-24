@@ -226,11 +226,21 @@ export function registerCommands(app: App, files: FileOps) {
     },
     {
       id: 'fixComponent', label: tr("Fix/Float Component"), icon: 'origin',
-      enabled: () => app.isAssembly && app.selection.ofKind('component').length === 1,
-      checked: () => !!app.component(app.selection.ofKind('component')[0]?.id)?.fixed,
+      enabled: () => app.isAssembly && app.selection.ofKind('component').length >= 1,
+      checked: () => {
+        const selected = app.selection.ofKind('component');
+        return selected.length > 0 && selected.every((c) => !!app.component(c.id)?.fixed);
+      },
       run: () => {
-        const component = app.selection.ofKind('component')[0];
-        if (component) app.updateComponentFixed(component.id, !app.component(component.id)?.fixed);
+        const selected = app.selection.ofKind('component');
+        if (!selected.length) return;
+        // One component toggles; several are all grounded (or all floated if already grounded).
+        if (selected.length === 1) {
+          app.updateComponentFixed(selected[0].id, !app.component(selected[0].id)?.fixed);
+          return;
+        }
+        const ground = !selected.every((c) => !!app.component(c.id)?.fixed);
+        for (const component of selected) app.updateComponentFixed(component.id, ground);
       },
     },
     {
