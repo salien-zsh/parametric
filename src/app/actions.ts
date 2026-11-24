@@ -265,6 +265,29 @@ export function registerCommands(app: App, files: FileOps) {
       },
     },
     {
+      id: 'componentPattern', label: tr("Component Pattern..."), icon: 'circularPattern',
+      keywords: tr("pattern array circular rectangular instance copy assembly"),
+      description: tr("Copy the selected components around an axis or along directions, as a component pattern."),
+      enabled: () => app.isAssembly && app.selection.ofKind('component').length >= 1,
+      run: () => {
+        void import('./assembly').then(({ ComponentPatternPanel }) => app.openPanel(new ComponentPatternPanel(app)))
+          .catch((e) => toast({ kind: 'error', message: (e as Error).message }));
+      },
+    },
+    {
+      id: 'isolateComponents', label: tr("Isolate"), icon: 'eyeOff',
+      keywords: tr("isolate hide others solo component assembly visibility"),
+      description: tr("Hide every other component so only the selected ones show."),
+      enabled: () => app.isAssembly && app.selection.ofKind('component').length >= 1,
+      run: () => app.isolateComponents(app.selection.ofKind('component').map((c) => c.id)),
+    },
+    {
+      id: 'showAllComponents', label: tr("Show All Components"), icon: 'eye',
+      keywords: tr("show all unhide components assembly visibility"),
+      enabled: () => app.isAssembly && (app.store.doc.components ?? []).some((c) => !c.visible),
+      run: () => app.showAllComponents(),
+    },
+    {
       id: 'mateSuggestions', label: tr("Mate Suggestions..."), icon: 'relation',
       keywords: tr("suggest fit faces axis automatic constraint list assembly"),
       description: tr("List the faces and axes that fit between the components, best first, and apply one."),
@@ -549,7 +572,7 @@ export const RIBBON: RibbonTab[] = [
         { cmd: 'pointVertex', menu: ['pointVertex', 'pointMidpoint', 'pointCenter', 'pointFaceCenter', 'pointIntersection'] },
         { cmd: 'importStep' }],
       [{ cmd: 'newAssembly' }, { cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'openDrawing' }],
-      [{ cmd: 'fixComponent' }, { cmd: 'moveComponents' }, { stack: [{ cmd: 'addJoint' }, { cmd: 'autoMate' }] }, { cmd: 'mateSuggestions' }, { cmd: 'motionStudy' }],
+      [{ cmd: 'fixComponent' }, { cmd: 'isolateComponents' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { stack: [{ cmd: 'addJoint' }, { cmd: 'autoMate' }] }, { cmd: 'mateSuggestions' }, { cmd: 'motionStudy' }],
       [{ cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
     ],
   },
@@ -721,6 +744,10 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
     return [
       ...pickedItems,
       { label: tr("Move/Rotate"), icon: 'select', run: () => c.run('moveComponents') },
+      { label: tr("Component Pattern..."), icon: 'circularPattern', run: () => c.run('componentPattern') },
+      { label: tr("Isolate"), icon: 'eyeOff', run: () => c.run('isolateComponents') },
+      { label: tr("Show All Components"), icon: 'eye', disabled: !c.isEnabled('showAllComponents'), run: () => c.run('showAllComponents') },
+      sep,
       { label: tr("Auto Mate"), icon: 'relation', disabled: !c.isEnabled('autoMate'), run: () => c.run('autoMate') },
       { label: tr("Joint..."), icon: 'revolve', run: () => c.run('addJoint') },
       { label: tr("Mate Suggestions..."), icon: 'relation', run: () => c.run('mateSuggestions') },
@@ -801,8 +828,8 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
       );
     }
     const assemblyItems: MenuItem[] = components.length
-      ? [m('moveComponents'), m('autoMate'), m('addJoint'), m('mateSuggestions'), m('fixComponent'), sep]
-      : [m('insertComponent'), m('newAssemblyPart'), m('autoMate'), m('mateSuggestions'), m('motionStudy'), m('interference'), sep];
+      ? [m('moveComponents'), m('componentPattern'), m('isolateComponents'), m('showAllComponents'), m('autoMate'), m('addJoint'), m('fixComponent'), sep]
+      : [m('insertComponent'), m('newAssemblyPart'), m('autoMate'), m('mateSuggestions'), m('showAllComponents'), m('motionStudy'), m('interference'), sep];
     items.push(...assemblyItems);
   }
   items.push(m('zoomFit'), { label: tr("View Orientation"), icon: 'viewOrientation', submenu: () => app.viewMenuItems() }, { label: tr("Display Style"), icon: 'shadedEdges', submenu: () => app.displayMenuItems() });
@@ -826,7 +853,7 @@ export function quickActions(app: App): { cmd: string }[] {
     if (app.selection.ofKind('assemblyJoint').length) return [{ cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'zoomFit' }];
     if (components.length === 2) return [{ cmd: 'autoMate' }, { cmd: 'addJoint' }, { cmd: 'mateSuggestions' }, { cmd: 'openDrawing' }];
     return components.length
-      ? [{ cmd: 'editComponent' }, { cmd: 'moveComponents' }, { cmd: 'addJoint' }, { cmd: 'autoMate' }, { cmd: 'fixComponent' }]
+      ? [{ cmd: 'editComponent' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { cmd: 'addJoint' }, { cmd: 'autoMate' }, { cmd: 'fixComponent' }]
       : [{ cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'autoMate' }, { cmd: 'mateSuggestions' }, { cmd: 'zoomFit' }];
   }
   const it = app.selection.items[0];

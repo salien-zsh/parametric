@@ -72,7 +72,9 @@ The **Mechanical** tab holds the power-transmission generators. Every generator 
 - Export to PDF or SVG.
 
 **Assemblies**
-- Create a new assembly and insert saved `.parametric` parts as independent components, by the picker or by dragging a part file onto the assembly. A saved assembly can be inserted as a sub-assembly: it is built from its parts and moves as one unit until it is opened for editing.
+- Create a new assembly and insert saved `.parametric` parts as independent components, by the picker or by dragging a part file onto the assembly.
+- **Component patterns** copy components around an axis or along up to two directions; the copies are built as part of the assembly, light up with their seed and count in the bill of materials.
+- **Isolate** hides every other component and **Show All Components** brings them back. A saved assembly can be inserted as a sub-assembly: it is built from its parts and moves as one unit until it is opened for editing.
 - **New Part** in an assembly creates an empty in-place part and opens it for sketching and modeling; **Finish Part** writes it back into the component, and a double-click on a component opens its part again.
 - The assembly design tree shows every component; component properties edit its name, visibility, XYZ position and XYZ rotation, with full undo/redo.
 - Pick a component in the view (a click selects the whole component, highlighted as one part) or in the design tree; Ctrl-click adds to the selection.

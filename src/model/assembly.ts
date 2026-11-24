@@ -2,7 +2,7 @@
 // same transforms drive the geometry worker, tests and motion simulation.
 
 import type {
-  AssemblyAxis, AssemblyComponent, AssemblyJoint, ComponentTransform, Id, PartDocument,
+  AssemblyAxis, AssemblyComponent, AssemblyJoint, ComponentPattern, ComponentTransform, Id, PartDocument,
 } from './types';
 import type { Vec3 } from '../math/vec';
 
@@ -422,4 +422,78 @@ export function assemblyDiagnostics(doc: PartDocument): AssemblyDiagnostic[] {
   }
   if ((doc.mates?.length || doc.joints?.length) && !fixed.size) out.push({ code: 'no-ground', severity: 'warning' });
   return out;
+}
+
+// ---- component patterns ----
+
+/** Axis vector of a world X/Y/Z direction, for patterns. */
+export function patternDir(axis: AssemblyAxis | null | undefined): Vec3 {
+  return axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+}
+
+/** One copy of a pattern: how far to turn about the assembly origin and how far to slide. */
+export interface PatternStep {
+  /** Rotation about the pattern axis, in degrees (circular patterns). */
+  rotation: number;
+  /** Translation from the seed (rectangular patterns). */
+  offset: Vec3;
+}
+
+/** The angle between neighbouring copies, or 0 for a full turn spread evenly. */
+export function circularStep(angle: number, count: number): number {
+  if (count <= 1) return 0;
+  // A full turn divides by the count; a partial sweep puts the last copy on the angle.
+  return angle >= 359.999 ? 360 / count : angle / (count - 1);
+}
+
+/** Copies a pattern adds, excluding the seed itself. */
+export function patternSteps(pattern: ComponentPattern): PatternStep[] {
+  const out: PatternStep[] = [];
+  if (pattern.type === 'circular') {
+    const count = Math.max(1, Math.floor(pattern.count ?? 1));
+    const angle = pattern.angle ?? 360;
+    const step = circularStep(angle, count);
+    for (let i = 1; i < count; i++) out.push({ rotation: step * i, offset: [0, 0, 0] });
+    return out;
+  }
+  const dir1 = patternDir(pattern.dir1 ?? 'x');
+  const spacing1 = pattern.spacing1 ?? 0;
+  const count1 = Math.max(1, Math.floor(pattern.count1 ?? 1));
+  const dir2 = pattern.dir2 ? patternDir(pattern.dir2) : null;
+  const spacing2 = pattern.spacing2 ?? 0;
+  const count2 = dir2 ? Math.max(1, Math.floor(pattern.count2 ?? 1)) : 1;
+  for (let j = 0; j < count2; j++) {
+    for (let i = 0; i < count1; i++) {
+      if (i === 0 && j === 0) continue;
+      out.push({ rotation: 0, offset: [
+        dir1[0] * spacing1 * i + (dir2 ? dir2[0] * spacing2 * j : 0),
+        dir1[1] * spacing1 * i + (dir2 ? dir2[1] * spacing2 * j : 0),
+        dir1[2] * spacing1 * i + (dir2 ? dir2[2] * spacing2 * j : 0),
+      ] });
+    }
+  }
+  return out;
+}
+
+/** How many copies a pattern makes of its seeds, including the seed. */
+export function patternMultiplier(pattern: ComponentPattern): number {
+  if (pattern.type === 'circular') return Math.max(1, Math.floor(pattern.count ?? 1));
+  return Math.max(1, Math.floor(pattern.count1 ?? 1)) * (pattern.dir2 ? Math.max(1, Math.floor(pattern.count2 ?? 1)) : 1);
+}
+
+/**
+ * How many times a component appears in the assembly, counting the copies a
+ * pattern makes of it (several patterns multiply, as in Fusion).
+ */
+export function componentInstanceCount(patterns: ComponentPattern[] | undefined, componentId: Id): number {
+  let count = 1;
+  for (const pattern of patterns ?? []) {
+    if (pattern.components.includes(componentId)) count *= patternMultiplier(pattern);
+  }
+  return count;
+}
+
+/** The patterns that copy a given component. */
+export function patternsOf(patterns: ComponentPattern[] | undefined, componentId: Id): ComponentPattern[] {
+  return (patterns ?? []).filter((pattern) => pattern.components.includes(componentId));
 }

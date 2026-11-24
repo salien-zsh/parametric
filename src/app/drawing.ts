@@ -8,6 +8,7 @@ import type { Vec3 } from '../math/vec';
 import { UNIT_SYSTEMS, formatNumber } from '../model/units';
 import { SHEET_LABELS, STANDARD_SCALES, VIEW_DIRS, VIEW_LABELS, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdf, toSvg, type ViewAnnotations, type ViewFrame } from '../drawing/sheet';
 import { cross, dot, normalize } from '../math/vec';
+import { componentInstanceCount } from '../model/assembly';
 import { toDxf } from '../drawing/dxf';
 import { download, safeName } from '../platform/files';
 import { h } from '../ui/dom';
@@ -215,24 +216,26 @@ export class DrawingWorkspace {
   }
 
   /** Visible components grouped for the bill of materials, with their ids. */
-  private bomGroups(): { part: string; material: string; components: string[] }[] {
+  private bomGroups(): { part: string; material: string; components: string[]; quantity: number }[] {
     const doc = this.app.store.doc;
     if (doc.kind !== 'assembly') return [];
-    const groups = new Map<string, { part: string; material: string; components: string[] }>();
+    const groups = new Map<string, { part: string; material: string; components: string[]; quantity: number }>();
     for (const component of doc.components ?? []) {
       if (!component.visible) continue;
       const material = component.part.material?.name ?? tr("Not specified");
       const key = JSON.stringify([component.part.name, material]);
+      // Pattern copies count towards the quantity, like separate instances.
+      const copies = componentInstanceCount(doc.componentPatterns, component.id);
       const row = groups.get(key);
-      if (row) row.components.push(component.id);
-      else groups.set(key, { part: component.part.name, material, components: [component.id] });
+      if (row) { row.components.push(component.id); row.quantity += copies; }
+      else groups.set(key, { part: component.part.name, material, components: [component.id], quantity: copies });
     }
     return [...groups.values()];
   }
 
   /** Aggregated assembly components for the drawing's bill of materials. */
   private bomRows() {
-    return this.bomGroups().map((group, i) => ({ item: i + 1, part: group.part, quantity: group.components.length, material: group.material }));
+    return this.bomGroups().map((group, i) => ({ item: i + 1, part: group.part, quantity: group.quantity, material: group.material }));
   }
 
   /** Centre marks and balloons for each view, in that view's model space. */

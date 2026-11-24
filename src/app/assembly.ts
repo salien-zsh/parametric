@@ -2,14 +2,15 @@
 // parts to each other.
 
 import {
-  connectorAxis, dominantAxis, frameToLocal, jointPlacement, movableJoints, relativeTransform, rotateAbout, snapJointValue,
+  connectorAxis, dominantAxis, frameToLocal, jointPlacement, movableJoints, patternMultiplier, relativeTransform, rotateAbout, snapJointValue,
 } from '../model/assembly';
 import type {
-  AssemblyAxis, AssemblyJoint, AssemblyJointRef, AssemblyJointType, AssemblyMate, AssemblyMateType, ComponentTransform, Id,
+  AssemblyAxis, AssemblyJoint, AssemblyJointRef, AssemblyJointType, AssemblyMate, AssemblyMateType, ComponentPattern, ComponentPatternType, ComponentTransform, Id,
 } from '../model/types';
 import { cross, dot, perpendicular, type Vec3 } from '../math/vec';
 import { fitCandidates, isGoodFit, type FitCandidate } from '../model/assembly-fit';
 import { h } from '../ui/dom';
+import { icon } from '../ui/icons';
 import { toast } from '../ui/overlay';
 import { tr } from '../i18n';
 import type { App } from './app';
@@ -489,7 +490,7 @@ function connectorKey(app: App, ref?: AssemblyJointRef | null): string {
 function jointConnectors(app: App, componentId: Id): { value: string; label: string }[] {
   const out: { value: string; label: string }[] = [{ value: 'origin', label: tr("Origin") }];
   let faces = 0, edges = 0;
-  const owned = (owner: string | undefined) => owner === componentId || !!owner?.startsWith(`${componentId}/`);
+  const owned = (owner: string | undefined) => !!owner && owner.split('/')[0].split('#')[0] === componentId;
   app.faces.forEach((face, i) => {
     if (owned(face.component) && face.type === 'plane') {
       out.push({ value: `face:${i}`, label: tr("Face {0}", [++faces]) });
@@ -512,13 +513,13 @@ function connectorFrame(app: App, componentId: Id, value: string): { p: Vec3; d:
   const index = Number(raw);
   if (kind === 'face') {
     const face = app.faces[index];
-    const owner = face?.component ?? '';
-    if (!face || !face.normal || (owner !== componentId && !owner.startsWith(`${componentId}/`))) return null;
+    const owner = (face?.component ?? '').split('/')[0].split('#')[0];
+    if (!face || !face.normal || owner !== componentId) return null;
     return { p: [...face.center], d: [...face.normal], kind: 'face', name: face.name };
   }
   const edge = app.edges[index];
-  const owner = edge?.component ?? '';
-  if (!edge || (owner !== componentId && !owner.startsWith(`${componentId}/`))) return null;
+  const owner = (edge?.component ?? '').split('/')[0].split('#')[0];
+  if (!edge || owner !== componentId) return null;
   const p = edge.type === 'circle' ? edge.center : edge.mid;
   const d = edge.type === 'circle' ? edge.axis : edge.dir;
   if (!p || !d) return null;
@@ -795,6 +796,152 @@ export class MateSuggestionsPanel extends PropertyPanel {
     ];
     if (!rows.length) body.push(h('p', { class: 'field-label' }, tr("No matching geometry was found. Move the parts nearer, or pick the geometry with Joint.")));
     return [section(tr("Suggested fits"), body), section(tr("Auto mate"), [autoButton])];
+  }
+}
+
+/** Circular or rectangular arrays of components, like Fusion's Pattern. */
+export class ComponentPatternPanel extends PropertyPanel {
+  title: string;
+  icon = 'circularPattern';
+  editingId: Id | null = null;
+  private draft: ComponentPattern;
+  private seeds: Id[];
+
+  constructor(private app: App, pattern?: ComponentPattern) {
+    super();
+    this.seeds = pattern ? [...pattern.components] : app.selection.ofKind('component').map((c) => c.id);
+    if (pattern) {
+      this.draft = structuredClone(pattern);
+      this.editingId = pattern.id;
+      this.title = tr("Edit Component Pattern");
+    } else {
+      const n = (app.store.doc.componentPatterns?.length ?? 0) + 1;
+      this.draft = {
+        id: app.store.nextId('p'),
+        name: tr("Pattern{0}", [n]),
+        type: 'circular',
+        components: this.seeds,
+        axis: 'z',
+        angle: 360,
+        count: 3,
+        dir1: 'x',
+        spacing1: 30,
+        count1: 2,
+        dir2: null,
+        spacing2: 30,
+        count2: 2,
+      };
+      this.title = tr("Component Pattern");
+    }
+  }
+
+  private changed() {
+    this.app.commands.changed();
+  }
+
+  render(): HTMLElement[] {
+    const d = this.draft;
+    const app = this.app;
+    const patterns = app.store.doc.componentPatterns ?? [];
+    const name = h('input', { class: 'input', value: d.name, 'aria-label': tr("Pattern name"), autocomplete: 'off' }) as HTMLInputElement;
+    name.addEventListener('input', () => { d.name = name.value; this.changed(); });
+
+    const names = this.seeds.map((id) => app.component(id)?.name ?? id).join(', ');
+    const type = selectField<ComponentPatternType>(tr("Pattern type"), d.type, [
+      { value: 'circular', label: tr("Circular") },
+      { value: 'rectangular', label: tr("Rectangular") },
+    ], (value) => { d.type = value; app.refreshPanel(); this.changed(); });
+
+    const number = (label: string, value: number, kind: 'length' | 'count' | 'angle', set: (v: number) => void, min = 1) =>
+      numberField({
+        label, value, kind, ctx: app.unitContext(), min,
+        onChange: (v) => { if (typeof v === 'number' && Number.isFinite(v)) { set(v); this.changed(); } },
+      });
+
+    const axis = selectField<AssemblyAxis>(tr("Pattern axis"), d.axis ?? 'z', [
+      { value: 'x', label: 'X' }, { value: 'y', label: 'Y' }, { value: 'z', label: 'Z' },
+    ], (value) => { d.axis = value; this.changed(); });
+    const angle = number(tr("Total angle"), d.angle ?? 360, 'angle', (v) => { d.angle = v; }, 1);
+    const count = number(tr("Count"), d.count ?? 3, 'count', (v) => { d.count = Math.max(2, Math.round(v)); }, 2);
+
+    const dir1 = selectField<AssemblyAxis>(tr("Direction 1"), d.dir1 ?? 'x', [
+      { value: 'x', label: 'X' }, { value: 'y', label: 'Y' }, { value: 'z', label: 'Z' },
+    ], (value) => { d.dir1 = value; this.changed(); });
+    const spacing1 = number(tr("Spacing 1"), d.spacing1 ?? 30, 'length', (v) => { d.spacing1 = v; }, 0);
+    const count1 = number(tr("Count 1"), d.count1 ?? 2, 'count', (v) => { d.count1 = Math.max(2, Math.round(v)); }, 2);
+    const second = checkbox(tr("Second direction"), d.dir2 != null, (value) => {
+      d.dir2 = value ? 'y' : null;
+      d.count2 = value ? Math.max(2, d.count2 ?? 2) : 1;
+      app.refreshPanel();
+      this.changed();
+    });
+    const dir2 = selectField<AssemblyAxis>(tr("Direction 2"), d.dir2 ?? 'y', [
+      { value: 'x', label: 'X' }, { value: 'y', label: 'Y' }, { value: 'z', label: 'Z' },
+    ], (value) => { d.dir2 = value; this.changed(); });
+    const spacing2 = number(tr("Spacing 2"), d.spacing2 ?? 30, 'length', (v) => { d.spacing2 = v; }, 0);
+    const count2 = number(tr("Count 2"), d.count2 ?? 2, 'count', (v) => { d.count2 = Math.max(1, Math.round(v)); }, 1);
+
+    const existing = patterns.length
+      ? section(tr("Existing patterns"), patterns.map((pattern) => {
+        const label = pattern.type === 'circular'
+          ? tr("{0}: {1} x {2}° about {3}", [pattern.name, String(patternMultiplier(pattern)), String(pattern.angle ?? 360), String(pattern.axis ?? 'z').toUpperCase()])
+          : tr("{0}: {1} x {2}", [pattern.name, String(patternMultiplier(pattern)).concat(pattern.dir2 ? tr(" grid") : ''), String(pattern.count1 ?? 2)]);
+        const edit = h('button', { class: 'btn small', type: 'button' }, icon('edit', 14), tr("Edit")) as HTMLButtonElement;
+        edit.addEventListener('click', () => app.openPanel(new ComponentPatternPanel(app, pattern)));
+        const del = h('button', { class: 'icon-btn', type: 'button', 'aria-label': tr("Delete pattern {0}", [pattern.name]) }, icon('trash', 14)) as HTMLButtonElement;
+        del.addEventListener('click', () => {
+          app.store.change(tr("Delete component pattern"), (doc) => {
+            doc.componentPatterns = (doc.componentPatterns ?? []).filter((p) => p.id !== pattern.id);
+          });
+          app.refreshPanel();
+        });
+        return h('div', { class: 'rel-btn', style: { cursor: 'default' } },
+          h('span', { class: 'grow' }, label), edit, del);
+      }))
+      : null;
+
+    const body: HTMLElement[] = [
+      h('p', { class: 'field-label' }, tr("Components: {0}", [names || tr("select components first")])),
+    ];
+    if (!this.seeds.length) {
+      body.push(h('p', { class: 'field-label' }, tr("Select one or more components to pattern.")));
+    }
+    return [
+      section(tr("Pattern"), [h('div', { class: 'field-label' }, tr("Pattern name")), name, type, ...body]),
+      d.type === 'circular'
+        ? section(tr("Circular"), [axis, angle, count])
+        : section(tr("Rectangular"), [dir1, spacing1, count1, second, ...(d.dir2 ? [dir2, spacing2, count2] : [])]),
+      ...(existing ? [existing] : []),
+    ];
+  }
+
+  get edited(): boolean {
+    return !!this.editingId || this.seeds.length > 0;
+  }
+
+  ok(): boolean {
+    if (!this.seeds.length) {
+      this.setMessage('error', tr("Select one or more components to pattern."));
+      return false;
+    }
+    const d = this.draft;
+    d.name = d.name.trim() || tr("Pattern");
+    if (d.type === 'circular' && (d.count ?? 0) < 2) {
+      this.setMessage('error', tr("A circular pattern needs at least two instances."));
+      return false;
+    }
+    if (d.type === 'rectangular' && (d.count1 ?? 0) < 2) {
+      this.setMessage('error', tr("A rectangular pattern needs at least two instances."));
+      return false;
+    }
+    this.app.store.change(this.editingId ? tr("Edit component pattern") : tr("Add component pattern"), (doc) => {
+      doc.componentPatterns ??= [];
+      const index = doc.componentPatterns.findIndex((p) => p.id === d.id);
+      if (index >= 0) doc.componentPatterns[index] = structuredClone(d);
+      else doc.componentPatterns.push(structuredClone(d));
+    });
+    toast({ kind: 'success', message: tr("Pattern {0} adds {1} instances.", [d.name, String(patternMultiplier(d))]) });
+    return true;
   }
 }
 

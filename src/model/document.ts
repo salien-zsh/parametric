@@ -6,7 +6,7 @@ import { convertExpressionUnits, evaluate, evaluateVariables, renameReferences, 
 import { FEATURE_LABELS, PARAM_FIELDS, type ParamKind, getPath, setPath } from './features';
 import type {
   AssemblyJointRef,
-  AssemblyComponent, AssemblyJoint, AssemblyMate, ComponentTransform, Feature, Id, Param, ParameterConfiguration, PartDocument, SkDimension, SketchFeature, UnitSystem, Variable,
+  AssemblyComponent, AssemblyJoint, AssemblyMate, ComponentPattern, ComponentTransform, Feature, Id, Param, ParameterConfiguration, PartDocument, SkDimension, SketchFeature, UnitSystem, Variable,
 } from './types';
 import { isDimension } from './types';
 import { UNIT_SYSTEMS } from './units';
@@ -57,6 +57,7 @@ export function newAssembly(name = 'Assembly1', units: UnitSystem = 'MMGS'): Par
     components: [],
     mates: [],
     joints: [],
+    componentPatterns: [],
   };
 }
 
@@ -252,16 +253,54 @@ export function parseDocument(text: string): PartDocument {
         ...(rawJoint.flip === true ? { flip: true } : {}),
       };
     }) : [];
+    const patternIds = new Set<Id>();
+    const axisOk = (v: unknown): boolean => v === 'x' || v === 'y' || v === 'z';
+    const countOf = (v: unknown, fallback = 1): number => typeof v === 'number' && Number.isFinite(v) ? Math.max(1, Math.min(200, Math.floor(v))) : fallback;
+    doc.componentPatterns = Array.isArray(d.componentPatterns) ? d.componentPatterns.map((rawPattern): ComponentPattern => {
+      if (!isObj(rawPattern) || typeof rawPattern.id !== 'string' || !rawPattern.id || patternIds.has(rawPattern.id)
+        || typeof rawPattern.name !== 'string' || !rawPattern.name
+        || (rawPattern.type !== 'circular' && rawPattern.type !== 'rectangular')
+        || !Array.isArray(rawPattern.components) || rawPattern.components.length === 0
+        || rawPattern.components.some((c) => typeof c !== 'string' || !componentIds.has(c))
+        || (rawPattern.axis != null && !axisOk(rawPattern.axis))
+        || (rawPattern.dir1 != null && !axisOk(rawPattern.dir1))
+        || (rawPattern.dir2 != null && !axisOk(rawPattern.dir2))) {
+        throw new Error(tr("The assembly file is damaged (invalid component pattern)."));
+      }
+      patternIds.add(rawPattern.id);
+      const base = { id: rawPattern.id, name: rawPattern.name, components: [...(rawPattern.components as string[])] };
+      if (rawPattern.type === 'circular') {
+        return {
+          ...base,
+          type: 'circular' as const,
+          axis: (rawPattern.axis ?? 'z') as ComponentPattern['axis'],
+          angle: typeof rawPattern.angle === 'number' && Number.isFinite(rawPattern.angle) ? rawPattern.angle : 360,
+          count: countOf(rawPattern.count, 2),
+        };
+      }
+      return {
+        ...base,
+        type: 'rectangular' as const,
+        dir1: (rawPattern.dir1 ?? 'x') as ComponentPattern['dir1'],
+        spacing1: typeof rawPattern.spacing1 === 'number' && Number.isFinite(rawPattern.spacing1) ? rawPattern.spacing1 : 10,
+        count1: countOf(rawPattern.count1, 2),
+        dir2: rawPattern.dir2 == null ? null : rawPattern.dir2 as ComponentPattern['dir2'],
+        spacing2: typeof rawPattern.spacing2 === 'number' && Number.isFinite(rawPattern.spacing2) ? rawPattern.spacing2 : 10,
+        count2: countOf(rawPattern.count2, 1),
+      };
+    }) : [];
   } else {
     doc.components = [];
     doc.mates = [];
     doc.joints = [];
+    // Part files do not carry assembly data; do not add an empty array either.
+    delete doc.componentPatterns;
   }
   for (const f of doc.features) if (typeof f.name !== 'string' || !f.name) f.name = f.id;
   // New feature ids must not collide with existing ones, even when the file's
   // counter is missing or stale.
   let maxId = 0;
-  for (const f of [...doc.features, ...doc.variables, ...(doc.components ?? []), ...(doc.mates ?? []), ...(doc.joints ?? [])]) {
+  for (const f of [...doc.features, ...doc.variables, ...(doc.components ?? []), ...(doc.mates ?? []), ...(doc.joints ?? []), ...(doc.componentPatterns ?? [])]) {
     const m = /^[a-z]+(\d+)$/i.exec(String(f?.id ?? ''));
     const suffix = m ? Number(m[1]) : NaN;
     // Unsafe suffixes cannot be emitted by the numeric allocator.

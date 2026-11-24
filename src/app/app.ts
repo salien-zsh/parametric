@@ -5,7 +5,7 @@ import type { BuildResult, EdgeInfo, FaceInfo, FeatureStatus } from '../kernel/p
 import { KernelClient, KernelRestartError } from '../kernel/client';
 import type { Frame, Vec3 } from '../math/vec';
 import { DocStore, configurationVariables, isAssembly, newAssembly as newAssemblyDocument, newDocument } from '../model/document';
-import { assemblyTransforms, composeTransform, frameToWorld, jointValue, movableJoints } from '../model/assembly';
+import { assemblyTransforms, composeTransform, frameToWorld, jointValue, movableJoints, patternDir, patternSteps, patternsOf, rotateAbout } from '../model/assembly';
 import { evaluateVariables } from '../model/expr';
 import { consumedSketches, defaultName, dependencies, newSketch } from '../model/features';
 import { BASE_FRAMES, BASE_PLANE_NAMES } from '../model/planes';
@@ -796,9 +796,14 @@ export class App {
     const id = item.kind === 'face' ? this.faces[item.index]?.component
       : item.kind === 'edge' ? this.edges[item.index]?.component : undefined;
     if (!id) return null;
-    // A part of a sub-assembly carries a path like "c3/c1": it belongs to the
-    // top-level component that holds the sub-assembly.
-    return this.component(id.split('/')[0]);
+    // A sub-assembly part carries a path ("c3/c1") and a pattern copy a
+    // suffix ("c2#2"): both belong to the top-level component.
+    return this.component(id.split('/')[0].split('#')[0]);
+  }
+
+  /** True when a built face/edge owner is the component, a part of it or one of its pattern copies. */
+  ownsComponent(owner: string | undefined, componentId: Id): boolean {
+    return !!owner && owner.split('/')[0].split('#')[0] === componentId;
   }
 
   /**
@@ -808,45 +813,53 @@ export class App {
    */
   private assemblyBuildComponents(transforms: Map<Id, ComponentTransform> | null): import('../kernel/protocol').AssemblyBuildComponent[] {
     const out: import('../kernel/protocol').AssemblyBuildComponent[] = [];
-    const walk = (components: AssemblyComponent[], parent: ComponentTransform | null, prefix: string) => {
+    const patterns = this.store.doc.componentPatterns ?? [];
+    const walk = (
+      components: AssemblyComponent[],
+      parent: ComponentTransform | null,
+      prefix: string,
+      levelPatterns: typeof patterns,
+      solvedHere: Map<Id, ComponentTransform> | null,
+    ) => {
       for (const component of components) {
-        const placed = parent ? composeTransform(parent, component.transform) : component.transform;
+        const placed = !prefix && solvedHere
+          ? solvedHere.get(component.id) ?? component.transform
+          : parent ? composeTransform(parent, component.transform) : component.transform;
         const id = prefix ? `${prefix}/${component.id}` : component.id;
-        const part = component.part;
-        if (part.kind === 'assembly') {
-          walk(part.components ?? [], placed, id);
-          continue;
+        // The seed plus one copy per pattern step, so instances need no
+        // separate component documents and the BOM can count them.
+        const emit = (instanceId: string, transform: ComponentTransform) => {
+          const part = component.part;
+          if (part.kind === 'assembly') {
+            walk(part.components ?? [], transform, instanceId, part.componentPatterns ?? [], null);
+            return;
+          }
+          const partStore = new DocStore(part);
+          const partResolved = partStore.resolve();
+          out.push({
+            id: instanceId,
+            name: component.name,
+            features: partResolved.features,
+            upTo: partStore.builtCount,
+            blobs: part.blobs,
+            transform,
+            visible: component.visible,
+          });
+        };
+        emit(id, placed);
+        for (const pattern of patternsOf(levelPatterns, component.id)) {
+          const axis = patternDir(pattern.axis ?? 'z');
+          patternSteps(pattern).forEach((step, k) => {
+            const turned = step.rotation ? rotateAbout(placed, [0, 0, 0], axis, step.rotation) : {
+              position: [placed.position[0] + step.offset[0], placed.position[1] + step.offset[1], placed.position[2] + step.offset[2]] as ComponentTransform['position'],
+              rotation: [...placed.rotation] as ComponentTransform['rotation'],
+            };
+            emit(`${id}#${k + 1}`, turned);
+          });
         }
-        const partStore = new DocStore(part);
-        const partResolved = partStore.resolve();
-        out.push({
-          id,
-          name: component.name,
-          features: partResolved.features,
-          upTo: partStore.builtCount,
-          blobs: part.blobs,
-          transform: placed,
-          visible: component.visible,
-        });
       }
     };
-    for (const component of this.store.doc.components ?? []) {
-      const placed = transforms?.get(component.id) ?? component.transform;
-      if (component.part.kind === 'assembly') walk(component.part.components ?? [], placed, component.id);
-      else {
-        const partStore = new DocStore(component.part);
-        const partResolved = partStore.resolve();
-        out.push({
-          id: component.id,
-          name: component.name,
-          features: partResolved.features,
-          upTo: partStore.builtCount,
-          blobs: component.part.blobs,
-          transform: placed,
-          visible: component.visible,
-        });
-      }
-    }
+    walk(this.store.doc.components ?? [], null, '', patterns, transforms);
     return out;
   }
 
@@ -868,8 +881,7 @@ export class App {
       if (!it) return;
       if (it.kind === 'component') {
         for (let i = 0; i < this.faces.length; i++) {
-          const owner = this.faces[i].component;
-          if (owner === it.id || owner?.startsWith(`${it.id}/`)) out.push({ kind: 'face', index: i, name: this.faces[i].name });
+          if (this.ownsComponent(this.faces[i].component, it.id)) out.push({ kind: 'face', index: i, name: this.faces[i].name });
         }
         return;
       }
@@ -1074,6 +1086,23 @@ export class App {
       doc.joints = doc.joints?.filter((j) => !remove.has(j.component) && !(j.relativeTo && remove.has(j.relativeTo)));
     });
     this.selection.clear();
+  }
+
+  /** Hides every component except the given ones (Fusion's Isolate). */
+  isolateComponents(ids: Id[]) {
+    if (!ids.length) return;
+    const keep = new Set(ids);
+    this.store.change(tr("Isolate components"), (doc) => {
+      for (const component of doc.components ?? []) component.visible = keep.has(component.id);
+    });
+  }
+
+  /** Brings every hidden component back. */
+  showAllComponents() {
+    if (!(this.store.doc.components ?? []).some((c) => !c.visible)) return;
+    this.store.change(tr("Show all components"), (doc) => {
+      for (const component of doc.components ?? []) component.visible = true;
+    });
   }
 
   updateComponentFixed(id: Id, fixed: boolean) {

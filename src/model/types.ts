@@ -671,6 +671,34 @@ export interface AssemblyJoint {
   flip?: boolean;
 }
 
+/** How a component pattern lays out its copies. */
+export type ComponentPatternType = 'circular' | 'rectangular';
+
+/**
+ * Copies of components around an axis or along direction(s). The pattern
+ * lives in the assembly; the build makes the instances without storing them
+ * as separate components, and the bill of materials counts them.
+ */
+export interface ComponentPattern {
+  id: Id;
+  name: string;
+  type: ComponentPatternType;
+  /** Seed components; the pattern adds copies of each. */
+  components: Id[];
+  /** Circular patterns: the assembly axis to turn about, total angle and count (the seed counts). */
+  axis?: AssemblyAxis;
+  /** Total sweep in degrees (360 for a full turn). */
+  angle?: number;
+  count?: number;
+  /** Rectangular patterns: up to two directions, spacing and count along each. */
+  dir1?: AssemblyAxis;
+  spacing1?: number;
+  count1?: number;
+  dir2?: AssemblyAxis | null;
+  spacing2?: number;
+  count2?: number;
+}
+
 export interface PartDocument {
   format: 'parametric-part';
   version: 1;
@@ -697,6 +725,8 @@ export interface PartDocument {
   components?: AssemblyComponent[];
   mates?: AssemblyMate[];
   joints?: AssemblyJoint[];
+  /** Component patterns (circular/rectangular arrays of parts). */
+  componentPatterns?: ComponentPattern[];
   nextId: number;
   created: number;
   modified: number;

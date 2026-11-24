@@ -529,7 +529,8 @@ export class Viewport {
       // A selected component lights up as a whole; in an assembly so does the
       // component a hovered or picked face belongs to (clicking part of a
       // component selects the component).
-      const owned = (owner: string | undefined, componentId: string) => owner === componentId || !!owner?.startsWith(`${componentId}/`);
+      // Faces of a sub-assembly part or a pattern copy still belong to their top-level component.
+      const owned = (owner: string | undefined, componentId: string) => !!owner && owner.split('/')[0].split('#')[0] === componentId;
       if (it.kind === 'component') {
         app.faces.forEach((f, i) => { if (owned(f.component, it.id)) faces[i] |= bit; });
         app.edges.forEach((e, i) => { if (owned(e.component, it.id)) edges[i] |= bit; });
