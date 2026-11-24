@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ThreadFeature,
+  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, ThreadFeature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -33,7 +33,7 @@ import type {
 } from './protocol';
 import {
   type EdgeDesc, type Sh, type SurfDesc, ShapeIndex, bbox, common, compound, cut, describeEdge, describeFace, faceMidPoint, fuse, getOc, gdir,
-  hashOf, isEmpty, meshEdgesOf, meshShape, mirrored, planarFaceFrame, plane, pnt, rotated, sameSurface, sharesSurface, subShapes, translated,
+  hashOf, isEmpty, meshEdgesOf, meshShape, mirrored, planarFaceFrame, plane, pnt, rotated, sameSurface, scaled, sharesSurface, subShapes, translated,
   vertexPoint, volumeOf, wrap, xyz,
 } from './occ';
 import { type PtContext, buildBevelGear, buildSpurGear, buildSprocket, buildSyncBelt, buildVBelt, buildWormGear } from './pt';
@@ -419,6 +419,7 @@ export class ModelBuilder {
       case 'thread': this.applyThread(f, st); return 'tool';
       case 'offsetFace': this.applyOffsetFace(f, st); return 'tool';
       case 'moveBody': this.applyMoveBody(f, st); return 'body';
+      case 'scaleBody': this.applyScaleBody(f, st); return 'body';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -1636,6 +1637,22 @@ export class ModelBuilder {
     const slab = R.basicFaceExtrusion(profile, new R.Vector(scale(d.d, off))) as unknown as Sh;
     if (isEmpty(slab)) throw new FeatureError(tr("The face could not be offset"));
     this.applyTool(f.id, st, slab, this.nameTool(f.id, slab, (_d, k) => `o${k}`), off < 0);
+  }
+
+  /** Uniformly scales the whole body about the world origin, keeping face names. */
+  private applyScaleBody(f: ScaleBodyFeature, st: State) {
+    if (!st.body) throw new FeatureError(tr("There is no body to scale"));
+    const factor = num(f.factor);
+    if (!(factor > 0)) throw new FeatureError(tr("The scale factor must be greater than zero"));
+    if (Math.abs(factor - 1) < 1e-12) return;
+    const at: Vec3 = [0, 0, 0];
+    st.body = scaled(st.body, at, factor);
+    st.faces = st.faces.map((nf) => {
+      const desc = { ...nf.desc, p: scale(nf.desc.p, factor), center: scale(nf.desc.center, factor), area: nf.desc.area * factor * factor } as typeof nf.desc;
+      if ('r' in nf.desc && typeof nf.desc.r === 'number') (desc as { r: number }).r = nf.desc.r * factor;
+      return { ...nf, shape: scaled(nf.shape, at, factor), desc };
+    });
+    st.edges = null;
   }
 
   /** Moves and rotates the whole body, keeping every face name attached to its face. */

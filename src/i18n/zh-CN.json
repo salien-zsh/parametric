@@ -1856,5 +1856,12 @@
   "Select the face the extrusion should stop at": "选择拉伸终止面",
   "An extrusion can stop at a planar face only": "拉伸只能终止于平面",
   "The extrusion direction is parallel to the face it should stop at": "拉伸方向与终止面平行",
-  "The face to stop at is not in front of the sketch. Reverse the direction or pick another face.": "终止面不在草图前方，请反向或另选面。"
+  "The face to stop at is not in front of the sketch. Reverse the direction or pick another face.": "终止面不在草图前方，请反向或另选面。",
+  "Scale Body": "缩放实体",
+  "Scale factor": "缩放比例",
+  "Scales the whole body uniformly about the world origin. Face names stay with their faces.": "以世界原点为中心等比缩放整个实体，面名称保持跟随。",
+  "Scale the whole body uniformly about the origin.": "以原点为中心等比缩放整个实体。",
+  "The scale factor must be greater than zero": "缩放比例必须大于零",
+  "scale body resize direct edit": "缩放 实体 调整 直接编辑",
+  "There is no body to scale": "没有可缩放的实体"
 }

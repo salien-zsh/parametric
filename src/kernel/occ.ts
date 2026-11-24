@@ -361,6 +361,13 @@ export function rotated(shape: Sh, p: Vec3, d: Vec3, angleRad: number): Sh {
   try { return transformShape(shape, tr); } finally { ax.delete(); gp.delete(); gd.delete(); tr.delete(); }
 }
 
+export function scaled(shape: Sh, p: Vec3, factor: number): Sh {
+  const tr = new oc.gp_Trsf();
+  const gp = pnt(p);
+  tr.SetScale(gp, factor);
+  try { return transformShape(shape, tr); } finally { gp.delete(); tr.delete(); }
+}
+
 export function mirrored(shape: Sh, p: Vec3, n: Vec3): Sh {
   const tr = new oc.gp_Trsf();
   const gp = pnt(p), gd = gdir(n);

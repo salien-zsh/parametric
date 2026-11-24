@@ -468,6 +468,12 @@ export interface MoveBodyFeature extends FeatureBase {
   rotZ?: Param;
 }
 
+/** Uniformly scales the whole body about the world origin (Fusion's Scale). */
+export interface ScaleBodyFeature extends FeatureBase {
+  type: 'scaleBody';
+  factor: Param;
+}
+
 export interface LoftFeature extends FeatureBase {
   type: 'loft';
   profiles: Id[];
@@ -649,6 +655,7 @@ export type Feature =
   | ThreadFeature
   | OffsetFaceFeature
   | MoveBodyFeature
+  | ScaleBodyFeature
   | AxisFeature
   | PointFeature
   | LoftFeature

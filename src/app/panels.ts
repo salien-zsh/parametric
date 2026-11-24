@@ -4,7 +4,7 @@ import type { Frame, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newAxis, newBevelGear, newCoil, newMirror, newMoveBody, newOffsetFace, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBevelGear, newCoil, newMirror, newMoveBody, newOffsetFace, newScaleBody, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -14,7 +14,7 @@ import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel
 import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
-  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
@@ -1661,6 +1661,27 @@ export class SweepPanel extends FeaturePanel<SweepFeature> {
 
 // ---------- factory ----------
 
+export class ScaleBodyPanel extends FeaturePanel<ScaleBodyFeature> {
+  render(): HTMLElement[] {
+    const f = this.f;
+    const factor = numberField({ label: tr("Scale factor"), icon: 'ruler', value: f.factor, kind: 'count', ctx: this.ctx(), min: 0.001, onChange: (v) => { f.factor = v; this.changed(); } });
+    return [
+      section(tr("Scale"), [
+        h('p', { class: 'field-label' }, tr("Scales the whole body uniformly about the world origin. Face names stay with their faces.")),
+        factor,
+      ]),
+    ];
+  }
+
+  protected validate() {
+    return Number(this.f.factor) > 0 ? null : tr("The scale factor must be greater than zero");
+  }
+
+  preview() {
+    return this.f;
+  }
+}
+
 export class MoveBodyPanel extends FeaturePanel<MoveBodyFeature> {
   render(): HTMLElement[] {
     const f = this.f;
@@ -1834,6 +1855,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'thread': return new ThreadPanel(app, f, editing);
     case 'offsetFace': return new OffsetFacePanel(app, f, editing);
     case 'moveBody': return new MoveBodyPanel(app, f, editing);
+    case 'scaleBody': return new ScaleBodyPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
     case 'axis': return new AxisPanel(app, f, editing);
@@ -1921,6 +1943,11 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
+    case 'scaleBody': {
+      const x = newScaleBody(id, name);
+      f = x;
+      break;
+    }
     case 'moveBody': {
       const x = newMoveBody(id, name);
       x.dx = Math.max(size / 10, app.store.unitScale);
