@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, ThreadFeature,
+  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -420,6 +420,7 @@ export class ModelBuilder {
       case 'offsetFace': this.applyOffsetFace(f, st); return 'tool';
       case 'moveBody': this.applyMoveBody(f, st); return 'body';
       case 'scaleBody': this.applyScaleBody(f, st); return 'body';
+      case 'splitBody': this.applySplitBody(f, st); return 'tool';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -1637,6 +1638,24 @@ export class ModelBuilder {
     const slab = R.basicFaceExtrusion(profile, new R.Vector(scale(d.d, off))) as unknown as Sh;
     if (isEmpty(slab)) throw new FeatureError(tr("The face could not be offset"));
     this.applyTool(f.id, st, slab, this.nameTool(f.id, slab, (_d, k) => `o${k}`), off < 0);
+  }
+
+  /** Splits the body with an axis-aligned plane and keeps the requested side. */
+  private applySplitBody(f: SplitBodyFeature, st: State) {
+    if (!st.body) throw new FeatureError(tr("There is no body to split"));
+    const b = bbox(st.body);
+    if (!b) throw new FeatureError(tr("There is no body to split"));
+    const index = f.axis === 'x' ? 0 : f.axis === 'y' ? 1 : 2;
+    const off = num(f.offset);
+    const pad = Math.max(10, len(sub(b.max, b.min)) * 2);
+    const min: Vec3 = [b.min[0] - pad, b.min[1] - pad, b.min[2] - pad];
+    const max: Vec3 = [b.max[0] + pad, b.max[1] + pad, b.max[2] + pad];
+    // Remove the material on the discarded side.
+    if (!f.flip) max[index] = Math.min(max[index], off);
+    else min[index] = Math.max(min[index], off);
+    if (!(max[index] > min[index])) throw new FeatureError(tr("The split plane does not pass through the body"));
+    const tool = R.makeBox(min, max) as unknown as Sh;
+    this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `p${k}`), true);
   }
 
   /** Uniformly scales the whole body about the world origin, keeping face names. */

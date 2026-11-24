@@ -413,6 +413,7 @@ export class FeatureCodec {
         hub_diameter: L(f.hubDiameter), hub_length: L(f.hubLength), material: f.material,
         power: f.power, speed: f.speed, service_factor: f.serviceFactor,
       };
+      case 'splitBody': return { axis: f.axis, offset: L(f.offset), flip: f.flip };
       case 'scaleBody': return { factor: C(f.factor) };
       case 'moveBody': return { dx: L(f.dx), dy: L(f.dy), dz: L(f.dz), rot_x: A(f.rotX ?? 0), rot_y: A(f.rotY ?? 0), rot_z: A(f.rotZ ?? 0) };
       case 'offsetFace': return { face: f.face?.name ?? null, offset: L(f.offset) };

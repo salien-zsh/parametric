@@ -1863,5 +1863,17 @@
   "Scale the whole body uniformly about the origin.": "以原点为中心等比缩放整个实体。",
   "The scale factor must be greater than zero": "缩放比例必须大于零",
   "scale body resize direct edit": "缩放 实体 调整 直接编辑",
-  "There is no body to scale": "没有可缩放的实体"
+  "There is no body to scale": "没有可缩放的实体",
+  "Split Body": "分割实体",
+  "Split plane": "分割平面",
+  "Split offset": "分割偏移",
+  "Keep the other side": "保留另一侧",
+  "Removes the material on the discarded side of the plane; the kept side becomes the body.": "去除平面另一侧的材料，保留侧成为实体。",
+  "Split the body with a plane and keep one side.": "用平面分割实体并保留一侧。",
+  "The split plane does not pass through the body": "分割平面没有穿过实体",
+  "split body trim plane": "分割 实体 修剪 平面",
+  "There is no body to split": "没有可分割的实体",
+  "YZ plane (X)": "垂直于 X 轴的平面",
+  "XZ plane (Y)": "垂直于 Y 轴的平面",
+  "XY plane (Z)": "垂直于 Z 轴的平面"
 }

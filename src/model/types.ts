@@ -474,6 +474,15 @@ export interface ScaleBodyFeature extends FeatureBase {
   factor: Param;
 }
 
+/** Splits the body with an axis-aligned plane and keeps one side (Fusion's Split Body). */
+export interface SplitBodyFeature extends FeatureBase {
+  type: 'splitBody';
+  axis: AssemblyAxis;
+  offset: Param;
+  /** Keep the side below the plane instead of above. */
+  flip: boolean;
+}
+
 export interface LoftFeature extends FeatureBase {
   type: 'loft';
   profiles: Id[];
@@ -656,6 +665,7 @@ export type Feature =
   | OffsetFaceFeature
   | MoveBodyFeature
   | ScaleBodyFeature
+  | SplitBodyFeature
   | AxisFeature
   | PointFeature
   | LoftFeature

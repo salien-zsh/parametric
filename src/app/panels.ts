@@ -4,7 +4,7 @@ import type { Frame, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newAxis, newBevelGear, newCoil, newMirror, newMoveBody, newOffsetFace, newScaleBody, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBevelGear, newCoil, newMirror, newMoveBody, newOffsetFace, newScaleBody, newSplitBody, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -14,7 +14,7 @@ import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel
 import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
-  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
@@ -1661,6 +1661,33 @@ export class SweepPanel extends FeaturePanel<SweepFeature> {
 
 // ---------- factory ----------
 
+export class SplitBodyPanel extends FeaturePanel<SplitBodyFeature> {
+  render(): HTMLElement[] {
+    const f = this.f;
+    const axis = selectField<'x' | 'y' | 'z'>(tr("Split plane"), f.axis, [
+      { value: 'x', label: tr("YZ plane (X)") },
+      { value: 'y', label: tr("XZ plane (Y)") },
+      { value: 'z', label: tr("XY plane (Z)") },
+    ], (v) => { f.axis = v; this.changed(); });
+    const offset = numberField({ label: tr("Split offset"), icon: 'ruler', value: f.offset, kind: 'length', ctx: this.ctx(), onChange: (v) => { f.offset = v; this.changed(); } });
+    const flip = checkbox(tr("Keep the other side"), f.flip, (v) => { f.flip = v; this.changed(); });
+    return [
+      section(tr("Split"), [
+        h('p', { class: 'field-label' }, tr("Removes the material on the discarded side of the plane; the kept side becomes the body.")),
+        axis, offset, flip,
+      ]),
+    ];
+  }
+
+  protected validate() {
+    return null;
+  }
+
+  preview() {
+    return this.f;
+  }
+}
+
 export class ScaleBodyPanel extends FeaturePanel<ScaleBodyFeature> {
   render(): HTMLElement[] {
     const f = this.f;
@@ -1856,6 +1883,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'offsetFace': return new OffsetFacePanel(app, f, editing);
     case 'moveBody': return new MoveBodyPanel(app, f, editing);
     case 'scaleBody': return new ScaleBodyPanel(app, f, editing);
+    case 'splitBody': return new SplitBodyPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
     case 'axis': return new AxisPanel(app, f, editing);
@@ -1943,6 +1971,12 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
+    case 'splitBody': {
+      const x = newSplitBody(id, name);
+      x.offset = size / 2;
+      f = x;
+      break;
+    }
     case 'scaleBody': {
       const x = newScaleBody(id, name);
       f = x;
