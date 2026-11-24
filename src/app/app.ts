@@ -1096,6 +1096,38 @@ export class App {
     });
   }
 
+  /** Copies the given components, offset so the copies are visible, and selects them. */
+  duplicateComponents(ids: Id[]) {
+    if (!ids.length) return;
+    const created: Id[] = [];
+    this.store.change(tr("Duplicate components"), (doc) => {
+      const used = new Set((doc.components ?? []).map((c) => c.name));
+      for (const id of ids) {
+        const source = doc.components?.find((c) => c.id === id);
+        if (!source) continue;
+        const newId = this.store.nextId('c');
+        let n = 1;
+        while (used.has(`${source.name}${n}`)) n++;
+        const name = `${source.name}${n}`;
+        used.add(name);
+        const offset = 20 * n;
+        doc.components ??= [];
+        doc.components.push({
+          ...structuredClone(source),
+          id: newId,
+          name,
+          fixed: false,
+          transform: {
+            position: [source.transform.position[0] + offset, source.transform.position[1], source.transform.position[2]],
+            rotation: [...source.transform.rotation],
+          },
+        });
+        created.push(newId);
+      }
+    });
+    if (created.length) this.selection.set(created.map((id) => ({ kind: 'component' as const, id })));
+  }
+
   /** Hides every component except the given ones (Fusion's Isolate). */
   isolateComponents(ids: Id[]) {
     if (!ids.length) return;

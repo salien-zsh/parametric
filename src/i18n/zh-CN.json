@@ -1795,5 +1795,9 @@
   "AUXILIARY": "辅助视图",
   "Auxiliary": "辅助视图",
   "Build a planar face before adding an auxiliary view.": "请先构建一个平面，再添加辅助视图。",
-  "Add auxiliary view": "添加辅助视图"
+  "Add auxiliary view": "添加辅助视图",
+  "Duplicate Component": "复制零部件",
+  "Duplicate components": "复制零部件",
+  "Copy the selected components, offset so the copies show, and select them.": "复制所选零部件并偏移放置副本，随后选中副本。",
+  "copy paste duplicate component assembly instance": "复制 粘贴 零部件 装配 实例"
 }
