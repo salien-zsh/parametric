@@ -506,6 +506,13 @@ export function registerCommands(app: App, files: FileOps) {
       },
     },
     // ---- view ----
+    {
+      id: 'zoomToSelection', label: tr("Zoom to Selection"), icon: 'zoomIn',
+      keywords: tr("zoom selection frame component face"),
+      description: tr("Frame the selected faces, edges, vertices or components."),
+      enabled: () => app.selection.items.length > 0,
+      run: () => app.viewport.zoomToSelection(),
+    },
     { id: 'zoomFit', label: tr("Zoom to Fit"), icon: 'zoomFit', shortcut: 'F', run: () => (app.inDrawing ? app.drawing.fit() : app.viewport.zoomToFit()) },
     // ---- drawing ----
     { id: 'openDrawing', label: tr("Make Drawing"), icon: 'file', keywords: tr("drawing sheet 2d views print pdf"), description: tr("Open the 2D drawing of this part with standard views."), enabled: () => hasBody() || !!app.store.doc.drawing, run: () => app.openDrawing() },
@@ -865,7 +872,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
       : [m('insertComponent'), m('newAssemblyPart'), m('autoMate'), m('mateSuggestions'), m('showAllComponents'), m('motionStudy'), m('interference'), sep];
     items.push(...assemblyItems);
   }
-  items.push(m('zoomFit'), { label: tr("View Orientation"), icon: 'viewOrientation', submenu: () => app.viewMenuItems() }, { label: tr("Display Style"), icon: 'shadedEdges', submenu: () => app.displayMenuItems() });
+  items.push(m('zoomToSelection'), m('zoomFit'), { label: tr("View Orientation"), icon: 'viewOrientation', submenu: () => app.viewMenuItems() }, { label: tr("Display Style"), icon: 'shadedEdges', submenu: () => app.displayMenuItems() });
   if (target === 'reference') items.unshift({ label: tr("Show/Hide Planes"), icon: 'plane', run: () => c.run('showPlanes') }, sep);
   return items;
 }

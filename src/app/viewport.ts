@@ -935,6 +935,25 @@ export class Viewport {
     return Math.max(r, b || drawn ? 1e-3 : 50);
   }
 
+  /** Frames the picked faces, edges and vertices; falls back to the whole model. */
+  zoomToSelection(animate = true) {
+    const points: Vec3[] = [];
+    for (const item of this.app.selection.items) {
+      if (item.kind === 'face') { const f = this.app.faces[item.index]; if (f) points.push(f.center); }
+      else if (item.kind === 'edge') { const e = this.app.edges[item.index]; if (e) points.push(e.mid); }
+      else if (item.kind === 'vertex') points.push(item.p);
+    }
+    if (!points.length) { this.zoomToFit(animate); return; }
+    let min: Vec3 = [...points[0]];
+    let max: Vec3 = [...points[0]];
+    for (const p of points) for (let i = 0; i < 3; i++) { min[i] = Math.min(min[i], p[i]); max[i] = Math.max(max[i], p[i]); }
+    const center: Vec3 = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+    const radius = Math.max(1, Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) / 2);
+    this.pushHistory();
+    const st = this.camera.fitState(center, radius);
+    if (animate) this.camera.animateTo(st); else this.camera.setState(st);
+  }
+
   zoomToFit(animate = true) {
     this.pushHistory();
     let center = this.modelCenter();
