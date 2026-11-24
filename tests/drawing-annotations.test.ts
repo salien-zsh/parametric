@@ -82,3 +82,13 @@ describe('title block fields', () => {
     expect(texts).toContain('REV');
   });
 });
+
+describe('sheet notes', () => {
+  it('prints the notes at the top left', () => {
+    const sheet = buildSheet({ ...doc(), notes: 'Deburr all edges\nTolerance ISO 2768-m' }, new Map([['v1', projection]]), info());
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts).toContain('NOTES');
+    expect(texts).toContain('Deburr all edges');
+    expect(texts).toContain('Tolerance ISO 2768-m');
+  });
+});

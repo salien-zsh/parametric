@@ -247,6 +247,9 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
       dimension(items, [fx0, fy0], [fx0, fy1], 'left', info.formatLength(by1 - by0));
     }
   }
+  const notesLines = d.notes.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  // One note fits the title block cell; several become a notes list at the top left.
+  if (notesLines.length > 1) notesBlock(items, d);
   bomTable(items, w, h, info.bom ?? []);
   titleBlock(items, w, h, d, info);
   return { items, frames, w, h };
@@ -486,7 +489,22 @@ function dimension(items: Item[], a: [number, number], b: [number, number], side
   }
 }
 
+/** Free notes at the top left of the sheet, one line each (up to ten). */
+function notesBlock(items: Item[], d: DrawingDoc) {
+  const lines = d.notes.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 10);
+  if (!lines.length) return;
+  const x = MARGIN + 6;
+  let y = MARGIN + 8;
+  items.push({ t: 'text', s: tr("NOTES"), x, y, size: 3, bold: true });
+  y += 5.5;
+  for (const line of lines) {
+    items.push({ t: 'text', s: line, x, y, size: 3 });
+    y += 4.5;
+  }
+}
+
 function titleBlock(items: Item[], w: number, h: number, d: DrawingDoc, info: SheetInfo) {
+  const notesLines = d.notes.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const x = w - MARGIN - TITLE_W, y = h - MARGIN - TITLE_H;
   const row = TITLE_H / 3;
   items.push({ t: 'rect', x, y, w: TITLE_W, h: TITLE_H, sw: 0.5 });
@@ -521,7 +539,7 @@ function titleBlock(items: Item[], w: number, h: number, d: DrawingDoc, info: Sh
   label(tr("DWG NO"), c2, y + 2 * row); value(d.number || '', c2, y + 2 * row, c1 - c2, 2.8);
   label(tr("REV"), c1, y + 2 * row); value(d.revision || '', c1, y + 2 * row, right - c1, 2.8);
   label(tr("SHEET"), c2, y + 2 * row); value(`${d.sheet}${d.landscape ? '' : tr(" portrait")}`, c2, y + 2 * row, c1 - c2, 2.8);
-  label(tr("NOTES"), c1, y + 2 * row); value(d.notes || '', c1, y + 2 * row, right - c1, 2.4);
+  label(tr("NOTES"), c1, y + 2 * row); value(notesLines.length > 1 ? '' : d.notes || '', c1, y + 2 * row, right - c1, 2.4);
 }
 
 /** Compact assembly bill of materials immediately above the title block. */

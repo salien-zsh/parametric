@@ -231,7 +231,7 @@
     {
       "file": "src/drawing/sheet.ts",
       "edits": 0,
-      "skipped": 34
+      "skipped": 35
     },
     {
       "file": "src/kernel/build.ts",
