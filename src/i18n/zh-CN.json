@@ -1845,5 +1845,8 @@
   "Move feature down": "特征下移",
   "Reorder": "重新排序",
   "reorder feature up tree": "重排 特征 上移 树",
-  "reorder feature down tree": "重排 特征 下移 树"
+  "reorder feature down tree": "重排 特征 下移 树",
+  "Intersect": "相交",
+  "There is no body to intersect with": "没有可相交的实体",
+  "The intersect leaves no material": "相交后没有剩余材料"
 }

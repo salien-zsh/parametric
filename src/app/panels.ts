@@ -188,6 +188,7 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
         this.changed();
       }),
       draftAngle, outward,
+      checkbox(tr("Intersect"), !!f.intersect, (v) => { f.intersect = v; if (v) f.cut = false; this.changed(); }),
     ]);
     const d2depth = numberField({ label: tr("Depth"), icon: 'ruler', value: f.dir2?.depth ?? f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { if (f.dir2) { f.dir2.depth = v; this.changed(); } } });
     const dir2sec = section(tr("Direction 2"), [
@@ -263,6 +264,7 @@ export class RevolvePanel extends FeaturePanel<RevolveFeature> {
         h('div', { class: 'row' }, flipButton(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); }), h('div', { class: 'grow' },
           selectField(tr("Type"), f.end, [{ value: 'blind' as const, label: tr("Blind") }, { value: 'midPlane' as const, label: tr("Mid Plane") }], (v) => { f.end = v; this.changed(); }))),
         angle,
+        checkbox(tr("Intersect"), !!f.intersect, (v) => { f.intersect = v; if (v) f.cut = false; this.changed(); }),
       ]),
     ];
   }

@@ -626,6 +626,17 @@ export class ModelBuilder {
   }
 
   /** Combines a tool with the body and renames faces. */
+  /** Fusion's Intersect: keep only the material shared by the body and the tool. */
+  private applyIntersect(featId: Id, st: State, tool: Sh, toolFaces: NamedFace[]) {
+    if (!st.body) throw new FeatureError(tr("There is no body to intersect with"));
+    const body = common(st.body, tool);
+    if (isEmpty(body)) throw new FeatureError(tr("The intersect leaves no material"));
+    st.faces = this.nameFaces(featId, body, st, toolFaces);
+    st.body = body;
+    st.edges = null;
+    st.tools.set(featId, { shape: tool, cut: false, faces: toolFaces });
+  }
+
   private applyTool(featId: Id, st: State, tool: Sh, toolFaces: NamedFace[], isCut: boolean) {
     let body: Sh;
     if (isCut) {
@@ -962,7 +973,9 @@ export class ModelBuilder {
       }
       return 'side:' + this.nearestSrc(regions, toLocal(frame, faceMidPoint(shape)));
     };
-    this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, classify), f.cut);
+    const named = this.nameTool(f.id, tool, classify);
+    if (f.intersect && !f.cut) this.applyIntersect(f.id, st, tool, named);
+    else this.applyTool(f.id, st, tool, named, f.cut);
   }
 
   private draftLateral(tool: Sh, fr: Frame, dir: Vec3, start: number, angleDeg: number): Sh {
@@ -1071,7 +1084,9 @@ export class ModelBuilder {
       const p: Vec2 = [a2[0] + d2[0] * axial + perp[0] * rho * side, a2[1] + d2[1] * axial + perp[1] * rho * side];
       return 'side:' + this.nearestSrc(regions, p);
     };
-    this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, classify), f.cut);
+    const named = this.nameTool(f.id, tool, classify);
+    if (f.intersect && !f.cut) this.applyIntersect(f.id, st, tool, named);
+    else this.applyTool(f.id, st, tool, named, f.cut);
   }
 
   /** Edges selected directly plus every edge of the selected faces (`from`: edge to the selected face it came from). */

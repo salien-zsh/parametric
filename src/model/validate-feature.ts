@@ -52,11 +52,11 @@ export function validFeature(f: Feature): boolean {
   const r = f as unknown as Record<string, unknown>;
   switch (f.type) {
     case 'extrude':
-      return sketchId(r.sketch);
+      return sketchId(r.sketch) && (r.intersect == null || typeof r.intersect === 'boolean');
     case 'hole':
       return sketchId(r.sketch) && (r.toFace == null || named(r.toFace));
     case 'revolve':
-      return sketchId(r.sketch) && axis(r.axis);
+      return sketchId(r.sketch) && axis(r.axis) && (r.intersect == null || typeof r.intersect === 'boolean');
     case 'fillet':
     case 'chamfer':
       return list(r.edges, named) && list(r.faces, named);

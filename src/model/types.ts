@@ -201,6 +201,8 @@ export interface ExtrudeFeature extends FeatureBase {
   draft: Param;
   draftOutward: boolean;
   thin: ThinOptions | null;
+  /** Keep only the intersection of the extrusion and the body (Fusion's Intersect). */
+  intersect?: boolean;
   /** Optional sample points (sketch coordinates) choosing which regions to use. */
   contours?: Vec2[];
 }
@@ -215,6 +217,8 @@ export interface RevolveFeature extends FeatureBase {
   angle: Param;
   flip: boolean;
   thin: ThinOptions | null;
+  /** Keep only the intersection of the revolution and the body (Fusion's Intersect). */
+  intersect?: boolean;
   contours?: Vec2[];
 }
 
