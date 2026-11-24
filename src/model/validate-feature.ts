@@ -26,6 +26,7 @@ function axis(v: unknown): boolean {
   if (v.kind === 'base') return ['x', 'y', 'z'].includes(String(v.axis));
   if (v.kind === 'edge') return named(v.edge);
   if (v.kind === 'face') return named(v.face);
+  if (v.kind === 'feature') return id(v.id);
   return v.kind === 'sketchLine' && id(v.sketch) && id(v.entity);
 }
 
@@ -81,6 +82,22 @@ export function validFeature(f: Feature): boolean {
       return list(r.profiles, id);
     case 'sweep':
       return (r.profile == null || id(r.profile)) && (r.path == null || id(r.path));
+    case 'axis': {
+      const kind = r.kind ?? 'cylinder';
+      if (!['cylinder', 'twoPoints', 'edge', 'perpendicular'].includes(String(kind))) return false;
+      if (kind === 'cylinder') return named(r.face);
+      if (kind === 'edge') return named(r.edge);
+      if (kind === 'twoPoints') return list(r.points, vector3) && (r.points as unknown[]).length >= 2;
+      return plane(r.ref) && vector3(r.point);
+    }
+    case 'point': {
+      const kind = r.kind ?? 'vertex';
+      if (!['vertex', 'midpoint', 'center', 'faceCenter', 'intersection'].includes(String(kind))) return false;
+      if (kind === 'vertex') return vector3(r.point);
+      if (kind === 'faceCenter') return named(r.face);
+      if (kind === 'intersection') return named(r.edge2) && plane(r.plane);
+      return named(r.edge);
+    }
     case 'shaft':
       return list(r.segments, shaftSegment) && shaftKeyway(r.keyway);
     case 'spurGear':

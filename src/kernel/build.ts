@@ -15,9 +15,9 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
+  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
-  PlaneRef, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
+  PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from '../model/types';
 import { dependencies } from '../model/features';
@@ -74,6 +74,9 @@ interface State {
   faces: NamedFace[];
   edges: NamedEdge[] | null;
   frames: Map<Id, Frame>;
+  /** Construction axes and points, for references and display. */
+  axes: Map<Id, { p: Vec3; d: Vec3 }>;
+  points: Map<Id, Vec3>;
   sketches: Map<Id, SketchFeature>;
   /** Projected sketch entities whose model edge or vertex is gone, by sketch. */
   lostRefs: Map<Id, Id[]>;
@@ -86,13 +89,15 @@ interface Step {
   status: FeatureStatus;
 }
 
-const emptyState = (): State => ({ body: null, faces: [], edges: null, frames: new Map(), sketches: new Map(), lostRefs: new Map(), tools: new Map() });
+const emptyState = (): State => ({ body: null, faces: [], edges: null, frames: new Map(), axes: new Map(), points: new Map(), sketches: new Map(), lostRefs: new Map(), tools: new Map() });
 
 const cloneState = (s: State): State => ({
   body: s.body,
   faces: s.faces,
   edges: s.edges,
   frames: new Map(s.frames),
+  axes: new Map(s.axes),
+  points: new Map(s.points),
   sketches: new Map(s.sketches),
   lostRefs: new Map(s.lostRefs),
   tools: new Map(s.tools),
@@ -227,6 +232,10 @@ export class ModelBuilder {
     }
     const frames: Record<Id, Frame> = {};
     for (const [k, v] of state.frames) frames[k] = v;
+    const axes: NonNullable<BuildResult['axes']> = {};
+    for (const [k, v] of state.axes) axes[k] = v;
+    const points: NonNullable<BuildResult['points']> = {};
+    for (const [k, v] of state.points) points[k] = v;
     const sketches: NonNullable<BuildResult['sketches']> = {};
     const linked = (s: State, id: Id, sk: SketchFeature) => { if (hasExternal(sk)) sketches[id] = { entities: sk.entities, lost: s.lostRefs.get(id) ?? [] }; };
     for (const [k, v] of state.sketches) linked(state, k, v);
@@ -241,6 +250,8 @@ export class ModelBuilder {
       edges: this.meshCache.edges,
       status,
       frames,
+      axes,
+      points,
       bbox: state.body ? boxOf(state.body) : null,
       ms: performance.now() - t0,
       preview: null,
@@ -265,6 +276,14 @@ export class ModelBuilder {
         if (req.preview.type === 'sketch' || req.preview.type === 'plane') {
           const fr = p.frames.get(req.preview.id);
           if (fr) result.frames[req.preview.id] = fr;
+        }
+        if (req.preview.type === 'axis') {
+          const ax = p.axes.get(req.preview.id);
+          if (ax) result.axes![req.preview.id] = ax;
+        }
+        if (req.preview.type === 'point') {
+          const pt = p.points.get(req.preview.id);
+          if (pt) result.points![req.preview.id] = pt;
         }
         if (req.preview.type === 'sketch') {
           const sk = p.sketches.get(req.preview.id);
@@ -360,6 +379,8 @@ export class ModelBuilder {
       edges: this.meshCache.edges,
       status,
       frames: {},
+      axes: {},
+      points: {},
       bbox: body ? boxOf(body) : null,
       ms: performance.now() - t0,
       preview: null,
@@ -380,6 +401,8 @@ export class ModelBuilder {
         return 'none';
       }
       case 'plane': this.applyPlane(f, st); return 'none';
+      case 'axis': this.applyAxis(f, st); return 'none';
+      case 'point': this.applyPoint(f, st); return 'none';
       case 'extrude': this.applyExtrude(f, st); return 'tool';
       case 'revolve': this.applyRevolve(f, st); return 'tool';
       case 'fillet': this.applyFillet(f, st); return 'body';
@@ -510,6 +533,11 @@ export class ModelBuilder {
         if (f.type === 'plane') return { p: f.center, d: f.d };
         if (f.type === 'cylinder' || f.type === 'sphere') return { p: f.p, d: f.d };
         throw new FeatureError(tr("Select a planar or cylindrical face"));
+      }
+      case 'feature': {
+        const ax = st.axes.get(ref.id);
+        if (!ax) throw new FeatureError(tr("The construction axis is missing or failed to build"));
+        return ax;
       }
       case 'sketchLine': {
         const sk = st.sketches.get(ref.sketch);
@@ -751,6 +779,90 @@ export class ModelBuilder {
    * gives the outward normal, the point (its centre by default) where the
    * plane touches the surface. The plane's X axis follows a cylinder's axis.
    */
+  /** A construction axis, like Fusion's axis types. */
+  private applyAxis(f: AxisFeature, st: State) {
+    const kind = f.kind ?? 'cylinder';
+    const sign = f.flip ? -1 : 1;
+    if (kind === 'cylinder') {
+      if (!f.face) throw new FeatureError(tr("Select a cylindrical or conical face"));
+      const d = st.faces[this.resolveFace(f.face, st)].desc;
+      if (d.type !== 'cylinder' && d.type !== 'cone') throw new FeatureError(tr("That face has no axis. Pick a cylindrical or conical face"));
+      st.axes.set(f.id, { p: d.p, d: scale(normalize(d.d), sign) });
+      return;
+    }
+    if (kind === 'twoPoints') {
+      const pts = f.points ?? [];
+      if (pts.length < 2) throw new FeatureError(tr("Select two points"));
+      const dir = sub(pts[1], pts[0]);
+      if (len(dir) < 1e-9) throw new FeatureError(tr("The two points are the same point"));
+      st.axes.set(f.id, { p: pts[0], d: scale(normalize(dir), sign) });
+      return;
+    }
+    if (kind === 'edge') {
+      if (!f.edge) throw new FeatureError(tr("Select a straight or circular edge"));
+      const e = this.edgesOf(st)[this.resolveEdge(f.edge, st)].desc;
+      if (e.type === 'line') {
+        st.axes.set(f.id, { p: e.a, d: scale(e.dir!, sign) });
+        return;
+      }
+      if (e.type === 'circle') {
+        st.axes.set(f.id, { p: e.center!, d: scale(normalize(e.axis!), sign) });
+        return;
+      }
+      throw new FeatureError(tr("The edge is not straight or circular"));
+    }
+    // Perpendicular to a plane, through a point.
+    if (!f.ref) throw new FeatureError(tr("Select a plane or planar face"));
+    if (!f.point) throw new FeatureError(tr("Select the point the axis starts at"));
+    const fr = this.resolvePlane(f.ref, st);
+    st.axes.set(f.id, { p: f.point, d: scale(fr.n, sign) });
+  }
+
+  /** A construction point, like Fusion's point types. */
+  private applyPoint(f: PointFeature, st: State) {
+    const kind = f.kind ?? 'vertex';
+    if (kind === 'vertex') {
+      if (!f.point) throw new FeatureError(tr("Select a vertex"));
+      st.points.set(f.id, [...f.point]);
+      return;
+    }
+    if (kind === 'midpoint') {
+      if (!f.edge) throw new FeatureError(tr("Select a straight edge"));
+      const e = this.edgesOf(st)[this.resolveEdge(f.edge, st)].desc;
+      if (e.type !== 'line') throw new FeatureError(tr("The edge is not straight"));
+      st.points.set(f.id, [...e.mid]);
+      return;
+    }
+    if (kind === 'center') {
+      if (!f.edge) throw new FeatureError(tr("Select a circular edge"));
+      const e = this.edgesOf(st)[this.resolveEdge(f.edge, st)].desc;
+      if (e.type === 'circle') {
+        st.points.set(f.id, [...e.center!]);
+        return;
+      }
+      if (e.type === 'ellipse') {
+        st.points.set(f.id, [...(e.center ?? e.mid)]);
+        return;
+      }
+      throw new FeatureError(tr("The edge is not a circle or arc"));
+    }
+    if (kind === 'faceCenter') {
+      if (!f.face) throw new FeatureError(tr("Select a face"));
+      st.points.set(f.id, [...st.faces[this.resolveFace(f.face, st)].desc.center]);
+      return;
+    }
+    // Intersection of a straight edge with a plane.
+    if (!f.edge2) throw new FeatureError(tr("Select a straight edge"));
+    if (!f.plane) throw new FeatureError(tr("Select a plane or planar face"));
+    const e = this.edgesOf(st)[this.resolveEdge(f.edge2, st)].desc;
+    if (e.type !== 'line') throw new FeatureError(tr("The edge is not straight"));
+    const fr = this.resolvePlane(f.plane, st);
+    const den = dot(e.dir!, fr.n);
+    if (Math.abs(den) < 1e-9) throw new FeatureError(tr("The edge runs along the plane, so they do not meet"));
+    const t = dot(sub(fr.o, e.a), fr.n) / den;
+    st.points.set(f.id, add(e.a, scale(e.dir!, t)));
+  }
+
   private tangentFrame(d: SurfDesc, at: Vec3 | null, flip: boolean): Frame {
     if (d.type === 'plane') throw new FeatureError(tr("The selected face is planar. Use an offset plane instead"));
     const sign = flip ? -1 : 1;

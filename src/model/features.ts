@@ -1,9 +1,9 @@
 // Feature factories, display names and parameter metadata.
 
 import type {
-  AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
+  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
   Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShaftFeature, ShellFeature,
-  SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature, SyncBeltFeature, VBeltFeature, WormGearFeature,
+  PointFeature, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature, SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from './types';
 import { tr } from '../i18n';
 
@@ -146,6 +146,8 @@ const BASE_NAMES: Record<FeatureType, string> = {
   circularPattern: tr('Circular Pattern'),
   mirror: tr('Mirror'),
   plane: tr('Plane'),
+  axis: tr('Axis'),
+  point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
   draft: tr('Draft'),
@@ -171,6 +173,8 @@ export const FEATURE_LABELS: Record<FeatureType, string> = {
   circularPattern: tr('Circular Pattern'),
   mirror: tr('Mirror'),
   plane: tr('Reference Plane'),
+  axis: tr('Axis'),
+  point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
   draft: tr('Draft'),
@@ -288,6 +292,14 @@ export const newSprocket = (id: Id, name: string): SprocketFeature => ({
   material: 'steel45', power: 3, speed: 500, serviceFactor: 1.2,
 });
 
+export const newAxis = (id: Id, name: string): AxisFeature => ({
+  id, name, type: 'axis', kind: 'cylinder', face: null, edge: null, points: [], ref: null, point: null, flip: false,
+});
+
+export const newPoint = (id: Id, name: string): PointFeature => ({
+  id, name, type: 'point', kind: 'vertex', point: null, edge: null, face: null, edge2: null, plane: null,
+});
+
 export const newLinearPattern = (id: Id, name: string, seeds: Id[], spacing: number): LinearPatternFeature => ({
   id, name, type: 'linearPattern', seeds, dir1: { ref: null, spacing, count: 3, flip: false }, dir2: null,
 });
@@ -368,6 +380,17 @@ export function dependencies(f: Feature): Id[] {
     // and edges they were made from.
     if (f.face) visitName(f.face.name);
     for (const e of f.edges ?? []) visitName(e.name);
+  }
+  if (f.type === 'axis') {
+    visitPlane(f.ref);
+    if (f.face) visitName(f.face.name);
+    if (f.edge) visitName(f.edge.name);
+  }
+  if (f.type === 'point') {
+    visitPlane(f.plane);
+    if (f.face) visitName(f.face.name);
+    if (f.edge) visitName(f.edge.name);
+    if (f.edge2) visitName(f.edge2.name);
   }
   if (f.type === 'hole' && f.toFace) visitName(f.toFace.name);
   if (f.type === 'mirror') { visitPlane(f.plane); f.seeds.forEach((s) => out.add(s)); }

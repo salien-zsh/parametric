@@ -54,7 +54,9 @@ export type AxisRef =
   | { kind: 'base'; axis: 'x' | 'y' | 'z' }
   | { kind: 'edge'; edge: EdgeRef }
   | { kind: 'face'; face: FaceRef }
-  | { kind: 'sketchLine'; sketch: Id; entity: Id };
+  | { kind: 'sketchLine'; sketch: Id; entity: Id }
+  /** A construction axis feature. */
+  | { kind: 'feature'; id: Id };
 
 // ---- Sketch ----
 
@@ -334,6 +336,49 @@ export interface PlaneFeature extends FeatureBase {
   points?: Vec3[];
 }
 
+/** How a construction axis is defined, like Fusion's axis types. */
+export type AxisKind = 'cylinder' | 'twoPoints' | 'edge' | 'perpendicular';
+
+/**
+ * A construction axis: the axis of a cylindrical/conical face, the line
+ * through two points, a straight or circular edge, or a plane's normal
+ * through a point.
+ */
+export interface AxisFeature extends FeatureBase {
+  type: 'axis';
+  kind?: AxisKind;
+  /** Cylinder-like face whose axis is used (cylinder). */
+  face?: FaceRef | null;
+  /** The edge used directly (edge), straight or circular. */
+  edge?: EdgeRef | null;
+  /** Two points the axis runs through (twoPoints). */
+  points?: Vec3[];
+  /** Plane whose normal gives the direction (perpendicular). */
+  ref?: PlaneRef | null;
+  /** Point the perpendicular axis starts at (perpendicular). */
+  point?: Vec3 | null;
+  /** Reverse the arrow of the axis. */
+  flip?: boolean;
+}
+
+/** How a construction point is defined, like Fusion's point types. */
+export type PointKind = 'vertex' | 'midpoint' | 'center' | 'faceCenter' | 'intersection';
+
+/** A construction point: a vertex, an edge midpoint, a centre, or a line/plane intersection. */
+export interface PointFeature extends FeatureBase {
+  type: 'point';
+  kind?: PointKind;
+  /** Picked vertex position (vertex). */
+  point?: Vec3 | null;
+  /** Edge whose midpoint (midpoint) or centre (center) is used. */
+  edge?: EdgeRef | null;
+  /** Face whose centre is used (faceCenter). */
+  face?: FaceRef | null;
+  /** Line edge or axis crossed with a plane (intersection). */
+  edge2?: EdgeRef | null;
+  plane?: PlaneRef | null;
+}
+
 export interface LoftFeature extends FeatureBase {
   type: 'loft';
   profiles: Id[];
@@ -510,6 +555,8 @@ export type Feature =
   | CircularPatternFeature
   | MirrorFeature
   | PlaneFeature
+  | AxisFeature
+  | PointFeature
   | LoftFeature
   | SweepFeature
   | DraftFeature

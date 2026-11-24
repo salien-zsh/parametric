@@ -652,6 +652,44 @@ export class Viewport {
       } : null);
     } else r.setLines('plane-grid', null);
 
+    // Construction axes and points (Fusion's reference geometry).
+    const axisPos: number[] = [];
+    const axisCol: number[] = [];
+    const pointPos: number[] = [];
+    const pointCol: number[] = [];
+    const selectedColor = [...this.renderer.theme.selection];
+    const normalColor = cssColor('--text-2');
+    for (const f of app.store.doc.features.slice(0, app.store.builtCount)) {
+      const highlighted = isShown({ kind: 'feature', id: f.id });
+      if (f.type === 'axis' && !f.suppressed && !f.hidden) {
+        const ax = app.axes[f.id];
+        if (!ax) continue;
+        const L = radius;
+        const c = highlighted ? selectedColor : normalColor;
+        const a: Vec3 = [ax.p[0] - ax.d[0] * L * 0.15, ax.p[1] - ax.d[1] * L * 0.15, ax.p[2] - ax.d[2] * L * 0.15];
+        const b: Vec3 = [ax.p[0] + ax.d[0] * L, ax.p[1] + ax.d[1] * L, ax.p[2] + ax.d[2] * L];
+        axisPos.push(...a, ...b);
+        axisCol.push(Math.round(c[0] * 255), Math.round(c[1] * 255), Math.round(c[2] * 255), 255);
+        axisCol.push(Math.round(c[0] * 255), Math.round(c[1] * 255), Math.round(c[2] * 255), 255);
+      }
+      if (f.type === 'point' && !f.suppressed && !f.hidden) {
+        const pt = app.points[f.id];
+        if (!pt) continue;
+        const c = highlighted ? selectedColor : normalColor;
+        pointPos.push(...pt);
+        pointCol.push(Math.round(c[0] * 255), Math.round(c[1] * 255), Math.round(c[2] * 255), 255);
+      }
+    }
+    r.setLines('constr-axes', axisPos.length ? {
+      positions: new Float32Array(axisPos), colors: new Uint8Array(axisCol), width: 1.6, depth: 'test', order: 2,
+    } : null);
+    if (pointPos.length) {
+      const sizes = new Float32Array((pointPos.length / 3) * 2).map((_, i) => (i % 2 ? 1 : 10));
+      r.setPoints('constr-points', {
+        positions: new Float32Array(pointPos), colors: new Uint8Array(pointCol), sizeStyle: sizes, depth: 'test', order: 5,
+      });
+    } else r.setPoints('constr-points', null);
+
     this.drawOrigin();
     if (!hoverOnly || this.sketchHoverKey() !== this.drawnSketchHover) this.drawSketches();
   }

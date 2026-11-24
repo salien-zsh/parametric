@@ -35,6 +35,8 @@ It runs entirely in the browser. The geometry kernel is OpenCascade compiled to 
 - Linear patterns (one or two directions), circular patterns and mirroring.
 - On-model value handles: a plane's offset, an extrusion's depth, a revolve's angle, a fillet's radius and a chamfer's distance can be dragged or typed directly beside the geometry, Fusion-style, and the PropertyManager field follows the handle.
 - Reference planes, matching Fusion's construction plane types: offset from a plane or face, halfway between two parallel references (midplane), at an angle about an edge lying in the plane, tangent to a cylindrical, conical or spherical face (at a picked vertex, or the face centre), through two straight edges, and through three points. The offset and angle can be edited on the model with the value handle. STEP import.
+- Reference axes and points, like Fusion's construction geometry: an axis along a cylindrical/conical face, through two points, along a straight or circular edge, or perpendicular to a plane through a point; a point at a vertex, an edge midpoint, a circle centre, a face centre, or where a straight edge meets a plane. Axes and points are drawn in the view, kept in the design tree and can be used as references.
+- **Sketch on This Plane** starts a sketch straight on the selected reference plane or planar face (also in the right-click menu), without the extra plane pick.
 - Open SolidWorks parts (.sldprt, SolidWorks 2003 and later) without SolidWorks: the exact solid is read from the file and becomes an imported body you can keep modeling on. The SolidWorks feature tree is not carried over.
 - References to faces and edges are stored by name, so fillets and sketches on faces survive dimension changes.
 

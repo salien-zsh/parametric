@@ -101,6 +101,9 @@ export class App {
   faces: FaceInfo[] = [];
   edges: EdgeInfo[] = [];
   frames: Record<Id, Frame> = {};
+  /** Construction axes and points from the last rebuild. */
+  axes: Record<Id, { p: Vec3; d: Vec3 }> = {};
+  points: Record<Id, Vec3> = {};
   /** Sketches with projected model geometry, as the last rebuild placed it. */
   linkedSketches: NonNullable<BuildResult['sketches']> = {};
   bbox: { min: Vec3; max: Vec3 } | null = null;
@@ -1348,6 +1351,8 @@ export class App {
     this.faces = res.faces;
     this.edges = res.edges;
     this.frames = res.frames;
+    this.axes = res.axes ?? {};
+    this.points = res.points ?? {};
     this.linkedSketches = res.sketches ?? {};
     this.bbox = res.bbox;
     if (!res.meshUnchanged) {

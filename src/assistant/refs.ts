@@ -199,5 +199,6 @@ export function axisSpec(ref: AxisRef | null): string | { sketch: Id; line: Id }
     case 'edge': return ref.edge.name;
     case 'face': return ref.face.name;
     case 'sketchLine': return { sketch: ref.sketch, line: ref.entity };
+    case 'feature': return ref.id;
   }
 }

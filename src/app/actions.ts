@@ -1,7 +1,7 @@
 // Command definitions and where they appear: CommandManager tabs, menus,
 // context menus and the selection quick-action toolbar.
 
-import type { Feature, Id, PlaneKind, SkDimension } from '../model/types';
+import type { AxisKind, Feature, Id, PlaneKind, PointKind, SkDimension } from '../model/types';
 import { isDimension } from '../model/types';
 import { consumedSketches } from '../model/features';
 import { VIEWS, type ViewName } from '../render/camera';
@@ -67,7 +67,7 @@ export function registerCommands(app: App, files: FileOps) {
   // A feature panel holds a copy of its feature: OK after a Redo would write
   // that copy back over the redone change, so the panel is cancelled first.
   const redo = () => { if (app.panel?.preview()) void app.closePanel(false); app.store.redo(); };
-  const feature = (type: Feature['type'], label: string, iconName: string, desc: string, opts: { cut?: boolean; needsBody?: boolean; shortcut?: string; keywords?: string; id?: string; planeKind?: PlaneKind } = {}): Command => ({
+  const feature = (type: Feature['type'], label: string, iconName: string, desc: string, opts: { cut?: boolean; needsBody?: boolean; shortcut?: string; keywords?: string; id?: string; planeKind?: PlaneKind; axisKind?: AxisKind; pointKind?: PointKind } = {}): Command => ({
     id: opts.id ?? (opts.cut ? `${type}Cut` : type),
     label,
     icon: iconName,
@@ -89,7 +89,7 @@ export function registerCommands(app: App, files: FileOps) {
         void c.run('sketch');
         return;
       }
-      const p = startFeature(app, type, { cut: opts.cut, planeKind: opts.planeKind });
+      const p = startFeature(app, type, { cut: opts.cut, planeKind: opts.planeKind, axisKind: opts.axisKind, pointKind: opts.pointKind });
       if (p) void app.openPanel(p);
     },
   });
@@ -349,6 +349,13 @@ export function registerCommands(app: App, files: FileOps) {
         void app.openPanel(app.hooks.planePickPanel((r) => { app.startSketchOn(r); after(); }));
       },
     },
+    {
+      id: 'sketchOnPlane', label: tr("Sketch on This Plane"), icon: 'sketch',
+      keywords: tr("new sketch direct plane face start"),
+      description: tr("Start a new sketch on the selected reference plane or planar face."),
+      enabled: () => isPart() && !inSketch() && !!app.selectedPlaneRef(),
+      run: () => { const ref = app.selectedPlaneRef(); if (ref) app.startSketchOn(ref); },
+    },
     { id: 'exitSketch', label: tr("Exit Sketch"), icon: 'sketch', enabled: inSketch, run: () => app.exitSketch(true) },
     ...Object.keys(SKETCH_TOOLS).map(tool),
     { id: 'offset', label: tr("Offset Entities"), icon: 'offset', description: tr("Copy selected sketch curves at a distance."), enabled: inSketch, run: () => { void app.openPanel(new OffsetPanel(app)); } },
@@ -402,6 +409,15 @@ export function registerCommands(app: App, files: FileOps) {
     feature('vBelt', tr("V-Belt Design"), 'vBelt', tr("Design a two-sheave V-belt drive with grooved sheaves and the belt around them."), { keywords: tr("mechanical belt pulley sheave transmission") }),
     feature('syncBelt', tr("Synchronous Belt Design"), 'syncBelt', tr("Design a two-pulley synchronous belt drive and check its belt length and teeth in mesh."), { keywords: tr("mechanical timing belt pulley transmission") }),
     feature('sprocket', tr("Sprocket Design"), 'sprocket', tr("Design a roller chain sprocket and check its pitch diameter and chain speed."), { keywords: tr("mechanical chain sprocket transmission") }),
+    feature('axis', tr("Axis of a Cylinder"), 'axis', tr("Create a construction axis along the axis of a cylindrical or conical face."), { id: 'axisCylinder', axisKind: 'cylinder', keywords: tr("reference geometry datum axis cylinder cone") }),
+    feature('axis', tr("Axis Through Two Points"), 'axis', tr("Create a construction axis through two points."), { id: 'axisTwoPoints', axisKind: 'twoPoints', keywords: tr("reference geometry datum axis two points") }),
+    feature('axis', tr("Axis Along an Edge"), 'axis', tr("Create a construction axis along a straight or circular edge."), { id: 'axisEdge', axisKind: 'edge', keywords: tr("reference geometry datum axis edge") }),
+    feature('axis', tr("Axis Perpendicular to a Plane"), 'axis', tr("Create a construction axis perpendicular to a plane through a point."), { id: 'axisPerpendicular', axisKind: 'perpendicular', keywords: tr("reference geometry datum axis normal plane point") }),
+    feature('point', tr("Point at a Vertex"), 'point', tr("Create a construction point at a vertex."), { id: 'pointVertex', pointKind: 'vertex', keywords: tr("reference geometry datum point vertex") }),
+    feature('point', tr("Point at an Edge Midpoint"), 'point', tr("Create a construction point at the midpoint of a straight edge."), { id: 'pointMidpoint', pointKind: 'midpoint', keywords: tr("reference geometry datum point midpoint") }),
+    feature('point', tr("Point at a Centre"), 'point', tr("Create a construction point at the centre of a circular edge."), { id: 'pointCenter', pointKind: 'center', keywords: tr("reference geometry datum point centre circle") }),
+    feature('point', tr("Point at a Face Centre"), 'point', tr("Create a construction point at the centre of a face."), { id: 'pointFaceCenter', pointKind: 'faceCenter', keywords: tr("reference geometry datum point face centre") }),
+    feature('point', tr("Point at an Intersection"), 'point', tr("Create a construction point where a straight edge meets a plane."), { id: 'pointIntersection', pointKind: 'intersection', keywords: tr("reference geometry datum point intersection") }),
     // ---- evaluate ----
     { id: 'measure', label: tr("Measure"), icon: 'measure', keywords: tr("distance length angle area"), description: tr("Measure distances, lengths, angles and areas."), enabled: hasBody, run: () => { void app.openPanel(new MeasurePanel(app)); } },
     { id: 'massProperties', label: tr("Mass Properties"), icon: 'massProperties', keywords: tr("volume weight inertia center of mass"), description: tr("Volume, mass, centre of mass and inertia."), enabled: hasBody, run: () => massPropertiesDialog(app) },
@@ -506,7 +522,10 @@ export const RIBBON: RibbonTab[] = [
       [{ cmd: 'extrudeCut' }, { cmd: 'revolveCut' }, { stack: [{ cmd: 'sweepCut' }, { cmd: 'loftCut' }] }],
       [{ cmd: 'hole' }, { cmd: 'fillet', menu: ['fillet', 'chamfer'] }, { cmd: 'linearPattern', menu: ['linearPattern', 'circularPattern', 'mirror'] }],
       [{ stack: [{ cmd: 'chamfer' }, { cmd: 'shell' }, { cmd: 'draft' }] }, { stack: [{ cmd: 'circularPattern' }, { cmd: 'mirror' }] }],
-      [{ cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle', 'planeTangent', 'planeTwoEdges', 'planeThreePoints'] }, { cmd: 'importStep' }],
+      [{ cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle', 'planeTangent', 'planeTwoEdges', 'planeThreePoints'] },
+        { cmd: 'axisCylinder', menu: ['axisCylinder', 'axisTwoPoints', 'axisEdge', 'axisPerpendicular'] },
+        { cmd: 'pointVertex', menu: ['pointVertex', 'pointMidpoint', 'pointCenter', 'pointFaceCenter', 'pointIntersection'] },
+        { cmd: 'importStep' }],
       [{ cmd: 'newAssembly' }, { cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'openDrawing' }],
       [{ cmd: 'fixComponent' }, { cmd: 'moveComponents' }, { cmd: 'addJoint' }, { cmd: 'addMate' }, { cmd: 'motionStudy' }],
       [{ cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
@@ -515,7 +534,7 @@ export const RIBBON: RibbonTab[] = [
   {
     id: 'sketch', label: tr("Sketch"),
     groups: [
-      [{ cmd: 'sketch' }],
+      [{ cmd: 'sketch' }, { cmd: 'sketchOnPlane' }],
       [
         { stack: [{ cmd: 'tool:line' }, { cmd: 'tool:centerline' }, { cmd: 'tool:point' }] },
         { stack: [{ cmd: 'tool:rectangle' }, { cmd: 'tool:centerRectangle' }, { cmd: 'tool:rectangle3Point' }, { cmd: 'tool:polygon' }] },
@@ -609,6 +628,8 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
         { label: tr("Features"), icon: 'fillet', submenu: () => [m('fillet'), m('chamfer'), m('hole'), m('shell'), m('draft'), m('shaft')] },
         { label: tr("Pattern/Mirror"), icon: 'linearPattern', submenu: () => [m('linearPattern'), m('circularPattern'), m('mirror')] },
         { label: tr("Reference Geometry"), icon: 'plane', submenu: () => [m('plane'), m('planeMidplane'), m('planeAngle'), m('planeTangent'), m('planeTwoEdges'), m('planeThreePoints')] },
+        { label: tr("Axis"), icon: 'axis', submenu: () => [m('axisCylinder'), m('axisTwoPoints'), m('axisEdge'), m('axisPerpendicular')] },
+        { label: tr("Point"), icon: 'point', submenu: () => [m('pointVertex'), m('pointMidpoint'), m('pointCenter'), m('pointFaceCenter'), m('pointIntersection')] },
         sep, m('importStep'),
       ],
     },
@@ -720,7 +741,9 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
   const items: MenuItem[] = [];
   if (sel) {
     const plane = app.selectedPlaneRef();
-    if (plane) items.push({ ...m('sketch'), label: tr("Sketch on This") }, m('normalTo'), m('plane', { label: tr("Offset Plane") }), m('planeMidplane'), m('planeAngle'), m('planeTangent'), m('planeTwoEdges'), m('planeThreePoints'), sep);
+    if (plane) items.push(m('sketchOnPlane'), m('normalTo'), m('plane', { label: tr("Offset Plane") }), m('planeMidplane'), m('planeAngle'), m('planeTangent'), m('planeTwoEdges'), m('planeThreePoints'), sep);
+    if (sel?.kind === 'face') items.push({ label: tr("Axis of This Face"), icon: 'axis', run: () => c.run('axisCylinder') }, { label: tr("Point at This Face's Centre"), icon: 'point', run: () => c.run('pointFaceCenter') });
+    if (sel?.kind === 'edge') items.push({ label: tr("Axis Along This Edge"), icon: 'axis', run: () => c.run('axisEdge') }, { label: tr("Point at the Edge Midpoint"), icon: 'point', run: () => c.run('pointMidpoint') });
     if (sel.kind === 'face') {
       const owner = app.store.feature(app.faces[sel.index]?.feature ?? '');
       if (owner) items.push({ label: `Edit ${owner.name}`, icon: 'edit', run: () => app.editFeature(owner.id) });

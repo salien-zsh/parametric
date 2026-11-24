@@ -4,7 +4,7 @@ import type { Frame, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newBevelGear, newMirror, newPlane, newRevolve, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBevelGear, newMirror, newPlane, newPoint, newRevolve, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -14,8 +14,8 @@ import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel
 import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
-  AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
-  HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, RevolveFeature,
+  AxisFeature, AxisKind, AxisRef, ChamferFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
 import { h } from '../ui/dom';
@@ -114,6 +114,7 @@ function axisLabel(app: App, ref: AxisRef | null): string {
     case 'edge': return `Edge (${ref.edge.sig.type})`;
     case 'face': return `Face of ${app.store.feature(app.faces.find((f) => f.name === ref.face.name)?.feature ?? '')?.name ?? 'part'}`;
     case 'sketchLine': return `${app.store.feature(ref.sketch)?.name ?? tr("Sketch")} line`;
+    case 'feature': return app.store.feature(ref.id)?.name ?? tr("Axis");
   }
 }
 
@@ -1380,6 +1381,235 @@ export class PlanePanel extends FeaturePanel<PlaneFeature> {
   }
 }
 
+// ---------- construction axes and points ----------
+
+const axisTitle = (kind: AxisKind) => kind === 'twoPoints' ? tr("Axis Through Two Points")
+  : kind === 'edge' ? tr("Axis Along an Edge")
+    : kind === 'perpendicular' ? tr("Axis Perpendicular to a Plane")
+      : tr("Axis of a Cylinder");
+
+const pointTitle = (kind: PointKind) => kind === 'midpoint' ? tr("Point at an Edge Midpoint")
+  : kind === 'center' ? tr("Point at a Centre")
+    : kind === 'faceCenter' ? tr("Point at a Face Centre")
+      : kind === 'intersection' ? tr("Point at an Intersection")
+        : tr("Point at a Vertex");
+
+export class AxisPanel extends FeaturePanel<AxisFeature> {
+  private faceSection: HTMLElement | null = null;
+  private edgeSection: HTMLElement | null = null;
+  private pointsSection: HTMLElement | null = null;
+  private perpSection: HTMLElement | null = null;
+
+  get title() {
+    return this.editingId ? this.f.name : axisTitle(this.f.kind ?? 'cylinder');
+  }
+
+  render(): HTMLElement[] {
+    const f = this.f;
+    const kind = f.kind ?? 'cylinder';
+
+    const curved = new SelectionBox(this, tr("Cylindrical face"), { face: true }, toFace(this.app), (items) => {
+      f.face = (items[0]?.data as FaceRef) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Select a cylindrical or conical face"), icon: 'plane' });
+    if (f.face) curved.setItems([{ item: faceItem(this.app, f.face), data: f.face, label: tr("Face") }]);
+
+    const edgeBox = new SelectionBox(this, tr("Edge"), { edge: true }, toEdge(this.app), (items) => {
+      f.edge = (items[0]?.data as EdgeRef) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Select a straight or circular edge"), icon: 'line' });
+    if (f.edge) edgeBox.setItems([{ item: edgeItem(this.app, f.edge), data: f.edge, label: tr("Edge") }]);
+
+    const pointBoxes = [0, 1].map((i) => {
+      const box = new SelectionBox(this, tr("Point {0}", [i + 1]), { vertex: true }, toVertex, (items) => {
+        const next = [...(f.points ?? [])];
+        next[i] = (items[0]?.data as Vec3) ?? (undefined as unknown as Vec3);
+        f.points = next.filter((p) => !!p);
+        this.changed();
+      }, { single: true, placeholder: tr("Pick a vertex"), icon: 'point' });
+      const stored = f.points?.[i];
+      if (stored) box.setItems([{ item: { kind: 'vertex', p: stored }, data: stored, label: tr("Vertex") }]);
+      return box;
+    });
+
+    const planeBox = new SelectionBox(this, tr("Plane"), { plane: true, planarOnly: true }, toPlane(this.app), (items) => {
+      f.ref = (items[0]?.data as PlaneRef) ?? null;
+      this.changed();
+    }, { single: true, icon: 'plane' });
+    if (f.ref) planeBox.setItems([{ item: planeItem(this.app, f.ref), data: f.ref, label: planeLabel(this.app, f.ref) }]);
+
+    const pointBox = new SelectionBox(this, tr("Through point"), { vertex: true }, toVertex, (items) => {
+      f.point = (items[0]?.data as Vec3) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Pick the vertex the axis starts at"), icon: 'point' });
+    if (f.point) pointBox.setItems([{ item: { kind: 'vertex', p: f.point }, data: f.point, label: tr("Vertex") }]);
+
+    const flip = checkbox(tr("Reverse direction"), !!f.flip, (v) => { f.flip = v; this.changed(); });
+    const type = selectField<AxisKind>(tr("Axis type"), kind, [
+      { value: 'cylinder', label: tr("Axis of a Cylinder") },
+      { value: 'twoPoints', label: tr("Axis Through Two Points") },
+      { value: 'edge', label: tr("Axis Along an Edge") },
+      { value: 'perpendicular', label: tr("Axis Perpendicular to a Plane") },
+    ], (v) => {
+      f.kind = v;
+      sync();
+      this.refreshTitle();
+      this.changed();
+    }, 'axis');
+
+    this.faceSection = section(tr("Cylinder"), [curved.el]);
+    this.edgeSection = section(tr("Edge"), [edgeBox.el]);
+    this.pointsSection = section(tr("Points"), pointBoxes.map((b) => b.el));
+    this.perpSection = section(tr("Plane and Point"), [planeBox.el, pointBox.el]);
+    const sync = () => {
+      const k = f.kind ?? 'cylinder';
+      this.faceSection!.hidden = k !== 'cylinder';
+      this.edgeSection!.hidden = k !== 'edge';
+      this.pointsSection!.hidden = k !== 'twoPoints';
+      this.perpSection!.hidden = k !== 'perpendicular';
+      const active = k === 'cylinder' ? curved : k === 'edge' ? edgeBox : k === 'twoPoints' ? pointBoxes[0] : planeBox;
+      this.activeBox = active;
+      for (const b of this.boxes) b.setActive(b === active);
+    };
+    sync();
+    return [section(tr("Definition"), [type]), this.faceSection, this.edgeSection, this.pointsSection, this.perpSection, section(tr("Direction"), [flip])];
+  }
+
+  private refreshTitle() {
+    const head = this.el.closest('.pm')?.querySelector<HTMLElement>('.pm-head .title');
+    if (head) head.textContent = this.title;
+  }
+
+  preview() {
+    const f = this.f;
+    const kind = f.kind ?? 'cylinder';
+    if (kind === 'cylinder') return f.face ? f : null;
+    if (kind === 'edge') return f.edge ? f : null;
+    if (kind === 'twoPoints') return (f.points ?? []).filter(Boolean).length >= 2 ? f : null;
+    return f.ref && f.point ? f : null;
+  }
+
+  protected validate() {
+    const f = this.f;
+    const kind = f.kind ?? 'cylinder';
+    if (kind === 'cylinder') return f.face ? null : tr("Select a cylindrical or conical face");
+    if (kind === 'edge') return f.edge ? null : tr("Select a straight or circular edge");
+    if (kind === 'twoPoints') return (f.points ?? []).filter(Boolean).length >= 2 ? null : tr("Select two points");
+    if (!f.ref) return tr("Select a plane or planar face");
+    return f.point ? null : tr("Select the point the axis starts at");
+  }
+
+  onBuild() {
+    this.app.viewport.drawReferenceGeometry();
+  }
+}
+
+export class PointPanel extends FeaturePanel<PointFeature> {
+  private vertexSection: HTMLElement | null = null;
+  private edgeSection: HTMLElement | null = null;
+  private faceSection: HTMLElement | null = null;
+  private crossSection: HTMLElement | null = null;
+
+  get title() {
+    return this.editingId ? this.f.name : pointTitle(this.f.kind ?? 'vertex');
+  }
+
+  render(): HTMLElement[] {
+    const f = this.f;
+    const kind = f.kind ?? 'vertex';
+
+    const vertex = new SelectionBox(this, tr("Vertex"), { vertex: true }, toVertex, (items) => {
+      f.point = (items[0]?.data as Vec3) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Pick a vertex"), icon: 'point' });
+    if (f.point) vertex.setItems([{ item: { kind: 'vertex', p: f.point }, data: f.point, label: tr("Vertex") }]);
+
+    const edgeBox = new SelectionBox(this, tr("Edge"), { edge: true }, toEdge(this.app), (items) => {
+      f.edge = (items[0]?.data as EdgeRef) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Select a straight edge for its midpoint, or a circular edge for its centre"), icon: 'line' });
+    if (f.edge) edgeBox.setItems([{ item: edgeItem(this.app, f.edge), data: f.edge, label: tr("Edge") }]);
+
+    const faceBox = new SelectionBox(this, tr("Face"), { face: true }, toFace(this.app), (items) => {
+      f.face = (items[0]?.data as FaceRef) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Select a face"), icon: 'plane' });
+    if (f.face) faceBox.setItems([{ item: faceItem(this.app, f.face), data: f.face, label: tr("Face") }]);
+
+    const crossEdge = new SelectionBox(this, tr("Edge"), { edge: true }, toEdge(this.app), (items) => {
+      f.edge2 = (items[0]?.data as EdgeRef) ?? null;
+      this.changed();
+    }, { single: true, placeholder: tr("Select a straight edge"), icon: 'line' });
+    if (f.edge2) crossEdge.setItems([{ item: edgeItem(this.app, f.edge2), data: f.edge2, label: tr("Edge") }]);
+    const crossPlane = new SelectionBox(this, tr("Plane"), { plane: true, planarOnly: true }, toPlane(this.app), (items) => {
+      f.plane = (items[0]?.data as PlaneRef) ?? null;
+      this.changed();
+    }, { single: true, icon: 'plane' });
+    if (f.plane) crossPlane.setItems([{ item: planeItem(this.app, f.plane), data: f.plane, label: planeLabel(this.app, f.plane) }]);
+
+    const type = selectField<PointKind>(tr("Point type"), kind, [
+      { value: 'vertex', label: tr("Point at a Vertex") },
+      { value: 'midpoint', label: tr("Point at an Edge Midpoint") },
+      { value: 'center', label: tr("Point at a Centre") },
+      { value: 'faceCenter', label: tr("Point at a Face Centre") },
+      { value: 'intersection', label: tr("Point at an Intersection") },
+    ], (v) => {
+      f.kind = v;
+      sync();
+      this.refreshTitle();
+      this.changed();
+    }, 'point');
+
+    this.vertexSection = section(tr("Vertex"), [vertex.el]);
+    this.edgeSection = section(tr("Edge"), [edgeBox.el]);
+    this.faceSection = section(tr("Face"), [faceBox.el]);
+    this.crossSection = section(tr("Edge and Plane"), [crossEdge.el, crossPlane.el]);
+    const sync = () => {
+      const k = f.kind ?? 'vertex';
+      this.vertexSection!.hidden = k !== 'vertex';
+      this.edgeSection!.hidden = k !== 'midpoint' && k !== 'center';
+      this.faceSection!.hidden = k !== 'faceCenter';
+      this.crossSection!.hidden = k !== 'intersection';
+      const active = k === 'vertex' ? vertex : k === 'faceCenter' ? faceBox : k === 'intersection' ? crossEdge : edgeBox;
+      this.activeBox = active;
+      for (const b of this.boxes) b.setActive(b === active);
+    };
+    sync();
+    return [section(tr("Definition"), [type]), this.vertexSection, this.edgeSection, this.faceSection, this.crossSection];
+  }
+
+  private refreshTitle() {
+    const head = this.el.closest('.pm')?.querySelector<HTMLElement>('.pm-head .title');
+    if (head) head.textContent = this.title;
+  }
+
+  preview() {
+    const f = this.f;
+    const kind = f.kind ?? 'vertex';
+    if (kind === 'vertex') return f.point ? f : null;
+    if (kind === 'faceCenter') return f.face ? f : null;
+    if (kind === 'intersection') return f.edge2 && f.plane ? f : null;
+    return f.edge ? f : null;
+  }
+
+  protected validate() {
+    const f = this.f;
+    const kind = f.kind ?? 'vertex';
+    if (kind === 'vertex') return f.point ? null : tr("Select a vertex");
+    if (kind === 'faceCenter') return f.face ? null : tr("Select a face");
+    if (kind === 'intersection') {
+      if (!f.edge2) return tr("Select a straight edge");
+      return f.plane ? null : tr("Select a plane or planar face");
+    }
+    if (!f.edge) return kind === 'center' ? tr("Select a circular edge") : tr("Select a straight edge");
+    return null;
+  }
+
+  onBuild() {
+    this.app.viewport.drawReferenceGeometry();
+  }
+}
+
 // ---------- loft / sweep ----------
 
 export class LoftPanel extends FeaturePanel<LoftFeature> {
@@ -1435,6 +1665,8 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'sweep': return new SweepPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
+    case 'axis': return new AxisPanel(app, f, editing);
+    case 'point': return new PointPanel(app, f, editing);
     case 'spurGear': return new SpurGearPanel(app, f, editing);
     case 'bevelGear': return new BevelGearPanel(app, f, editing);
     case 'wormGear': return new WormGearPanel(app, f, editing);
@@ -1447,7 +1679,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
 }
 
 /** Creates a new feature panel, pre-filling from the current selection. */
-export function startFeature(app: App, type: Feature['type'], opts: { cut?: boolean; planeKind?: PlaneKind } = {}): PropertyPanel | null {
+export function startFeature(app: App, type: Feature['type'], opts: { cut?: boolean; planeKind?: PlaneKind; axisKind?: AxisKind; pointKind?: PointKind } = {}): PropertyPanel | null {
   const doc = app.store.doc;
   const id = app.store.nextId('f');
   const size = app.typicalSize();
@@ -1520,6 +1752,49 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
     case 'draft': { const x = newDraft(id, name); x.faces = faces; f = x; break; }
     case 'shaft': f = newShaft(id, name); break;
+    case 'axis': {
+      const x = newAxis(id, name);
+      x.kind = opts.axisKind ?? 'cylinder';
+      if (x.kind === 'cylinder') {
+        const face = app.selection.items.find((it) => it.kind === 'face' && app.faces[it.index]?.type !== 'plane');
+        if (face) x.face = faceRef(app.faces[(face as { index: number }).index]);
+      }
+      if (x.kind === 'edge') {
+        const edge = app.selection.items.find((it) => it.kind === 'edge');
+        if (edge) x.edge = edgeRef(app.edges[(edge as { index: number }).index]);
+      }
+      if (x.kind === 'twoPoints') x.points = app.selection.ofKind('vertex').slice(0, 2).map((it) => it.p);
+      if (x.kind === 'perpendicular') {
+        x.ref = app.selectedPlaneRef();
+        const vertex = app.selection.ofKind('vertex')[0];
+        if (vertex) x.point = vertex.p;
+      }
+      f = x;
+      break;
+    }
+    case 'point': {
+      const x = newPoint(id, name);
+      x.kind = opts.pointKind ?? 'vertex';
+      if (x.kind === 'vertex') {
+        const vertex = app.selection.ofKind('vertex')[0];
+        if (vertex) x.point = vertex.p;
+      }
+      if (x.kind === 'midpoint' || x.kind === 'center') {
+        const edge = app.selection.items.find((it) => it.kind === 'edge');
+        if (edge) x.edge = edgeRef(app.edges[(edge as { index: number }).index]);
+      }
+      if (x.kind === 'faceCenter') {
+        const face = app.selection.items.find((it) => it.kind === 'face');
+        if (face) x.face = faceRef(app.faces[(face as { index: number }).index]);
+      }
+      if (x.kind === 'intersection') {
+        const edge = app.selection.items.find((it) => it.kind === 'edge');
+        if (edge) x.edge2 = edgeRef(app.edges[(edge as { index: number }).index]);
+        x.plane = app.selectedPlaneRef();
+      }
+      f = x;
+      break;
+    }
     case 'spurGear': f = newSpurGear(id, name); break;
     case 'bevelGear': f = newBevelGear(id, name); break;
     case 'wormGear': f = newWormGear(id, name); break;

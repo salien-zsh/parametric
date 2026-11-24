@@ -97,6 +97,9 @@ export interface BuildResult {
   status: FeatureStatus[];
   /** Resolved frames of sketches and reference planes. */
   frames: Record<Id, Frame>;
+  /** Construction axes and points resolved by the rebuild. */
+  axes?: Record<Id, { p: Vec3; d: Vec3 }>;
+  points?: Record<Id, Vec3>;
   /** Resolved axes used by features (for display). */
   bbox: { min: Vec3; max: Vec3 } | null;
   /**
