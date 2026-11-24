@@ -981,6 +981,19 @@ export class ExplodePanel extends PropertyPanel {
         this.app.refreshPanel();
       },
     });
+    const axis = selectField<'radial' | 'x' | 'y' | 'z'>(tr("Explode axis"), this.app.store.doc.explodeAxis ?? 'radial', [
+      { value: 'radial', label: tr("Radial") },
+      { value: 'x', label: 'X' },
+      { value: 'y', label: 'Y' },
+      { value: 'z', label: 'Z' },
+    ], (value) => {
+      this.app.store.change(tr("Exploded view"), (doc) => {
+        if (value === 'radial') delete doc.explodeAxis;
+        else doc.explodeAxis = value;
+      });
+      this.app.requestRebuild(true);
+      this.app.refreshPanel();
+    });
     const reset = h('button', { class: 'btn small', type: 'button' }, tr("Reset explode"));
     reset.addEventListener('click', () => {
       this.app.store.change(tr("Exploded view"), (doc) => { delete doc.explode; });
@@ -990,6 +1003,7 @@ export class ExplodePanel extends PropertyPanel {
     return [
       section(tr("Exploded View"), [
         h('p', { class: 'field-label' }, tr("Every component moves this far away from the assembly centre in the viewport and the drawings.")),
+        axis,
         distance,
         reset,
       ]),

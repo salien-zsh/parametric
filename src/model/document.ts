@@ -291,6 +291,7 @@ export function parseDocument(text: string): PartDocument {
       };
     }) : [];
     doc.explode = typeof d.explode === 'number' && Number.isFinite(d.explode) && d.explode > 0 ? d.explode : undefined;
+    doc.explodeAxis = d.explodeAxis === 'x' || d.explodeAxis === 'y' || d.explodeAxis === 'z' ? d.explodeAxis : undefined;
   } else {
     doc.components = [];
     doc.mates = [];
@@ -298,6 +299,7 @@ export function parseDocument(text: string): PartDocument {
     // Part files do not carry assembly data; do not add an empty array either.
     delete doc.componentPatterns;
     delete doc.explode;
+    delete doc.explodeAxis;
   }
   for (const f of doc.features) if (typeof f.name !== 'string' || !f.name) f.name = f.id;
   // New feature ids must not collide with existing ones, even when the file's

@@ -1836,5 +1836,7 @@
   "Reset explode": "重置爆炸",
   "explode exploded assembly view": "爆炸 视图 装配",
   "Move the components apart for an exploded view; drawings show the exploded state too.": "把零部件向外分开形成爆炸视图，工程图也使用爆炸位置。",
-  "Every component moves this far away from the assembly centre in the viewport and the drawings.": "每个零部件沿远离装配中心的方向移动该距离，视口与工程图同步生效。"
+  "Every component moves this far away from the assembly centre in the viewport and the drawings.": "每个零部件沿远离装配中心的方向移动该距离，视口与工程图同步生效。",
+  "Explode axis": "爆炸方向",
+  "Radial": "径向"
 }

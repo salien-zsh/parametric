@@ -874,8 +874,15 @@ export class App {
           entry.transform.position[1] - centre[1],
           entry.transform.position[2] - centre[2],
         ];
+        const axis = this.store.doc.explodeAxis;
+        const index = axis === 'x' ? 0 : axis === 'y' ? 1 : axis === 'z' ? 2 : -1;
         const length = Math.hypot(delta[0], delta[1], delta[2]);
-        const dir: [number, number, number] = length > 1e-9 ? [delta[0] / length, delta[1] / length, delta[2] / length] : [1, 0, 0];
+        // Radial (default) pushes away from the centre; an axis pushes each part
+        // to its own positive or negative side of that axis.
+        const dir: [number, number, number] = axis
+          ? [0, 0, 0]
+          : length > 1e-9 ? [delta[0] / length, delta[1] / length, delta[2] / length] : [1, 0, 0];
+        if (index === 0 || index === 1 || index === 2) dir[index] = delta[index] < 0 ? -1 : 1;
         entry.transform = {
           ...entry.transform,
           position: [

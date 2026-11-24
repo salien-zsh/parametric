@@ -817,6 +817,8 @@ export interface PartDocument {
   componentPatterns?: ComponentPattern[];
   /** Exploded-view offset (mm) applied to every component away from the assembly centre; 0/undefined is assembled. */
   explode?: number;
+  /** Exploded-view direction: radial from the centre (default) or along a world axis. */
+  explodeAxis?: AssemblyAxis;
   nextId: number;
   created: number;
   modified: number;

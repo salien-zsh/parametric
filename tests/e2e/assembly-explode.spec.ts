@@ -51,5 +51,16 @@ test('Exploded View moves the components apart and persists', async ({ page }) =
   expect(state.components).toBe(2);
   expect(state.minX).toBeLessThan(0);
   expect(state.maxX).toBeGreaterThan(60);
+  // An axis explosion pushes every part to its own side of that axis instead.
+  await page.getByRole('combobox', { name: 'Explode axis' }).selectOption('y');
+  await page.waitForTimeout(900);
+  await page.evaluate(() => (window as unknown as Handle).__parametric.whenBuilt());
+  const axis = await page.evaluate(() => {
+    const a = (window as unknown as Handle).__parametric;
+    return { axis: a.store.doc.explodeAxis ?? null, minX: Math.round(a.bbox!.min[0]), minY: Math.round(a.bbox!.min[1]) };
+  });
+  expect(axis.axis).toBe('y');
+  expect(axis.minX).toBe(0);
+  expect(axis.minY).toBeGreaterThan(20);
   expect(errors).toEqual([]);
 });
