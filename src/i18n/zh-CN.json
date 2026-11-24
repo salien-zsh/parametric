@@ -1805,5 +1805,8 @@
   "DESCRIPTION": "描述",
   "Zoom to Selection": "缩放到所选",
   "zoom selection frame component face": "缩放 所选 框选 零部件 面",
-  "Frame the selected faces, edges, vertices or components.": "将所选的面、边、顶点或零部件框满视图。"
+  "Frame the selected faces, edges, vertices or components.": "将所选的面、边、顶点或零部件框满视图。",
+  "Select All Components": "选择全部零部件",
+  "select all components assembly": "选择 全部 零部件 装配",
+  "Select every visible component in the assembly.": "选中装配中所有可见零部件。"
 }

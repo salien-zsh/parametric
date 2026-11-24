@@ -295,6 +295,13 @@ export function registerCommands(app: App, files: FileOps) {
       },
     },
     {
+      id: 'selectAllComponents', label: tr("Select All Components"), icon: 'select',
+      keywords: tr("select all components assembly"),
+      description: tr("Select every visible component in the assembly."),
+      enabled: () => app.isAssembly && (app.store.doc.components ?? []).some((c) => c.visible),
+      run: () => app.selection.set((app.store.doc.components ?? []).filter((c) => c.visible).map((c) => ({ kind: 'component' as const, id: c.id }))),
+    },
+    {
       id: 'duplicateComponent', label: tr("Duplicate Component"), icon: 'copy',
       keywords: tr("copy paste duplicate component assembly instance"),
       description: tr("Copy the selected components, offset so the copies show, and select them."),
@@ -894,7 +901,7 @@ export function quickActions(app: App): { cmd: string }[] {
     if (components.length === 2) return [{ cmd: 'autoMate' }, { cmd: 'addJoint' }, { cmd: 'mateSuggestions' }, { cmd: 'openDrawing' }];
     return components.length
       ? [{ cmd: 'editComponent' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { cmd: 'addJoint' }, { cmd: 'zoomToSelection' }, { cmd: 'fixComponent' }]
-      : [{ cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'autoMate' }, { cmd: 'mateSuggestions' }, { cmd: 'zoomFit' }];
+      : [{ cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'selectAllComponents' }, { cmd: 'autoMate' }, { cmd: 'mateSuggestions' }, { cmd: 'zoomFit' }];
   }
   const it = app.selection.items[0];
   if (!it) return [];
