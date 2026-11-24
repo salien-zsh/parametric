@@ -733,6 +733,8 @@ export class App {
 
   /** The joint whose travel is drawn (set by the Move panel while it is open). */
   visualJointId: Id | null = null;
+  /** Geometry last clicked or right-clicked in an assembly, for smart fits. */
+  assemblyPick: { kind: 'face' | 'edge'; index: number; componentId: Id } | null = null;
   /** The Move/Rotate panel shows the three-axis handle on the selected components. */
   showGizmo = false;
   /** Axis of the handle under the pointer, for the hover highlight. */
@@ -776,6 +778,16 @@ export class App {
   /** The transforms the assembly solver gives the components right now. */
   solvedComponentTransforms(): Map<Id, ComponentTransform> {
     return this.isAssembly ? assemblyTransforms(this.store.doc, this.jointOverrides()) : new Map();
+  }
+
+  /** Remembers the face or edge under the pointer for smart fit commands. */
+  rememberAssemblyPick(item: SelItem | null) {
+    if (!this.isAssembly || !item || (item.kind !== 'face' && item.kind !== 'edge')) {
+      this.assemblyPick = null;
+      return;
+    }
+    const component = this.componentOfItem(item);
+    this.assemblyPick = component ? { kind: item.kind, index: item.index, componentId: component.id } : null;
   }
 
   /** The component a picked face or edge belongs to (assemblies tag them). */
@@ -1608,6 +1620,7 @@ export class App {
   onViewportClick(e: VPEvent) {
     closeMenus();
     const item = this.viewport.pickItem(e.x, e.y, this.pickFilter());
+    this.rememberAssemblyPick(item);
     if (this.panel) {
       if (item && this.panel.onPick(item, e.shift || e.ctrl)) { this.viewport.refreshStates(); return; }
       if (!item) return;
@@ -1645,7 +1658,9 @@ export class App {
   }
 
   onViewportContextMenu(e: VPEvent, cx: number, cy: number) {
-    const item = this.selectionItemFor(this.viewport.pickItem(e.x, e.y, this.pickFilter()));
+    const raw = this.viewport.pickItem(e.x, e.y, this.pickFilter());
+    this.rememberAssemblyPick(raw);
+    const item = this.selectionItemFor(raw);
     if (item && !this.selection.has(item) && !this.panel) this.selection.set([item]);
     const items = this.hooks.contextItems('viewport');
     if (items.length) openMenu(items, cx, cy, { label: tr("Context menu") });

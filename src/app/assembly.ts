@@ -8,7 +8,9 @@ import type {
   AssemblyAxis, AssemblyJoint, AssemblyJointRef, AssemblyJointType, AssemblyMate, AssemblyMateType, ComponentTransform, Id,
 } from '../model/types';
 import { cross, dot, perpendicular, type Vec3 } from '../math/vec';
+import { fitCandidates, isGoodFit, type FitCandidate } from '../model/assembly-fit';
 import { h } from '../ui/dom';
+import { toast } from '../ui/overlay';
 import { tr } from '../i18n';
 import type { App } from './app';
 import { PropertyPanel, checkbox, numberField, section, selectField } from './pm';
@@ -253,8 +255,9 @@ export class AssemblyJointPanel extends PropertyPanel {
   private aChoice = 'origin';
   private bChoice = 'origin';
   private mate = true;
+  private suggestions: FitCandidate[] = [];
 
-  constructor(private app: App, joint?: AssemblyJoint) {
+  constructor(private app: App, joint?: AssemblyJoint, initial?: { aChoice?: string; bChoice?: string; type?: AssemblyJointType; mate?: boolean }) {
     super();
     if (joint) {
       this.draft = structuredClone(joint);
@@ -270,13 +273,30 @@ export class AssemblyJointPanel extends PropertyPanel {
         this.pair = { a: selected[0].id, b: selected[1].id };
         this.aChoice = 'origin';
         this.bChoice = 'origin';
+        // Suggest, and preselect, the geometry that fits best: faces that
+        // touch, parallel faces or shared axes, already picked for the user.
+        this.suggestions = fitCandidates({ faces: app.faces, edges: app.edges }, [this.pair], 4);
+        const best = this.suggestions[0];
+        if (best && isGoodFit(best)) {
+          const aChoice = connectorValueFor(app, best.a);
+          const bChoice = connectorValueFor(app, best.b);
+          if (aChoice && bChoice) {
+            this.aChoice = aChoice;
+            this.bChoice = bChoice;
+            this.mate = best.mate;
+            this.initialType = best.jointType;
+          }
+        }
+        if (initial?.aChoice) this.aChoice = initial.aChoice;
+        if (initial?.bChoice) this.bChoice = initial.bChoice;
+        if (initial?.mate != null) this.mate = initial.mate;
       }
       const component = selected[0];
       if (!component) throw new Error(tr("Select one or two components to add a joint."));
       this.draft = {
         id: app.store.nextId('j'),
-        name: tr("Joint{0}", [app.store.doc.joints?.length ? (app.store.doc.joints.length + 1) : 1]),
-        type: this.pair ? 'rigid' : 'revolute',
+        name: nextJointName(app),
+        type: initial?.type ?? this.initialType ?? (this.pair ? 'rigid' : 'revolute'),
         component: this.pair ? this.pair.b : component.id,
         relativeTo: this.pair?.a,
         axis: 'z',
@@ -295,6 +315,25 @@ export class AssemblyJointPanel extends PropertyPanel {
   }
 
   readonly title: string;
+  /** Suggested joint type, used until the user picks one. */
+  private initialType: AssemblyJointType | null = null;
+
+  /** Picks the suggestion at `index`, or the best one when omitted. */
+  useSuggestion(index = 0) {
+    const best = this.suggestions[index];
+    if (!best) return;
+    const aChoice = connectorValueFor(this.app, best.a);
+    const bChoice = connectorValueFor(this.app, best.b);
+    if (!aChoice || !bChoice) return;
+    this.aChoice = aChoice;
+    this.bChoice = bChoice;
+    this.mate = best.mate;
+    this.draft.type = best.jointType;
+    this.draft.min = best.jointType === 'rigid' || best.jointType === 'planar' ? -100 : -180;
+    this.draft.max = best.jointType === 'rigid' || best.jointType === 'planar' ? 100 : 180;
+    this.app.refreshPanel();
+    this.changed();
+  }
 
   private changed() {
     this.app.commands.changed();
@@ -329,12 +368,32 @@ export class AssemblyJointPanel extends PropertyPanel {
       const mate = checkbox(tr("Mate the picked faces"), this.mate, (checked) => { this.mate = checked; this.changed(); });
       const a = this.app.component(this.pair.a)?.name ?? this.pair.a;
       const b = this.app.component(this.pair.b)?.name ?? this.pair.b;
+      const optionLabel = (options: { value: string; label: string }[], pick: { kind: 'face' | 'edge'; name: string }) => {
+        const value = connectorValueFor(this.app, pick);
+        return options.find((o) => o.value === value)?.label ?? (pick.kind === 'face' ? tr("Face") : tr("Edge"));
+      };
+      const suggestionRows = this.suggestions.map((s, i) => {
+        const what = s.fit === 'concentric' ? tr("Shared axis ({0} mm apart)", [s.distance.toFixed(1)])
+          : s.fit === 'flush' ? tr("Parallel faces ({0} mm apart)", [s.distance.toFixed(1)])
+            : tr("Faces in contact ({0} mm apart)", [s.distance.toFixed(1)]);
+        const label = `${optionLabel(aOptions, s.a)} ↔ ${optionLabel(bOptions, s.b)}: ${what}`;
+        const button = h('button', { class: 'pm-suggestion', type: 'button' }, `${i === 0 ? tr("Best") + ' · ' : ''}${label}`) as HTMLButtonElement;
+        button.addEventListener('click', () => this.useSuggestion(i));
+        return button;
+      });
+      const suggestions = suggestionRows.length
+        ? section(tr("Suggested fits"), [
+          h('p', { class: 'field-label' }, tr("Faces and axes that line up between the parts. The best fit is picked already.")),
+          ...suggestionRows,
+        ])
+        : null;
       return [
         section(tr("Joint"), [
           h('div', { class: 'field-label' }, tr("Joint name")), name,
           h('p', { class: 'field-label' }, tr("{0} is driven from {1}.", [b, a])),
           type,
         ]),
+        ...(suggestions ? [suggestions] : []),
         section(tr("Geometry"), [aRef, bRef, mate]),
         d.type === 'rigid'
           ? section(tr("Rigid"), [h('p', { class: 'field-label' }, tr("A rigid joint locks the two parts together."))])
@@ -405,42 +464,12 @@ export class AssemblyJointPanel extends PropertyPanel {
 
   /** Computes where the driven component goes so the picked geometry meets. */
   private makeGeometryJoint(): { joint: AssemblyJoint; placement: ComponentTransform } | null {
-    const pair = this.pair!;
-    const a = this.app.component(pair.a);
-    const b = this.app.component(pair.b);
-    const aFrame = connectorFrame(this.app, pair.a, this.aChoice);
-    const bFrame = connectorFrame(this.app, pair.b, this.bChoice);
-    if (!a || !b || !aFrame || !bFrame) {
-      this.setMessage('error', tr("Pick reference geometry on both components."));
+    const made = geometryJoint(this.app, this.pair!, this.aChoice, this.bChoice, this.draft, this.mate);
+    if ('error' in made) {
+      this.setMessage('error', made.error);
       return null;
     }
-    if (a.fixed && b.fixed) {
-      this.setMessage('error', tr("Both components are grounded. Float one of them first."));
-      return null;
-    }
-    const mate = this.mate;
-    const placement = jointPlacement(
-      { transform: a.transform, p: aFrame.p, d: aFrame.d },
-      { transform: b.transform, p: bFrame.p, d: bFrame.d },
-      { mate, offset: 0 },
-    );
-    const joint: AssemblyJoint = {
-      ...this.draft,
-      component: pair.b,
-      relativeTo: pair.a,
-      offset: relativeTransform(a.transform, placement),
-      aRef: { kind: aFrame.kind, name: aFrame.name, ...frameToLocal(a.transform, { p: aFrame.p, d: aFrame.d }) },
-      bRef: { kind: bFrame.kind, name: bFrame.name },
-      axis: dominantAxis(aFrame.d),
-      flip: !mate,
-    };
-    if (joint.type === 'revolute' || joint.type === 'ball') {
-      joint.min = -180; joint.max = 180;
-    } else if (joint.type !== 'rigid' && joint.type !== 'planar') {
-      joint.min = -100; joint.max = 100;
-    }
-    joint.value = 0;
-    return { joint, placement };
+    return made.result;
   }
 }
 
@@ -494,6 +523,279 @@ function connectorFrame(app: App, componentId: Id, value: string): { p: Vec3; d:
   const d = edge.type === 'circle' ? edge.axis : edge.dir;
   if (!p || !d) return null;
   return { p: [...p], d: [...d], kind: 'edge', name: edge.name };
+}
+
+/** Where a picked-geometry joint puts the driven component. */
+export interface GeometryJointResult {
+  joint: AssemblyJoint;
+  placement: ComponentTransform;
+}
+
+/**
+ * Builds a joint from two picked connectors and the placement that makes the
+ * picked geometry meet. Used by the Joint panel and by Auto Mate.
+ */
+export function geometryJoint(
+  app: App,
+  pair: { a: Id; b: Id },
+  aChoice: string,
+  bChoice: string,
+  draft: AssemblyJoint,
+  mate: boolean,
+): { result: GeometryJointResult } | { error: string } {
+  const a = app.component(pair.a);
+  const b = app.component(pair.b);
+  const aFrame = connectorFrame(app, pair.a, aChoice);
+  const bFrame = connectorFrame(app, pair.b, bChoice);
+  if (!a || !b || !aFrame || !bFrame) return { error: tr("Pick reference geometry on both components.") };
+  if (a.fixed && b.fixed) return { error: tr("Both components are grounded. Float one of them first.") };
+  const placement = jointPlacement(
+    { transform: a.transform, p: aFrame.p, d: aFrame.d },
+    { transform: b.transform, p: bFrame.p, d: bFrame.d },
+    { mate, offset: 0 },
+  );
+  const joint: AssemblyJoint = {
+    ...draft,
+    component: pair.b,
+    relativeTo: pair.a,
+    offset: relativeTransform(a.transform, placement),
+    aRef: { kind: aFrame.kind, name: aFrame.name, ...frameToLocal(a.transform, { p: aFrame.p, d: aFrame.d }) },
+    bRef: { kind: bFrame.kind, name: bFrame.name },
+    axis: dominantAxis(aFrame.d),
+    flip: !mate,
+  };
+  if (joint.type === 'revolute' || joint.type === 'ball') {
+    joint.min = -180; joint.max = 180;
+  } else if (joint.type !== 'rigid' && joint.type !== 'planar') {
+    joint.min = -100; joint.max = 100;
+  }
+  joint.value = 0;
+  return { result: { joint, placement } };
+}
+
+/** The connector option value ("face:3") of a suggested pick, if it still exists. */
+export function connectorValueFor(app: App, pick: { kind: 'face' | 'edge'; name: string }): string | null {
+  if (pick.kind === 'face') {
+    const i = app.faces.findIndex((f) => f.name === pick.name);
+    return i >= 0 ? `face:${i}` : null;
+  }
+  const i = app.edges.findIndex((e) => e.name === pick.name);
+  return i >= 0 ? `edge:${i}` : null;
+}
+
+/** A name for a new joint, numbered after the ones already in the document. */
+export function nextJointName(app: App): string {
+  return tr("Joint{0}", [(app.store.doc.joints?.length ?? 0) + 1]);
+}
+
+/**
+ * Applies one suggestion: reference part {reference}, driven part {driven},
+ * with the suggested geometry and joint type. Returns the new joint.
+ */
+export function applyFitCandidate(
+  app: App,
+  reference: Id,
+  driven: Id,
+  candidate: FitCandidate,
+  name = nextJointName(app),
+): AssemblyJoint | null {
+  if (!app.component(reference) || !app.component(driven)) return null;
+  if (reference === driven) return null;
+  const aChoice = connectorValueFor(app, candidate.a);
+  const bChoice = connectorValueFor(app, candidate.b);
+  if (!aChoice || !bChoice) return null;
+  const draft: AssemblyJoint = {
+    id: app.store.nextId('j'),
+    name,
+    type: candidate.jointType,
+    component: driven,
+    relativeTo: reference,
+    axis: 'z',
+    axis2: 'y',
+    value: 0,
+    min: -180,
+    max: 180,
+    value2: 0,
+    min2: -180,
+    max2: 180,
+  };
+  const made = geometryJoint(app, { a: reference, b: driven }, aChoice, bChoice, draft, candidate.mate);
+  if ('error' in made) {
+    toast({ kind: 'warning', message: made.error });
+    return null;
+  }
+  app.addGeometryJoint(made.result.joint, made.result.placement);
+  app.selection.set([{ kind: 'assemblyJoint', id: made.result.joint.id }]);
+  return made.result.joint;
+}
+
+/** The pairs Auto Mate looks at: the selection, or every movable pair. */
+export function matePairs(app: App): { a: Id; b: Id }[] {
+  const selected = app.selection.ofKind('component').map((c) => c.id);
+  if (selected.length >= 2) {
+    const out = [];
+    for (let i = 0; i < selected.length; i++) for (let j = i + 1; j < selected.length; j++) out.push({ a: selected[i], b: selected[j] });
+    return out;
+  }
+  if (selected.length === 1) {
+    // One part is selected: fit it against the others, grounded parts first.
+    const b = selected[0];
+    const components = app.store.doc.components ?? [];
+    const others = components.filter((c) => c.id !== b && c.visible).sort((x, y) => Number(y.fixed) - Number(x.fixed));
+    return others.map((c) => ({ a: c.id, b }));
+  }
+  const movable = (app.store.doc.components ?? []).filter((c) => c.visible && !c.fixed).map((c) => c.id);
+  const fixed = (app.store.doc.components ?? []).filter((c) => c.visible).map((c) => c.id);
+  const out: { a: Id; b: Id }[] = [];
+  for (const b of movable) {
+    for (const a of fixed) if (a !== b) out.push({ a, b });
+    for (const a of movable) if (a !== b && a < b) out.push({ a, b });
+  }
+  return out;
+}
+
+/** The other visible component a picked part can be constrained to. */
+export function matePartner(app: App, componentId: Id): Id | null {
+  const selected = app.selection.ofKind('component').map((c) => c.id).filter((id) => id !== componentId);
+  const components = app.store.doc.components ?? [];
+  const chosen = selected[0] ?? components.find((c) => c.id !== componentId && c.visible && c.fixed)?.id
+    ?? components.find((c) => c.id !== componentId && c.visible)?.id;
+  return chosen ?? null;
+}
+
+/**
+ * Opens the Joint panel already holding the clicked face or edge, so the
+ * picked geometry is the driven side and the other part is the reference.
+ */
+export function openJointFromPick(app: App) {
+  const pick = app.assemblyPick;
+  if (!pick) return;
+  const partner = matePartner(app, pick.componentId);
+  if (!partner) {
+    toast({ kind: 'warning', message: tr("Add another component to constrain this one to.") });
+    return;
+  }
+  const value = pick.kind === 'face' ? `face:${pick.index}` : `edge:${pick.index}`;
+  app.selection.set([{ kind: 'component', id: partner }, { kind: 'component', id: pick.componentId }]);
+  app.openPanel(new AssemblyJointPanel(app, undefined, { aChoice: 'origin', bChoice: value, type: 'rigid' }));
+}
+
+/**
+ * Auto mate using the clicked geometry: the clicked face or edge is one side
+ * of the fit, so a part can be dropped onto another with one command.
+ */
+export function autoMateFromPick(app: App): boolean {
+  const pick = app.assemblyPick;
+  if (!pick) {
+    app.selection.set([]);
+    return autoMateComponents(app);
+  }
+  const partner = matePartner(app, pick.componentId);
+  if (!partner) {
+    toast({ kind: 'warning', message: tr("Add another component to constrain this one to.") });
+    return false;
+  }
+  const candidates = fitCandidates({ faces: app.faces, edges: app.edges }, [{ a: partner, b: pick.componentId }], 8)
+    .filter((c) => c.b.name === (pick.kind === 'face' ? app.faces[pick.index]?.name : app.edges[pick.index]?.name));
+  const candidate = candidates[0];
+  if (!candidate || !isGoodFit(candidate)) {
+    toast({ kind: 'warning', message: tr("Nothing lines up with the clicked geometry. Try Joint to pick the other side.") });
+    return false;
+  }
+  const joint = applyFitCandidate(app, candidate.aComponent, candidate.bComponent, candidate);
+  if (!joint) return false;
+  const a = app.component(candidate.aComponent)?.name ?? candidate.aComponent;
+  const b = app.component(candidate.bComponent)?.name ?? candidate.bComponent;
+  toast({ kind: 'success', message: tr("Auto mated {0} to {1}.", [b, a]) });
+  return true;
+}
+
+/** Finds the best fit between the selected (or all movable) components. */
+export function bestFit(app: App, pairs = matePairs(app)): FitCandidate | null {
+  const candidates = fitCandidates({ faces: app.faces, edges: app.edges }, pairs, 1);
+  return isGoodFit(candidates[0]) ? candidates[0] : null;
+}
+
+/**
+ * Auto Mate: constrains the best-fitting geometry of the selected components
+ * (or of every movable part) without opening the panel.
+ */
+export function autoMateComponents(app: App): boolean {
+  const pairs = matePairs(app);
+  if (!pairs.length) {
+    toast({ kind: 'warning', message: tr("Select two components to auto mate, or have at least one floating component.") });
+    return false;
+  }
+  const candidates = fitCandidates({ faces: app.faces, edges: app.edges }, pairs, 1);
+  const candidate = candidates[0];
+  if (!isGoodFit(candidate)) {
+    toast({ kind: 'warning', message: tr("No matching faces or axes were found between the components.") });
+    return false;
+  }
+  const joint = applyFitCandidate(app, candidate.aComponent, candidate.bComponent, candidate);
+  if (!joint) return false;
+  const a = app.component(candidate.aComponent)?.name ?? candidate.aComponent;
+  const b = app.component(candidate.bComponent)?.name ?? candidate.bComponent;
+  const what = candidate.fit === 'concentric' ? tr("their axes") : candidate.fit === 'flush' ? tr("flush faces") : tr("touching faces");
+  toast({ kind: 'success', message: tr("Auto mated {0} to {1} on {2}.", [b, a, what]) });
+  return true;
+}
+
+/** Lists the fits Auto Mate found, so one can be applied deliberately. */
+export class MateSuggestionsPanel extends PropertyPanel {
+  readonly title = tr("Mate Suggestions");
+  icon = 'relation';
+  confirm = false;
+  closeLabel = tr("Close");
+
+  constructor(private app: App) {
+    super();
+    this.refreshSuggestions();
+    this.onCloseClick = () => void this.app.closePanel(false);
+  }
+
+  private candidates: FitCandidate[] = [];
+
+  private refreshSuggestions() {
+    this.candidates = fitCandidates({ faces: this.app.faces, edges: this.app.edges }, matePairs(this.app), 6);
+  }
+
+  ok() { return true; }
+
+  private label(candidate: FitCandidate): string {
+    const a = this.app.component(candidate.aComponent)?.name ?? candidate.aComponent;
+    const b = this.app.component(candidate.bComponent)?.name ?? candidate.bComponent;
+    const what = candidate.fit === 'concentric' ? tr("shared axis")
+      : candidate.fit === 'flush' ? tr("parallel faces")
+        : tr("touching faces");
+    return tr("{0} to {1}: {2}, {3} mm", [b, a, what, candidate.distance.toFixed(1)]);
+  }
+
+  render(): HTMLElement[] {
+    const rows = this.candidates.map((candidate) => {
+      const button = h('button', { class: 'pm-suggestion-apply', type: 'button' }, tr("Apply")) as HTMLButtonElement;
+      button.addEventListener('click', () => {
+        const joint = applyFitCandidate(this.app, candidate.aComponent, candidate.bComponent, candidate);
+        if (!joint) return;
+        toast({ kind: 'success', message: tr("{0} applied.", [joint.name]) });
+        this.refreshSuggestions();
+        this.app.refreshPanel();
+      });
+      return h('div', { class: 'pm-suggestion-row' }, [h('span', {}, this.label(candidate)), button]);
+    });
+    const autoButton = h('button', { class: 'pm-suggestion', type: 'button' }, tr("Auto mate the best fit")) as HTMLButtonElement;
+    autoButton.addEventListener('click', () => {
+      if (!autoMateComponents(this.app)) return;
+      this.refreshSuggestions();
+      this.app.refreshPanel();
+    });
+    const body: HTMLElement[] = [
+      h('p', { class: 'field-label' }, tr("Faces that touch, parallel faces and shared axes found between the selected or floating components, best first.")),
+      ...rows,
+    ];
+    if (!rows.length) body.push(h('p', { class: 'field-label' }, tr("No matching geometry was found. Move the parts nearer, or pick the geometry with Joint.")));
+    return [section(tr("Suggested fits"), body), section(tr("Auto mate"), [autoButton])];
+  }
 }
 
 export class MotionStudyPanel extends PropertyPanel {
