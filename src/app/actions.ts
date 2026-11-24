@@ -220,6 +220,18 @@ export function registerCommands(app: App, files: FileOps) {
       run: () => { const f = selectedFeature(app); if (f) app.editFeature(f.id); },
     },
     {
+      id: 'moveFeatureUp', label: tr("Move Feature Up"), icon: 'chevronUp',
+      keywords: tr("reorder feature up tree"),
+      enabled: () => isPart() && !!selectedFeature(app),
+      run: () => { const f = selectedFeature(app); if (f) app.moveFeature(f.id, -1); },
+    },
+    {
+      id: 'moveFeatureDown', label: tr("Move Feature Down"), icon: 'chevronDown',
+      keywords: tr("reorder feature down tree"),
+      enabled: () => isPart() && !!selectedFeature(app),
+      run: () => { const f = selectedFeature(app); if (f) app.moveFeature(f.id, 1); },
+    },
+    {
       id: 'editComponent', label: tr("Component Properties..."), icon: 'part',
       enabled: () => app.isAssembly && !!app.selection.ofKind('component')[0],
       run: () => { const component = app.selection.ofKind('component')[0]; if (component) app.openComponent(component.id); },
@@ -735,7 +747,7 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
       label: tr("Edit"), items: () => [
         { ...m('undo'), label: app.canUndo ? tr('Undo {0}', [app.store.undoLabel]) : tr("Undo") },
         { ...m('redo'), label: app.store.canRedo ? tr('Redo {0}', [app.store.redoLabel]) : tr("Redo") }, sep,
-        m('rebuild'), m('forceRebuild'), sep, m('editFeature'), m('delete'), m('suppress'), m('unsuppress'), m('rollToEnd'), sep, m('appearance'), m('material'),
+        m('rebuild'), m('forceRebuild'), sep, m('editFeature'), { label: tr("Reorder"), icon: 'chevronUp', submenu: () => [m('moveFeatureUp'), m('moveFeatureDown')] }, m('delete'), m('suppress'), m('unsuppress'), m('rollToEnd'), sep, m('appearance'), m('material'),
       ],
     },
     {

@@ -1838,5 +1838,12 @@
   "Move the components apart for an exploded view; drawings show the exploded state too.": "把零部件向外分开形成爆炸视图，工程图也使用爆炸位置。",
   "Every component moves this far away from the assembly centre in the viewport and the drawings.": "每个零部件沿远离装配中心的方向移动该距离，视口与工程图同步生效。",
   "Explode axis": "爆炸方向",
-  "Radial": "径向"
+  "Radial": "径向",
+  "Move Feature Up": "特征上移",
+  "Move Feature Down": "特征下移",
+  "Move feature up": "特征上移",
+  "Move feature down": "特征下移",
+  "Reorder": "重新排序",
+  "reorder feature up tree": "重排 特征 上移 树",
+  "reorder feature down tree": "重排 特征 下移 树"
 }

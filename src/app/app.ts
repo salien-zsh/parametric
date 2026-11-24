@@ -2160,6 +2160,17 @@ export class App {
     });
   }
 
+  /** Moves a feature one step up (delta -1) or down (delta +1) in the tree. */
+  moveFeature(id: Id, delta: -1 | 1) {
+    this.store.change(delta < 0 ? tr("Move feature up") : tr("Move feature down"), (doc) => {
+      const from = doc.features.findIndex((f) => f.id === id);
+      const to = from + delta;
+      if (from < 0 || to < 0 || to >= doc.features.length) return;
+      const [feature] = doc.features.splice(from, 1);
+      doc.features.splice(to, 0, feature);
+    });
+  }
+
   async deleteFeatures(ids: Id[]) {
     const signal = this.documentSignal;
     const doc = this.store.doc;
