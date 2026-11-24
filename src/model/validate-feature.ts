@@ -82,6 +82,11 @@ export function validFeature(f: Feature): boolean {
       return list(r.profiles, id);
     case 'sweep':
       return (r.profile == null || id(r.profile)) && (r.path == null || id(r.path));
+    case 'rib': {
+      return (r.sketch == null || id(r.sketch))
+        && numeric(r.thickness) && numeric(r.depth)
+        && typeof r.symmetric === 'boolean' && typeof r.flip === 'boolean' && typeof r.cut === 'boolean';
+    }
     case 'coil': {
       return (r.profile == null || id(r.profile))
         && numeric(r.pitch) && numeric(r.revolutions) && numeric(r.height)

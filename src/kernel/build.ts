@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature,
+  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, RibFeature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -415,6 +415,7 @@ export class ModelBuilder {
       case 'loft': this.applyLoft(f, st); return 'tool';
       case 'sweep': this.applySweep(f, st); return 'tool';
       case 'coil': this.applyCoil(f, st); return 'tool';
+      case 'rib': this.applyRib(f, st); return 'tool';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -1542,6 +1543,45 @@ export class ModelBuilder {
     }
     if (isEmpty(tool)) throw new FeatureError(tr("The coil could not be swept. Check the profile and the pitch."));
     this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `c${k}`), f.cut);
+  }
+
+  /**
+   * A rib: every straight line of the sketch becomes a wall of the given
+   * thickness, extruded along the sketch normal (symmetrically if asked).
+   */
+  private applyRib(f: RibFeature, st: State) {
+    if (!f.sketch) throw new FeatureError(tr("Select the sketch with the rib lines"));
+    const sk = st.sketches.get(f.sketch);
+    const fr = st.frames.get(f.sketch);
+    if (!sk || !fr) throw new FeatureError(tr("The rib sketch is missing or failed to build"));
+    const thickness = num(f.thickness);
+    const depth = num(f.depth);
+    if (!(thickness > 0)) throw new FeatureError(tr("The rib thickness must be greater than zero"));
+    if (!(depth > 0)) throw new FeatureError(tr("The rib depth must be greater than zero"));
+    const ix = new SketchIndex(sk.entities);
+    const normal: Vec3 = f.flip ? scale(fr.n, -1) : fr.n;
+    const from: Vec3 = f.symmetric ? scale(normal, -depth / 2) : [0, 0, 0];
+    const walls: Sh[] = [];
+    for (const e of sk.entities) {
+      if (e.t !== 'line' || e.construction) continue;
+      const a = ix.pt(e.a);
+      const b = ix.pt(e.b);
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const length = Math.hypot(dx, dy);
+      if (length < 1e-9) continue;
+      const nx = (-dy / length) * (thickness / 2);
+      const ny = (dx / length) * (thickness / 2);
+      const loop: [number, number][] = [
+        [a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny],
+      ];
+      const points = loop.map((q) => add(toWorld(fr, q), from));
+      const face = R.makePolygon(points) as unknown as R.Face;
+      walls.push(R.basicFaceExtrusion(face, new R.Vector(scale(normal, depth))) as unknown as Sh);
+    }
+    if (!walls.length) throw new FeatureError(tr("The rib sketch has no straight lines"));
+    const tool = this.fuseAll(walls);
+    if (isEmpty(tool)) throw new FeatureError(tr("The rib could not be built"));
+    this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `r${k}`), f.cut);
   }
 
   private applySweep(f: SweepFeature, st: State) {

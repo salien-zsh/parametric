@@ -1756,5 +1756,16 @@
   "The coil could not be swept. Check the profile and the pitch.": "螺旋扫掠失败，请检查轮廓与螺距。",
   "The coil needs at least one turn": "螺旋至少需要一圈",
   "The pitch must be greater than zero": "螺距必须大于零",
-  "spring helix thread spiral": "弹簧 螺旋 螺纹 螺旋线"
+  "spring helix thread spiral": "弹簧 螺旋 螺纹 螺旋线",
+  "Every straight line in the sketch becomes a rib wall, extruded along the sketch normal.": "草图中的每一条直线都会变成一道筋壁，沿草图法向拉伸。",
+  "Rib": "筋",
+  "Select the sketch with the rib lines": "选择包含筋线的草图",
+  "Symmetric": "对称",
+  "The rib could not be built": "筋无法生成",
+  "The rib depth must be greater than zero": "筋的拉伸深度必须大于零",
+  "The rib sketch has no straight lines": "筋草图中没有直线",
+  "The rib sketch is missing or failed to build": "筋草图缺失或构建失败",
+  "The rib thickness must be greater than zero": "筋的厚度必须大于零",
+  "Thicken the sketch lines into ribs along the sketch normal.": "把草图直线加厚成筋，并沿草图法向拉伸。",
+  "rib web gusset stiffener": "筋 腹板 角撑 加强筋"
 }

@@ -402,6 +402,23 @@ export interface CoilFeature extends FeatureBase {
   cut: boolean;
 }
 
+/**
+ * A rib: each straight line in the sketch is thickened into a wall of the
+ * given thickness and extruded along the sketch plane's normal.
+ */
+export interface RibFeature extends FeatureBase {
+  type: 'rib';
+  sketch: Id | null;
+  /** Wall thickness, centred on the sketch line. */
+  thickness: Param;
+  /** Extrusion depth along the sketch plane normal. */
+  depth: Param;
+  /** Extrude half each way about the sketch plane. */
+  symmetric: boolean;
+  flip: boolean;
+  cut: boolean;
+}
+
 export interface LoftFeature extends FeatureBase {
   type: 'loft';
   profiles: Id[];
@@ -579,6 +596,7 @@ export type Feature =
   | MirrorFeature
   | PlaneFeature
   | CoilFeature
+  | RibFeature
   | AxisFeature
   | PointFeature
   | LoftFeature

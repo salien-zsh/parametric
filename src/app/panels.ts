@@ -4,7 +4,7 @@ import type { Frame, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newAxis, newBevelGear, newCoil, newMirror, newPlane, newPoint, newRevolve, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBevelGear, newCoil, newMirror, newPlane, newPoint, newRevolve, newRib, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -14,7 +14,7 @@ import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel
 import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
-  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, RibFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
@@ -1649,6 +1649,38 @@ export class SweepPanel extends FeaturePanel<SweepFeature> {
 
 // ---------- factory ----------
 
+export class RibPanel extends FeaturePanel<RibFeature> {
+  render(): HTMLElement[] {
+    const f = this.f;
+    const ctx = this.ctx();
+    const sketch = this.sketchBox(tr("Profile sketch"), () => f.sketch, (id) => { f.sketch = id; });
+    const thickness = numberField({ label: tr("Thickness"), icon: 'ruler', value: f.thickness, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.thickness = v; this.changed(); } });
+    const depth = numberField({ label: tr("Depth"), icon: 'ruler', value: f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.depth = v; this.changed(); } });
+    const symmetric = checkbox(tr("Symmetric"), f.symmetric, (v) => { f.symmetric = v; this.changed(); });
+    const flip = checkbox(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); });
+    const cut = checkbox(tr("Cut"), f.cut, (v) => { f.cut = v; this.changed(); });
+    return [
+      section(tr("Profile"), [
+        sketch.el,
+        h('p', { class: 'field-label' }, tr("Every straight line in the sketch becomes a rib wall, extruded along the sketch normal.")),
+      ]),
+      section(tr("Rib"), [thickness, depth, symmetric, flip, cut]),
+    ];
+  }
+
+  protected validate() {
+    const f = this.f;
+    if (!f.sketch) return tr("Select the sketch with the rib lines");
+    if (!(Number(f.thickness) > 0)) return tr("The rib thickness must be greater than zero");
+    if (!(Number(f.depth) > 0)) return tr("The rib depth must be greater than zero");
+    return null;
+  }
+
+  preview() {
+    return this.f.sketch ? this.f : null;
+  }
+}
+
 export class CoilPanel extends FeaturePanel<CoilFeature> {
   render(): HTMLElement[] {
     const f = this.f;
@@ -1698,6 +1730,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'loft': return new LoftPanel(app, f, editing);
     case 'sweep': return new SweepPanel(app, f, editing);
     case 'coil': return new CoilPanel(app, f, editing);
+    case 'rib': return new RibPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
     case 'axis': return new AxisPanel(app, f, editing);
@@ -1722,7 +1755,7 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
   const selSketch = (() => {
     for (const it of sel) if (it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch') return it.id;
     // Default to the most recent unconsumed sketch.
-    const used = new Set(doc.features.flatMap((f) => (f.type === 'extrude' || f.type === 'revolve' || f.type === 'hole' ? [f.sketch] : f.type === 'loft' ? f.profiles : f.type === 'sweep' ? [f.profile, f.path] : f.type === 'coil' ? [f.profile] : [])));
+    const used = new Set(doc.features.flatMap((f) => (f.type === 'extrude' || f.type === 'revolve' || f.type === 'hole' ? [f.sketch] : f.type === 'loft' ? f.profiles : f.type === 'sweep' ? [f.profile, f.path] : f.type === 'coil' ? [f.profile] : f.type === 'rib' ? [f.sketch] : [])));
     const built = doc.features.slice(0, app.store.builtCount);
     for (let i = built.length - 1; i >= 0; i--) if (built[i].type === 'sketch' && !used.has(built[i].id)) return built[i].id;
     return null;
@@ -1785,6 +1818,12 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
+    case 'rib': {
+      const x = newRib(id, name, Math.max(size / 20, app.store.unitScale), Math.max(size / 2, app.store.unitScale));
+      x.sketch = selSketch;
+      f = x;
+      break;
+    }
     case 'coil': {
       const x = newCoil(id, name);
       x.profile = selSketch;
