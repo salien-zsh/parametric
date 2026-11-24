@@ -48,11 +48,14 @@ export const VIEW_DIRS: Record<DrawingViewKind, { dir: Vec3; x: Vec3 }> = {
   isometric: { dir: isoDir, x: normalize(cross([0, 1, 0], isoDir)) },
   // Section views compute their direction from the cut axis; this is only a placeholder.
   section: { dir: [0, 0, 1], x: [1, 0, 0] },
+  // Detail views reuse their source view's projection.
+  detail: { dir: [0, 0, 1], x: [1, 0, 0] },
 };
 
 export const VIEW_LABELS: Record<DrawingViewKind, string> = {
   front: tr("Front"), back: tr("Back"), top: tr("Top"), bottom: tr("Bottom"), right: tr("Right"), left: tr("Left"), isometric: tr("Isometric"),
   section: tr("Section"),
+  detail: tr("Detail"),
 };
 
 /** Size of a view of a box, in model units (paper width, height). */
@@ -153,11 +156,34 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
   const items: Item[] = [];
   const frames: ViewFrame[] = [];
   items.push({ t: 'rect', x: MARGIN, y: MARGIN, w: w - 2 * MARGIN, h: h - 2 * MARGIN, sw: 0.5 });
+  // Each view's paper scale: a detail view enlarges its source view's scale.
+  const scales = new Map<string, number>();
+  for (const v of d.views) {
+    if (v.kind === 'detail' && v.detail) {
+      const source = d.views.find((q) => q.id === v.detail!.source);
+      const sourceScale = source ? (source.scale ?? d.scale) : d.scale;
+      scales.set(v.id, sourceScale * Math.max(0.1, v.detail.scale || 1));
+    } else {
+      scales.set(v.id, v.scale ?? d.scale);
+    }
+  }
+  // A detail view has no projection of its own: it clips and enlarges the
+  // source view's projected curves around the detail circle.
+  const detailProjections = new Map<string, ProjectionResult>();
+  for (const v of d.views) {
+    const detail = v.detail;
+    if (v.kind !== 'detail' || !detail) continue;
+    const source = projections.get(detail.source);
+    if (!source?.bounds) continue;
+    const visible = clipPathsToCircle(source.visible, detail.x, detail.y, detail.radius);
+    const hidden = clipPathsToCircle(source.hidden, detail.x, detail.y, detail.radius);
+    detailProjections.set(v.id, { id: v.id, visible: visible.paths, hidden: hidden.paths, bounds: visible.bounds });
+  }
   const placed: { v: DrawingView; pr: ProjectionResult; tx: number; ty: number; f: ViewFrame; scale: number }[] = [];
   for (const v of d.views) {
-    const pr = projections.get(v.id);
+    const pr = projections.get(v.id) ?? detailProjections.get(v.id);
     if (!pr || !pr.bounds) continue;
-    const s = v.scale ?? d.scale;
+    const s = scales.get(v.id) ?? (v.scale ?? d.scale);
     const [bx0, by0, bx1, by1] = pr.bounds;
     const tx = v.x - (s * (bx0 + bx1)) / 2;
     const ty = v.y - (s * (by0 + by1)) / 2;
@@ -171,21 +197,32 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
   taken.push([w - MARGIN - TITLE_W, h - MARGIN - TITLE_H, w - MARGIN, h - MARGIN]);
   // Section views are lettered in the order they appear: A-A, B-B, ...
   let sectionLetter = 0;
+  let detailLetter = 0;
   const letters = new Map<string, string>();
-  for (const v of d.views) if (v.kind === 'section') letters.set(v.id, String.fromCharCode(65 + sectionLetter++));
+  for (const v of d.views) {
+    if (v.kind === 'section') letters.set(v.id, String.fromCharCode(65 + sectionLetter++));
+    else if (v.kind === 'detail') letters.set(v.id, String.fromCharCode(65 + detailLetter++));
+  }
   for (const [i, { v, pr, tx, ty, f, scale }] of placed.entries()) {
     const [bx0, by0, bx1, by1] = pr.bounds!;
     if (v.hidden) for (const p of pr.hidden) items.push({ t: 'path', d: p, tx, ty, s: scale, w: HIDDEN_W, dash: [1.6, 0.8], view: v.id });
     for (const p of pr.visible) items.push({ t: 'path', d: p, tx, ty, s: scale, w: VISIBLE_W, view: v.id });
     // The cut face of a section view is hatched; its outline is already drawn.
+    if (v.kind === 'detail' && v.detail) {
+      items.push({ t: 'circle', x: v.x, y: v.y, r: v.detail.radius * (scales.get(v.id) ?? d.scale), sw: 0.25 });
+    }
     if (v.kind === 'section' && pr.section?.length) {
       const loops = parseLoops(pr.section).map((loop) => loop.map(([x, y]) => [tx + x * scale, ty + y * scale] as [number, number]));
       hatchLoops(items, loops, Math.max(1.6, 2.4 / Math.max(0.25, scale)));
     }
     const { x0: fx0, x1: fx1, y0: fy0, y1: fy1 } = f;
     const letter = letters.get(v.id);
-    const base = letter ? `${tr("SECTION")} ${letter}-${letter}` : VIEW_LABELS[v.kind].toUpperCase();
-    const scaled = v.scale != null && v.scale !== d.scale ? `${base} (${scaleLabel(v.scale)})` : base;
+    const base = v.kind === 'section' && letter
+      ? `${tr("SECTION")} ${letter}-${letter}`
+      : v.kind === 'detail' && letter ? `${tr("DETAIL")} ${letter}` : VIEW_LABELS[v.kind].toUpperCase();
+    const scaled = v.kind === 'detail' && v.detail
+      ? `${base} (${scaleLabel(v.detail.scale)})`
+      : v.scale != null && v.scale !== d.scale ? `${base} (${scaleLabel(v.scale)})` : base;
     const label = viewLabel(scaled, f, hasDims(v), taken.filter((_, j) => j !== i), w, h);
     items.push(label.item);
     taken.push(label.box);
@@ -238,6 +275,62 @@ function viewLabel(s: string, f: ViewFrame, dims: boolean, taken: Box[], w: numb
     b[0] >= MARGIN && b[1] >= MARGIN && b[2] <= w - MARGIN && b[3] <= h - MARGIN &&
     !taken.some((o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
   return candidates.find((c) => free(c.box)) ?? below;
+}
+
+/** The part of a segment inside the circle, or null when it misses it. */
+export function clipSegment(
+  a: [number, number], b: [number, number], cx: number, cy: number, r: number,
+): [[number, number], [number, number]] | null {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const fx = a[0] - cx, fy = a[1] - cy;
+  const qa = dx * dx + dy * dy;
+  if (qa < 1e-12) return Math.hypot(fx, fy) <= r ? [a, b] : null;
+  const qb = 2 * (fx * dx + fy * dy);
+  const qc = fx * fx + fy * fy - r * r;
+  const disc = qb * qb - 4 * qa * qc;
+  let t0 = 0, t1 = 1;
+  if (disc < 0) {
+    // No crossing: the whole segment is inside or outside.
+    return qc <= 0 ? [a, b] : null;
+  }
+  const sq = Math.sqrt(disc);
+  t0 = Math.max(t0, (-qb - sq) / (2 * qa));
+  t1 = Math.min(t1, (-qb + sq) / (2 * qa));
+  if (t1 - t0 < 1e-9) return null;
+  return [[a[0] + dx * t0, a[1] + dy * t0], [a[0] + dx * t1, a[1] + dy * t1]];
+}
+
+/**
+ * Cuts projected polylines down to what falls inside a circle (a detail
+ * view), returning runs of space-separated path data and the circle's bounds.
+ */
+export function clipPathsToCircle(
+  paths: string[], cx: number, cy: number, r: number,
+): { paths: string[]; bounds: [number, number, number, number] } {
+  const out: string[] = [];
+  for (const d of paths) {
+    for (const loop of parseLoops([d])) {
+      let run: [number, number][] = [];
+      const flush = () => {
+        if (run.length >= 2) out.push('M ' + run.map((p, i) => `${i ? 'L ' : ''}${p[0].toFixed(4)} ${p[1].toFixed(4)}`).join(' '));
+        run = [];
+      };
+      for (let i = 1; i < loop.length; i++) {
+        const cut = clipSegment(loop[i - 1], loop[i], cx, cy, r);
+        if (!cut) { flush(); continue; }
+        const [c0, c1] = cut;
+        if (!run.length) run.push(c0);
+        else {
+          const last = run[run.length - 1];
+          if (Math.hypot(last[0] - c0[0], last[1] - c0[1]) > 1e-6) { flush(); run.push(c0); }
+        }
+        run.push(c1);
+        if (Math.hypot(loop[i][0] - cx, loop[i][1] - cy) > r) flush();
+      }
+      flush();
+    }
+  }
+  return { paths: out, bounds: [cx - r, cy - r, cx + r, cy + r] };
 }
 
 /**

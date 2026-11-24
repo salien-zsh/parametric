@@ -742,7 +742,20 @@ export interface ParameterConfiguration {
 // ---- Drawings ----
 
 export type SheetSize = 'A4' | 'A3' | 'A2' | 'A1' | 'Letter' | 'Tabloid';
-export type DrawingViewKind = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom' | 'isometric' | 'section';
+export type DrawingViewKind = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom' | 'isometric' | 'section' | 'detail';
+
+/** A magnified circular window onto another view. */
+export interface DrawingViewDetail {
+  /** The view the detail is taken from. */
+  source: Id;
+  /** Centre in the source view's model coordinates (mm). */
+  x: number;
+  y: number;
+  /** Radius of the window in source model millimetres. */
+  radius: number;
+  /** Enlargement over the source view's scale (2 = twice as large). */
+  scale: number;
+}
 
 /** The axis a section view cuts along, and how far from the model centre. */
 export type SectionAxis = 'x' | 'y' | 'z';
@@ -771,6 +784,8 @@ export interface DrawingView {
   balloons?: boolean;
   /** Section views: the cut plane. */
   section?: DrawingViewSection;
+  /** Detail views: where the magnified window sits on its source view. */
+  detail?: DrawingViewDetail;
 }
 
 export interface DrawingDoc {

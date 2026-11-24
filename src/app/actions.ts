@@ -152,6 +152,16 @@ export function registerCommands(app: App, files: FileOps) {
     { id: 'importStep', label: tr("Import..."), icon: 'import', keywords: tr("stp step sldprt solidworks import"), description: tr("Insert a STEP file or SolidWorks part as a solid body."), enabled: isPart, run: () => files.importStep() },
     { id: 'insertComponent', label: tr("Insert Component..."), icon: 'import', keywords: tr("assembly insert part place component"), description: tr("Place a saved Parametric part in this assembly."), enabled: () => app.isAssembly && !app.inComponentEdit, run: () => files.insertComponent() },
     {
+      id: 'replaceComponent', label: tr("Replace Component..."), icon: 'import',
+      keywords: tr("replace swap component part assembly"),
+      description: tr("Swap the selected component's part for another saved part; its position and constraints stay."),
+      enabled: () => app.isAssembly && app.selection.ofKind('component').length === 1,
+      run: () => {
+        const component = app.selection.ofKind('component')[0];
+        if (component) void files.replaceComponent(component.id);
+      },
+    },
+    {
       id: 'newAssemblyPart', label: tr("New Part"), icon: 'part',
       keywords: tr("assembly new part in place empty component"),
       description: tr("Create an empty part in this assembly and open it for editing."),
@@ -745,6 +755,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
       ...pickedItems,
       { label: tr("Move/Rotate"), icon: 'select', run: () => c.run('moveComponents') },
       { label: tr("Component Pattern..."), icon: 'circularPattern', run: () => c.run('componentPattern') },
+      { label: tr("Replace Component..."), icon: 'import', disabled: !c.isEnabled('replaceComponent'), run: () => c.run('replaceComponent') },
       { label: tr("Isolate"), icon: 'eyeOff', run: () => c.run('isolateComponents') },
       { label: tr("Show All Components"), icon: 'eye', disabled: !c.isEnabled('showAllComponents'), run: () => c.run('showAllComponents') },
       sep,
@@ -828,7 +839,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
       );
     }
     const assemblyItems: MenuItem[] = components.length
-      ? [m('moveComponents'), m('componentPattern'), m('isolateComponents'), m('showAllComponents'), m('autoMate'), m('addJoint'), m('fixComponent'), sep]
+      ? [m('moveComponents'), m('componentPattern'), m('replaceComponent'), m('isolateComponents'), m('showAllComponents'), m('autoMate'), m('addJoint'), m('fixComponent'), sep]
       : [m('insertComponent'), m('newAssemblyPart'), m('autoMate'), m('mateSuggestions'), m('showAllComponents'), m('motionStudy'), m('interference'), sep];
     items.push(...assemblyItems);
   }

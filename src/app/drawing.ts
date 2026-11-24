@@ -15,7 +15,7 @@ import { h } from '../ui/dom';
 import { icon } from '../ui/icons';
 import { toast } from '../ui/overlay';
 import type { App } from './app';
-import { PropertyPanel, checkbox, section, selectField } from './pm';
+import { PropertyPanel, checkbox, numberField, section, selectField } from './pm';
 import { tr } from '../i18n';
 
 /**
@@ -145,7 +145,7 @@ export class DrawingWorkspace {
   /** Rebuilds the PropertyManager if what it shows changed (not when a view only moved). */
   private syncPanel() {
     const d = this.doc;
-    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section, v.centers, v.balloons])]) : '';
+    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section, v.detail, v.centers, v.balloons])]) : '';
     if (key === this.panelKey) return;
     this.panelKey = key;
     if (this.panelChanging) return;
@@ -177,7 +177,9 @@ export class DrawingWorkspace {
       if (!d.views.length) { this.relayout(); return; }
     }
     const version = this.app.buildVersion;
+    // Detail views reuse their source view's projection: nothing to project.
     const need = d.views.filter((v) => {
+      if (v.kind === 'detail') return false;
       const c = this.cache.get(v.id);
       return !c || c.kind !== v.kind || c.version !== version || c.sig !== viewSig(v);
     });
@@ -246,6 +248,7 @@ export class DrawingWorkspace {
     const center: Vec3 = [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
     const groups = this.bomGroups();
     for (const v of d.views) {
+      if (v.kind === 'detail') continue;
       const pr = projections.get(v.id);
       if (!pr?.bounds) continue;
       const { dir, x } = viewRequest(v, center);
@@ -484,6 +487,10 @@ export class DrawingWorkspace {
     const d = this.doc;
     const b = this.app.bbox;
     if (!d || !b) return;
+    if (kind === 'detail') {
+      this.addDetailView();
+      return;
+    }
     // A new section cuts across Z through the middle until it is moved.
     const section = kind === 'section' ? { axis: 'z' as SectionAxis, offset: 0, flip: false } : undefined;
     const sized = kind === 'section' ? 'front' : kind;
@@ -502,6 +509,50 @@ export class DrawingWorkspace {
     this.update((dd) => {
       dd.views.push({ id, kind, x, y, hidden: kind !== 'isometric' && kind !== 'section', dims: kind !== 'isometric', centers: kind !== 'isometric', ...(section ? { section } : {}) });
     }, tr("Add view"));
+  }
+
+  /** A magnified circular window onto another view, placed beside it. */
+  addDetailView() {
+    const d = this.doc;
+    const b = this.app.bbox;
+    if (!d || !b) return;
+    const sources = d.views.filter((v) => v.kind !== 'detail');
+    if (!sources.length) {
+      toast({ kind: 'warning', message: tr("Add a view before a detail view.") });
+      return;
+    }
+    const source = sources.find((v) => v.kind === 'front') ?? sources[0];
+    const bounds = this.cache.get(source.id)?.result.bounds ?? [b.min[0], b.min[1], b.max[0], b.max[1]];
+    // Centre the window on a hole when the view has one: there is geometry to
+    // show, unlike the middle of a plain face.
+    const modelCentre: Vec3 = [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
+    const dir = viewRequest(source, modelCentre).dir;
+    const u = normalize(viewRequest(source, modelCentre).x);
+    const up = cross(dir, u);
+    const holes = this.app.edges
+      .filter((e) => e.type === 'circle' && e.center && e.axis && Math.abs(dot(e.axis, dir)) > 0.999)
+      .map((e) => ({ x: dot(e.center!, u), y: -dot(e.center!, up), r: e.radius ?? 0 }))
+      .filter((hole) => hole.x >= bounds[0] && hole.x <= bounds[2] && hole.y >= bounds[1] && hole.y <= bounds[3]);
+    const centre = holes[0];
+    const cx = centre ? centre.x : (bounds[0] + bounds[2]) / 2;
+    const cy = centre ? centre.y : (bounds[1] + bounds[3]) / 2;
+    const radius = centre ? Math.max(6, centre.r * 2.5) : Math.max(4, Math.min(bounds[2] - bounds[0], bounds[3] - bounds[1]) * 0.25);
+    const magnification = 2;
+    const size = radius * 2 * (source.scale ?? d.scale) * magnification;
+    const frame = this.frames.find((f) => f.id === source.id);
+    const sheet = sheetDims(d);
+    const x = frame ? Math.min(sheet.w - 25 - size / 2, frame.x1 + 14 + size / 2) : 40 + size / 2;
+    const y = frame ? Math.max(25 + size / 2, frame.y0 + size / 2) : 40 + size / 2;
+    let n = d.views.length + 1;
+    while (d.views.some((v) => v.id === `v${n}`)) n++;
+    const id = `v${n}`;
+    this.selected = id;
+    this.update((dd) => {
+      dd.views.push({
+        id, kind: 'detail', x, y, hidden: false, dims: false,
+        detail: { source: source.id, x: cx, y: cy, radius, scale: magnification },
+      });
+    }, tr("Add detail view"));
   }
 
   // ---------- export ----------
@@ -627,6 +678,22 @@ export class DrawingPanel extends PropertyPanel {
       del);
     // Only the selected view opens its own controls, so the list stays short.
     const extra = ws.selected === v.id ? h('div', { class: 'rel-extra' }) : null;
+    if (extra && v.kind === 'detail' && v.detail) {
+      const det = v.detail;
+      const sources = ws.doc?.views.filter((q) => q.kind !== 'detail') ?? [];
+      const source = selectField<string>(tr("Detail source"), det.source, sources.map((q) => ({ value: q.id, label: VIEW_LABELS[q.kind] })), (value) => ws.updateFromPanel((x) => {
+        const q = x.views.find((r) => r.id === v.id);
+        if (q?.detail) q.detail.source = value;
+      }, tr("Detail source")));
+      const centerX = numberField({ label: tr("Centre X"), value: det.x, kind: 'length', ctx: this.app.unitContext(), onChange: (value) => { if (typeof value === 'number') ws.updateFromPanel((x) => { const q = x.views.find((r) => r.id === v.id); if (q?.detail) q.detail.x = value; }, tr("Detail centre")); } });
+      const centerY = numberField({ label: tr("Centre Y"), value: det.y, kind: 'length', ctx: this.app.unitContext(), onChange: (value) => { if (typeof value === 'number') ws.updateFromPanel((x) => { const q = x.views.find((r) => r.id === v.id); if (q?.detail) q.detail.y = value; }, tr("Detail centre")); } });
+      const radius = numberField({ label: tr("Detail radius"), value: det.radius, kind: 'length', ctx: this.app.unitContext(), min: 0.1, onChange: (value) => { if (typeof value === 'number') ws.updateFromPanel((x) => { const q = x.views.find((r) => r.id === v.id); if (q?.detail) q.detail.radius = Math.max(0.1, value); }, tr("Detail radius")); } });
+      const magnification = selectField<string>(tr("Magnification"), String(det.scale), ['1.5', '2', '3', '4', '5'].map((value) => ({ value, label: scaleLabel(Number(value)) })), (value) => ws.updateFromPanel((x) => {
+        const q = x.views.find((r) => r.id === v.id);
+        if (q?.detail) q.detail.scale = Number(value);
+      }, tr("Magnification")));
+      extra.append(source, centerX, centerY, radius, magnification);
+    }
     if (extra && v.kind === 'section') {
       const sec = v.section ?? { axis: 'z' as SectionAxis, offset: 0, flip: false };
       const axis = selectField<SectionAxis>(tr("Cut along"), sec.axis, [

@@ -1726,5 +1726,21 @@
   "select components first": "请先选择零部件",
   "show all unhide components assembly visibility": "显示全部 取消隐藏 零部件 装配",
   "{0}: {1} x {2}": "{0}：{1} 个 × {2}",
-  "{0}: {1} x {2}° about {3}": "{0}：{1} 个 × {2}°，绕 {3} 轴"
+  "{0}: {1} x {2}° about {3}": "{0}：{1} 个 × {2}°，绕 {3} 轴",
+  "Add a view before a detail view.": "请先添加一个视图，再创建局部放大视图。",
+  "Add detail view": "添加局部放大视图",
+  "Centre X": "中心 X",
+  "Centre Y": "中心 Y",
+  "Could not replace the component": "无法替换零部件",
+  "DETAIL": "局部放大",
+  "Detail": "局部放大",
+  "Detail centre": "局部放大中心",
+  "Detail radius": "局部放大半径",
+  "Detail source": "局部放大来源",
+  "Magnification": "放大倍数",
+  "Replace Component...": "替换零部件…",
+  "Replace component": "替换零部件",
+  "Swap the selected component's part for another saved part; its position and constraints stay.": "用另一个已保存的零件替换所选零部件的零件，位置与约束保持不变。",
+  "replace swap component part assembly": "替换 更换 零部件 零件 装配",
+  "{0} replaced with {1}.": "已将 {0} 替换为 {1}。"
 }

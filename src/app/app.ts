@@ -10,7 +10,7 @@ import { evaluateVariables } from '../model/expr';
 import { consumedSketches, defaultName, dependencies, newSketch } from '../model/features';
 import { BASE_FRAMES, BASE_PLANE_NAMES } from '../model/planes';
 import type {
-  AssemblyComponent, AssemblyJoint, AssemblyMate, BasePlane, ComponentTransform, Feature, Id, PlaneRef, SkEntity, SketchFeature,
+  AssemblyComponent, AssemblyJoint, AssemblyMate, BasePlane, ComponentTransform, Feature, Id, PartDocument, PlaneRef, SkEntity, SketchFeature,
 } from '../model/types';
 import { UNIT_SYSTEMS, formatLength } from '../model/units';
 import { Renderer, type Theme } from '../render/renderer';
@@ -1086,6 +1086,14 @@ export class App {
       doc.joints = doc.joints?.filter((j) => !remove.has(j.component) && !(j.relativeTo && remove.has(j.relativeTo)));
     });
     this.selection.clear();
+  }
+
+  /** Swaps the part behind a component, keeping its name, position and joints. */
+  replaceComponentPart(id: Id, part: PartDocument) {
+    this.store.change(tr("Replace component"), (doc) => {
+      const component = doc.components?.find((c) => c.id === id);
+      if (component) component.part = part;
+    });
   }
 
   /** Hides every component except the given ones (Fusion's Isolate). */

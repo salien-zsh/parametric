@@ -3,7 +3,7 @@
 
 import { defaultName } from '../model/features';
 import { allocateId, newDocument, parseDocument, serializeDocument, withUsedBlobs } from '../model/document';
-import type { ImportFeature, PartDocument } from '../model/types';
+import type { Id, ImportFeature, PartDocument } from '../model/types';
 import {
   type Location, EXT, IMPORT_EXTS, clearRecovery, download, isSolidWorksFile, isStepFile, listParts, loadText, locationLabel, newLocation,
   pickCloudFile, pickCloudSave, pickDeviceFile, orphanRecoveries, removeRecovery, saveText, safeName, writeRecovery, type FileEntry, deletePart, renameCloud, forgetRecent, rememberRecent,
@@ -570,6 +570,26 @@ export class FileOps {
     }
     if (documentVersion !== this.documentVersion || !app.isAssembly) return;
     this.insertPartDocument(part, file.name);
+  }
+
+  /** Replaces a component's part with a file from the device (Fusion's Replace). */
+  async replaceComponent(id: Id) {
+    const app = this.app;
+    if (!app.isAssembly) return;
+    if (!app.component(id)) return;
+    const documentVersion = this.documentVersion;
+    const file = await pickDeviceFile(EXT);
+    if (!file || documentVersion !== this.documentVersion || tooLarge(file.size, file.name)) return;
+    let part: PartDocument;
+    try {
+      part = parseDocument(await file.text());
+    } catch (e) {
+      toast({ kind: 'error', title: tr("Could not replace the component"), message: (e as Error).message });
+      return;
+    }
+    if (documentVersion !== this.documentVersion || !app.isAssembly) return;
+    app.replaceComponentPart(id, part);
+    toast({ kind: 'success', message: tr("{0} replaced with {1}.", [app.component(id)?.name ?? id, file.name]) });
   }
 
   /** Places a parsed part in the open assembly; the first component is grounded. */

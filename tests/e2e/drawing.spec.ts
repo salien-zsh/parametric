@@ -527,3 +527,29 @@ test('assembly drawings number their parts with balloons', async ({ page }) => {
   expect(balloons).toBeGreaterThanOrEqual(2);
   expect(errors).toEqual([]);
 });
+
+test('a detail view magnifies a window of another view', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.getByRole('button', { name: /Mounting Bracket/ }).click();
+  await waitForFeature(page, 'Fillet1');
+  await page.getByRole('tab', { name: 'Drawing' }).click();
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(4, { timeout: 30_000 });
+  await page.evaluate(() => {
+    type AppT = { drawing: { addView(kind: string): void } };
+    (window as unknown as { __parametric: AppT }).__parametric.drawing.addView('detail');
+  });
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(5, { timeout: 30_000 });
+  const texts = () => page.evaluate(() => [...document.querySelectorAll('.paper svg text')].map((t) => t.textContent ?? ''));
+  await expect.poll(texts).toEqual(expect.arrayContaining([expect.stringContaining('DETAIL A')]));
+  expect((await texts()).some((t) => t.includes('2:1'))).toBe(true);
+  expect(await page.evaluate(() => document.querySelectorAll('.paper svg circle').length)).toBeGreaterThanOrEqual(1);
+  // Its controls open when selected: change the magnification.
+  const row = page.locator('.relations-list > *').filter({ hasText: 'Detail' }).first();
+  await row.locator('button').first().click();
+  const magnification = page.getByLabel('Magnification');
+  await expect(magnification).toBeVisible();
+  await magnification.selectOption('3');
+  await page.waitForTimeout(900);
+  expect((await texts()).some((t) => t.includes('3:1'))).toBe(true);
+  expect(errors).toEqual([]);
+});
