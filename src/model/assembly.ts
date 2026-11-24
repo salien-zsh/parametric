@@ -189,6 +189,25 @@ export function frameToWorld(transform: ComponentTransform, frame: JointFrame): 
 
 const identityTransform = (): ComponentTransform => ({ position: [0, 0, 0], rotation: [0, 0, 0] });
 
+/**
+ * Clamps a dragged joint value to its limits and snaps it when close to a
+ * limit, to zero, or to a whole degree/millimetre. Returns the value to use.
+ */
+export function snapJointValue(joint: AssemblyJoint, raw: number): number {
+  const angle = joint.type === 'revolute' || joint.type === 'ball';
+  const span = Math.max(1e-9, joint.max - joint.min);
+  const limitSnap = Math.max(1e-6, Math.min(2, span * 0.02));
+  let v = Math.max(joint.min, Math.min(joint.max, Number.isFinite(raw) ? raw : joint.value));
+  const step = angle ? 5 : 1;
+  const near = Math.round(v / step) * step;
+  if (near >= joint.min && near <= joint.max && Math.abs(near - v) < (angle ? 0.75 : 0.15)) v = near;
+  if (joint.min <= 0 && joint.max >= 0 && Math.abs(v) < (angle ? 0.75 : 0.15)) v = 0;
+  if (Math.abs(v - joint.min) < limitSnap) v = joint.min;
+  else if (Math.abs(v - joint.max) < limitSnap) v = joint.max;
+  return v;
+}
+
+
 const translateBy = (t: ComponentTransform, d: Vec3): ComponentTransform => ({
   position: [t.position[0] + d[0], t.position[1] + d[1], t.position[2] + d[2]],
   rotation: [...t.rotation],

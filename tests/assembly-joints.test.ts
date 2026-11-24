@@ -2,7 +2,7 @@
 // the round trip through a saved assembly file.
 import { describe, expect, it } from 'vitest';
 import {
-  assemblyTransforms, composeTransform, jointPlacement, relativeTransform,
+  assemblyTransforms, composeTransform, jointPlacement, relativeTransform, snapJointValue,
 } from '../src/model/assembly';
 import type { AssemblyComponent, AssemblyJoint, ComponentTransform, PartDocument } from '../src/model/types';
 import { newAssembly, newDocument, parseDocument } from '../src/model/document';
@@ -119,5 +119,30 @@ describe('assembly joint placement', () => {
     expect(joint.offset!.rotation).toEqual([0, 0, 45]);
     expect(joint.aRef!.name).toBe('c1/f5');
     expect(joint.bRef!.kind).toBe('edge');
+  });
+});
+
+describe('joint drag limits', () => {
+  const slider: AssemblyJoint = {
+    id: 'j1', name: 'Slide', type: 'prismatic', component: 'c2', axis: 'x', value: 0, min: -100, max: 100,
+  };
+  const hinge: AssemblyJoint = {
+    id: 'j2', name: 'Hinge', type: 'revolute', component: 'c2', axis: 'z', value: 0, min: -180, max: 180,
+  };
+
+  it('clamps a dragged slider to its travel', () => {
+    expect(snapJointValue(slider, 150)).toBe(100);
+    expect(snapJointValue(slider, -150)).toBe(-100);
+    expect(snapJointValue(slider, 99)).toBe(100);
+    expect(snapJointValue(slider, -98.5)).toBe(-100);
+  });
+
+  it('snaps close values to whole units, zero and limits', () => {
+    expect(snapJointValue(slider, 45.1)).toBe(45);
+    expect(snapJointValue(slider, 0.1)).toBe(0);
+    expect(snapJointValue(slider, 42.6)).toBeCloseTo(42.6, 6);
+    expect(snapJointValue(hinge, 179)).toBe(180);
+    expect(snapJointValue(hinge, 45.4)).toBe(45);
+    expect(snapJointValue(hinge, 44)).toBe(44);
   });
 });

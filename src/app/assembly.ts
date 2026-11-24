@@ -2,7 +2,7 @@
 // parts to each other.
 
 import {
-  connectorAxis, dominantAxis, frameToLocal, jointPlacement, movableJoints, relativeTransform, rotateAbout,
+  connectorAxis, dominantAxis, frameToLocal, jointPlacement, movableJoints, relativeTransform, rotateAbout, snapJointValue,
 } from '../model/assembly';
 import type {
   AssemblyAxis, AssemblyJoint, AssemblyJointRef, AssemblyJointType, AssemblyMate, AssemblyMateType, ComponentTransform, Id,
@@ -216,6 +216,7 @@ export class AssemblyMatePanel extends PropertyPanel {
     axis.hidden = originCoincident || d.type === 'distance' || d.type === 'flush';
     return [
       section(tr("Definition"), [
+        h('p', { class: 'field-label' }, tr("This is a legacy mate between component origins and axes. New constraints use picked faces or edges: use Joint (Assembly Mate) instead.")),
         h('div', { class: 'field-label' }, tr("Mate name")), name,
         h('p', { class: 'field-label' }, tr("{0} is driven from {1}.", [b, a])),
         aRef, bRef, type, axis, value,
@@ -594,6 +595,7 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
   private angleField: HTMLElement | null = null;
   private dragFrom: { x: number; y: number; rotate: boolean } | null = null;
   private jointDrag: { id: Id; from: number; base: number; perPixel: number } | null = null;
+  private rangeOut: HTMLElement | null = null;
   private batching = false;
 
   constructor(private app: App) {
@@ -622,6 +624,8 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
   mount(): HTMLElement {
     const el = super.mount();
     this.attachTool();
+    this.app.visualJointId = this.jointOf(this.ids[0])?.id ?? null;
+    this.app.viewport.drawReferenceGeometry();
     return el;
   }
 
@@ -675,7 +679,8 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
       type: 'range', min: String(joint.min), max: String(joint.max), step: angle ? '0.5' : '0.1',
       value: String(joint.value), 'aria-label': tr("Joint position"),
     }) as HTMLInputElement;
-    const out = h('output', { class: 'field-label' }, `${Number(joint.value).toFixed(2)}${angle ? '°' : ' mm'}`);
+    const out = h('output', { class: 'field-label' }, `${Number(joint.value).toFixed(2)}${angle ? '°' : ' mm'}  (${joint.min} … ${joint.max})`);
+    this.rangeOut = out;
     range.addEventListener('input', () => {
       out.textContent = `${Number(range.value).toFixed(2)}${angle ? '°' : ' mm'}`;
       this.setJointValue(joint.id, Number(range.value));
@@ -741,7 +746,14 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
     const from = this.dragFrom;
     if (!from || !dragging) return;
     if (this.jointDrag) {
-      this.setJointValue(this.jointDrag.id, this.jointDrag.base + (from.y - e.y) * this.jointDrag.perPixel);
+      const joint = (this.app.store.doc.joints ?? []).find((j) => j.id === this.jointDrag!.id);
+      if (!joint) return;
+      const raw = this.jointDrag.base + (from.y - e.y) * this.jointDrag.perPixel;
+      const value = snapJointValue(joint, raw);
+      const angle = joint.type === 'revolute' || joint.type === 'ball';
+      this.setJointValue(joint.id, value);
+      if (this.rangeOut) this.rangeOut.textContent = `${value.toFixed(2)}${angle ? '°' : ' mm'}  (${joint.min} … ${joint.max})`;
+      this.app.setStatus(`${joint.name}: ${value.toFixed(2)}${angle ? '°' : ' mm'}  (${joint.min} … ${joint.max})`);
       this.dragFrom = { ...from, y: e.y };
       return;
     }
@@ -813,6 +825,9 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
 
   dispose(): void {
     if (this.app.viewport.tool === this) this.app.viewport.tool = null;
+    this.app.visualJointId = null;
+    this.app.setStatus(tr("Ready"));
+    this.app.viewport.drawReferenceGeometry();
     this.endBatch(false);
   }
 }

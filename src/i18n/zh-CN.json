@@ -1640,5 +1640,8 @@
   "reference geometry datum point face centre": "参考几何 基准 点 面中心",
   "reference geometry datum point intersection": "参考几何 基准 点 交点",
   "reference geometry datum point midpoint": "参考几何 基准 点 中点",
-  "reference geometry datum point vertex": "参考几何 基准 点 顶点"
+  "reference geometry datum point vertex": "参考几何 基准 点 顶点",
+  "Constrain two components at picked geometry: the same faces, edges and origins as a joint.": "用拾取的几何约束两个零件：与关节相同的面、边和原点参考。",
+  "This is a legacy mate between component origins and axes. New constraints use picked faces or edges: use Joint (Assembly Mate) instead.": "这是基于零件原点与坐标轴的旧版配合。新建约束请改用拾取的面或边：使用“关节（装配配合）”。",
+  "constraint coincident distance angle align assembly face edge mate": "约束 配合 对齐 装配 面 边 位置"
 }

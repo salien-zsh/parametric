@@ -3,7 +3,7 @@
 // (planes, origin, sketches) drawn over the model.
 
 import type { Frame, Vec2, Vec3 } from '../math/vec';
-import { add, cross, dot, normalize, rayPlaneT, scale, sub, toWorld, qAxisAngle } from '../math/vec';
+import { add, cross, dot, normalize, perpendicular, rayPlaneT, scale, sub, toWorld, qAxisAngle } from '../math/vec';
 import type { BasePlane, Id, SketchFeature } from '../model/types';
 import { BASE_FRAMES } from '../model/planes';
 import { consumedSketches } from '../model/features';
@@ -689,6 +689,52 @@ export class Viewport {
         positions: new Float32Array(pointPos), colors: new Uint8Array(pointCol), sizeStyle: sizes, depth: 'test', order: 5,
       });
     } else r.setPoints('constr-points', null);
+
+    // Travel of the joint being moved: the allowed range along its axis, or
+    // the allowed sweep around its pivot, with a mark at the current value.
+    const jointRange = app.jointRangeVisual();
+    const rangePos: number[] = [];
+    const rangeCol: number[] = [];
+    if (jointRange) {
+      const c = this.renderer.theme.selection.map((v) => Math.round(v * 255));
+      const addLine = (a: Vec3, b: Vec3) => {
+        rangePos.push(...a, ...b);
+        rangeCol.push(c[0], c[1], c[2], 235, c[0], c[1], c[2], 235);
+      };
+      if (jointRange.angle) {
+        const u = perpendicular(jointRange.d);
+        const v = cross(jointRange.d, u);
+        const r = Math.max(12, radius * 0.35);
+        const a0 = (jointRange.min * Math.PI) / 180;
+        const a1 = (jointRange.max * Math.PI) / 180;
+        const at = (a: number): Vec3 => add(jointRange.p, add(scale(u, r * Math.cos(a)), scale(v, r * Math.sin(a))));
+        let prev = at(a0);
+        for (let i = 1; i <= 36; i++) {
+          const cur = at(a0 + ((a1 - a0) * i) / 36);
+          addLine(prev, cur);
+          prev = cur;
+        }
+        addLine(jointRange.p, at(a0));
+        addLine(jointRange.p, at(a1));
+        addLine(jointRange.p, at((jointRange.value * Math.PI) / 180));
+      } else {
+        const a = add(jointRange.p, scale(jointRange.d, jointRange.min));
+        const b = add(jointRange.p, scale(jointRange.d, jointRange.max));
+        addLine(a, b);
+        const tick = perpendicular(jointRange.d);
+        const t = Math.max(2, radius * 0.04);
+        addLine(a, add(a, scale(tick, t)));
+        addLine(a, add(a, scale(tick, -t)));
+        addLine(b, add(b, scale(tick, t)));
+        addLine(b, add(b, scale(tick, -t)));
+        const cur = add(jointRange.p, scale(jointRange.d, jointRange.value));
+        addLine(cur, add(cur, scale(tick, t * 1.5)));
+        addLine(cur, add(cur, scale(tick, -t * 1.5)));
+      }
+    }
+    r.setLines('joint-range', rangePos.length ? {
+      positions: new Float32Array(rangePos), colors: new Uint8Array(rangeCol), width: 2, depth: 'always', order: 4,
+    } : null);
 
     this.drawOrigin();
     if (!hoverOnly || this.sketchHoverKey() !== this.drawnSketchHover) this.drawSketches();

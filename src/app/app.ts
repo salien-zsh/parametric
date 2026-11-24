@@ -5,7 +5,7 @@ import type { BuildResult, EdgeInfo, FaceInfo, FeatureStatus } from '../kernel/p
 import { KernelClient, KernelRestartError } from '../kernel/client';
 import type { Frame, Vec3 } from '../math/vec';
 import { DocStore, configurationVariables, isAssembly, newAssembly as newAssemblyDocument, newDocument } from '../model/document';
-import { assemblyTransforms, jointValue, movableJoints } from '../model/assembly';
+import { assemblyTransforms, frameToWorld, jointValue, movableJoints } from '../model/assembly';
 import { evaluateVariables } from '../model/expr';
 import { consumedSketches, defaultName, dependencies, newSketch } from '../model/features';
 import { BASE_FRAMES, BASE_PLANE_NAMES } from '../model/planes';
@@ -729,6 +729,27 @@ export class App {
 
   component(id: Id): AssemblyComponent | null {
     return this.store.doc.components?.find((c) => c.id === id) ?? null;
+  }
+
+  /** The joint whose travel is drawn (set by the Move panel while it is open). */
+  visualJointId: Id | null = null;
+
+  /** World pivot and direction of a joint plus its travel, for the range display. */
+  jointRangeVisual(): { id: Id; p: Vec3; d: Vec3; min: number; max: number; value: number; angle: boolean } | null {
+    if (!this.isAssembly) return null;
+    const joints = this.store.doc.joints ?? [];
+    const selected = this.selection.ofKind('assemblyJoint').map((it) => it.id);
+    const joint = joints.find((j) => j.id === this.visualJointId) ?? joints.find((j) => selected.includes(j.id));
+    if (!joint) return null;
+    const solved = this.solvedComponentTransforms();
+    const ref = joint.relativeTo ? solved.get(joint.relativeTo) : undefined;
+    const base = ref ?? { position: [0, 0, 0] as Vec3, rotation: [0, 0, 0] as Vec3 };
+    if (joint.aRef?.d) {
+      const world = frameToWorld(base, { p: joint.aRef.p ?? [0, 0, 0], d: joint.aRef.d });
+      return { id: joint.id, p: world.p, d: world.d, min: joint.min, max: joint.max, value: joint.value, angle: joint.type === 'revolute' || joint.type === 'ball' };
+    }
+    const dir: Vec3 = joint.axis === 'x' ? [1, 0, 0] : joint.axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+    return { id: joint.id, p: solved.get(joint.component)?.position ?? [0, 0, 0], d: dir, min: joint.min, max: joint.max, value: joint.value, angle: joint.type === 'revolute' || joint.type === 'ball' };
   }
 
   /** The transforms the assembly solver gives the components right now. */

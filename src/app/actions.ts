@@ -225,10 +225,11 @@ export function registerCommands(app: App, files: FileOps) {
     },
     {
       id: 'addMate', label: tr("Assembly Mate..."), icon: 'relation',
-      keywords: tr("constraint coincident distance angle align assembly"),
+      keywords: tr("constraint coincident distance angle align assembly face edge mate"),
+      description: tr("Constrain two components at picked geometry: the same faces, edges and origins as a joint."),
       enabled: () => app.isAssembly && app.selection.ofKind('component').length === 2,
       run: () => {
-        void import('./assembly').then(({ AssemblyMatePanel }) => app.openPanel(new AssemblyMatePanel(app)))
+        void import('./assembly').then(({ AssemblyJointPanel }) => app.openPanel(new AssemblyJointPanel(app)))
           .catch((e) => toast({ kind: 'error', message: (e as Error).message }));
       },
     },
@@ -527,7 +528,7 @@ export const RIBBON: RibbonTab[] = [
         { cmd: 'pointVertex', menu: ['pointVertex', 'pointMidpoint', 'pointCenter', 'pointFaceCenter', 'pointIntersection'] },
         { cmd: 'importStep' }],
       [{ cmd: 'newAssembly' }, { cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'openDrawing' }],
-      [{ cmd: 'fixComponent' }, { cmd: 'moveComponents' }, { cmd: 'addJoint' }, { cmd: 'addMate' }, { cmd: 'motionStudy' }],
+      [{ cmd: 'fixComponent' }, { cmd: 'moveComponents' }, { cmd: 'addJoint' }, { cmd: 'motionStudy' }],
       [{ cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
     ],
   },

@@ -138,3 +138,107 @@ test('a joint mates two picked faces and carries the part when the reference mov
   expect(solved.bracket[2] - solved.base[2]).toBeCloseTo(30, 4);
   expect(errors).toEqual([]);
 });
+
+test('the mate command creates the same geometry constraint as a joint', async ({ page }) => {
+  const errors = await openApp(page);
+  await assembly(page);
+  await page.locator('.tree [role="treeitem"]').filter({ hasText: 'Base' }).first().click();
+  await page.locator('.tree [role="treeitem"]').filter({ hasText: 'Bracket' }).first().click({ modifiers: ['Control'] });
+  await page.evaluate(() => (window as unknown as Handle).__parametric.commands.run('addMate'));
+  await expect(page.getByRole('heading', { name: 'Joint' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Reference geometry' })).toBeVisible();
+  const picks = await page.evaluate(() => {
+    const a = (window as unknown as Handle).__parametric;
+    return {
+      baseTop: a.faces.findIndex((f) => f.component === 'c1' && f.type === 'plane' && Math.abs((f.normal?.[2] ?? 0) - 1) < 1e-6),
+      bracketBottom: a.faces.findIndex((f) => f.component === 'c2' && f.type === 'plane' && Math.abs((f.normal?.[2] ?? 0) + 1) < 1e-6),
+    };
+  });
+  await page.evaluate((p) => {
+    const selects = [...document.querySelectorAll<HTMLSelectElement>('.pm-section select')];
+    selects[1].value = `face:${p.baseTop}`;
+    selects[1].dispatchEvent(new Event('change', { bubbles: true }));
+    selects[2].value = `face:${p.bracketBottom}`;
+    selects[2].dispatchEvent(new Event('change', { bubbles: true }));
+  }, picks);
+  await page.locator('.confirm-corner .ok').click();
+  const joint = await page.evaluate(() => {
+    const a = (window as unknown as Handle).__parametric;
+    return a.store.doc.joints!.map((j) => ({ relativeTo: j.relativeTo, component: j.component }));
+  });
+  expect(joint).toEqual([{ relativeTo: 'c1', component: 'c2' }]);
+  expect(errors).toEqual([]);
+});
+
+test('dragging a jointed component stops at the joint limits', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.getByRole('button', { name: /New part/ }).click();
+  await app(page);
+  await page.evaluate(async () => {
+    const a = (window as unknown as Handle).__parametric;
+    a.newAssembly('Sliding');
+    const now = Date.now();
+    const box = (name: string) => ({
+      format: 'parametric-part', version: 1, kind: 'part', name, units: 'MMGS', decimals: 2, material: null, color: '#b8c4d2',
+      variables: [], rollback: null, blobs: {}, components: [], nextId: 3, created: now, modified: now,
+      features: [
+        {
+          id: 's1', name: 'Sketch1', type: 'sketch', plane: { kind: 'base', plane: 'front' }, constraints: [], entities: [
+            { id: 'p1', t: 'point', x: 0, y: 0 }, { id: 'p2', t: 'point', x: 40, y: 0 }, { id: 'p3', t: 'point', x: 40, y: 40 }, { id: 'p4', t: 'point', x: 0, y: 40 },
+            { id: 'l1', t: 'line', a: 'p1', b: 'p2' }, { id: 'l2', t: 'line', a: 'p2', b: 'p3' }, { id: 'l3', t: 'line', a: 'p3', b: 'p4' }, { id: 'l4', t: 'line', a: 'p4', b: 'p1' },
+          ],
+        },
+        { id: 'e1', name: 'Extrude1', type: 'extrude', sketch: 's1', cut: false, end: 'blind', depth: 20, flip: false, dir2: null, draft: 0, draftOutward: false, thin: null },
+      ],
+    });
+    a.store.change('Sliding components', (doc) => {
+      doc.components = [
+        { id: 'c1', name: 'Rail', part: box('Rail'), transform: { position: [0, 0, 0], rotation: [0, 0, 0] }, visible: true, fixed: true },
+        { id: 'c2', name: 'Carriage', part: box('Carriage'), transform: { position: [0, 0, 30], rotation: [0, 0, 0] }, visible: true, fixed: false },
+      ] as unknown as typeof doc.components;
+      doc.joints = [{
+        id: 'j1', name: 'Slide', type: 'prismatic', component: 'c2', relativeTo: 'c1', axis: 'x', value: 0, min: -20, max: 20,
+        offset: { position: [0, 0, 30], rotation: [0, 0, 0] },
+        aRef: { kind: 'edge', p: [0, 0, 30], d: [1, 0, 0] },
+      }];
+    });
+    await a.whenBuilt();
+    a.viewport.setView('trimetric', false);
+    a.viewport.zoomToFit(false);
+    // Zoom out so a 260 px drag covers more than the joint's 40 mm travel.
+    a.renderer.camera.distance = Math.max(a.renderer.camera.distance * 6, 300);
+    (a.renderer.camera as unknown as { onChange(): void }).onChange();
+    a.renderer.requestRender();
+  });
+  await page.waitForTimeout(600);
+  const pixel = await pixelOver(page, 'c2');
+  await page.mouse.click(pixel.x, pixel.y);
+  await page.evaluate(() => (window as unknown as Handle).__parametric.commands.run('moveComponents'));
+  await expect(page.getByRole('heading', { name: 'Move/Rotate' })).toBeVisible();
+  expect(await page.evaluate(() => !!(window as unknown as Handle).__parametric.jointRangeVisual())).toBe(true);
+  // Drag far beyond the +20 mm limit (several strokes, as a user would).
+  for (let i = 0; i < 4; i++) {
+    const at = await pixelOver(page, 'c2');
+    await page.mouse.move(at.x, at.y);
+    await page.mouse.down();
+    await page.mouse.move(at.x, at.y - 260, { steps: 12 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+  }
+  await page.waitForTimeout(600);
+  const value = await page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.joints![0].value);
+  expect(value).toBe(20);
+  // Drag the other way: the carriage stops at the other end of its travel.
+  for (let i = 0; i < 6; i++) {
+    const at = await pixelOver(page, 'c2');
+    await page.mouse.move(at.x, at.y);
+    await page.mouse.down();
+    await page.mouse.move(at.x, at.y + 240, { steps: 12 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+  }
+  await page.waitForTimeout(600);
+  const back = await page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.joints![0].value);
+  expect(back).toBe(-20);
+  expect(errors).toEqual([]);
+});
