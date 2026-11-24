@@ -548,6 +548,20 @@ export class DrawingWorkspace {
     }, tr("Add view"));
   }
 
+  /** Turns centre marks or balloons on for every view, or off when they are all on. */
+  toggleAllViewFlags(flag: 'centers' | 'balloons') {
+    const d = this.doc;
+    if (!d) return;
+    const shows = (v: DrawingView) => flag === 'centers' ? v.centers !== false : !!v.balloons;
+    const allOn = d.views.every(shows);
+    this.update((doc) => {
+      for (const v of doc.views) {
+        if (flag === 'centers') v.centers = !allOn;
+        else v.balloons = !allOn;
+      }
+    }, flag === 'centers' ? tr("Center marks") : tr("Balloons"));
+  }
+
   /** A magnified circular window onto another view, placed beside it. */
   addDetailView() {
     const d = this.doc;

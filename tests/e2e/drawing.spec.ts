@@ -569,3 +569,21 @@ test('adds an auxiliary view taken from a planar face', async ({ page }) => {
     .toEqual(expect.arrayContaining([expect.stringContaining('AUXILIARY A')]));
   expect(errors).toEqual([]);
 });
+
+test('Center Marks toggles centre marks on every view at once', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.getByRole('button', { name: /Mounting Bracket/ }).click();
+  await waitForFeature(page, 'Fillet1');
+  await page.getByRole('tab', { name: 'Drawing' }).click();
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(4, { timeout: 30_000 });
+  const count = () => page.evaluate(() => document.querySelector('.paper svg')!.querySelectorAll('line').length);
+  const before = await count();
+  await page.evaluate(() => (window as unknown as { __parametric: { commands: { run(id: string): void } } }).__parametric.commands.run('drawing:centers'));
+  await page.waitForTimeout(700);
+  const off = await count();
+  expect(off).toBeLessThan(before);
+  await page.evaluate(() => (window as unknown as { __parametric: { commands: { run(id: string): void } } }).__parametric.commands.run('drawing:centers'));
+  await page.waitForTimeout(700);
+  expect(await count()).toBe(before);
+  expect(errors).toEqual([]);
+});
