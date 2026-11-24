@@ -529,14 +529,15 @@ export class Viewport {
       // A selected component lights up as a whole; in an assembly so does the
       // component a hovered or picked face belongs to (clicking part of a
       // component selects the component).
+      const owned = (owner: string | undefined, componentId: string) => owner === componentId || !!owner?.startsWith(`${componentId}/`);
       if (it.kind === 'component') {
-        app.faces.forEach((f, i) => { if (f.component === it.id) faces[i] |= bit; });
-        app.edges.forEach((e, i) => { if (e.component === it.id) edges[i] |= bit; });
+        app.faces.forEach((f, i) => { if (owned(f.component, it.id)) faces[i] |= bit; });
+        app.edges.forEach((e, i) => { if (owned(e.component, it.id)) edges[i] |= bit; });
       } else if (app.isAssembly && (it.kind === 'face' || it.kind === 'edge')) {
         const component = app.componentOfItem(it);
         if (component) {
-          app.faces.forEach((f, i) => { if (f.component === component.id) faces[i] |= bit; });
-          app.edges.forEach((e, i) => { if (e.component === component.id) edges[i] |= bit; });
+          app.faces.forEach((f, i) => { if (owned(f.component, component.id)) faces[i] |= bit; });
+          app.edges.forEach((e, i) => { if (owned(e.component, component.id)) edges[i] |= bit; });
         }
       }
     };
@@ -689,6 +690,38 @@ export class Viewport {
         positions: new Float32Array(pointPos), colors: new Uint8Array(pointCol), sizeStyle: sizes, depth: 'test', order: 5,
       });
     } else r.setPoints('constr-points', null);
+
+    // The Move/Rotate handle: an arrow on each world axis, drawn over the part.
+    const gizmo = app.gizmoGeometry();
+    const gizmoPos: number[] = [];
+    const gizmoCol: number[] = [];
+    if (gizmo) {
+      const axes: { axis: 'x' | 'y' | 'z'; d: Vec3; color: number[] }[] = [
+        { axis: 'x', d: [1, 0, 0], color: cssColor('--axis-x') },
+        { axis: 'y', d: [0, 1, 0], color: cssColor('--axis-y') },
+        { axis: 'z', d: [0, 0, 1], color: cssColor('--axis-z') },
+      ];
+      for (const a of axes) {
+        const hot = app.gizmoAxis === a.axis;
+        const c = hot ? this.renderer.theme.selection : a.color;
+        const rgba = [Math.round(c[0] * 255), Math.round(c[1] * 255), Math.round(c[2] * 255), 255];
+        const tip: Vec3 = [gizmo.o[0] + a.d[0] * gizmo.size, gizmo.o[1] + a.d[1] * gizmo.size, gizmo.o[2] + a.d[2] * gizmo.size];
+        gizmoPos.push(...gizmo.o, ...tip);
+        gizmoCol.push(...rgba, ...rgba);
+        // Arrowhead: two short wings back from the tip, perpendicular to the axis.
+        const u: Vec3 = a.axis === 'x' ? [0, 0, 1] : [1, 0, 0];
+        const wing = gizmo.size * 0.12;
+        for (const s of [1, -1]) {
+          const back: Vec3 = [tip[0] - a.d[0] * gizmo.size * 0.2, tip[1] - a.d[1] * gizmo.size * 0.2, tip[2] - a.d[2] * gizmo.size * 0.2];
+          const w: Vec3 = [back[0] + u[0] * wing * s, back[1] + u[1] * wing * s, back[2] + u[2] * wing * s];
+          gizmoPos.push(...tip, ...w);
+          gizmoCol.push(...rgba, ...rgba);
+        }
+      }
+    }
+    r.setLines('gizmo', gizmoPos.length ? {
+      positions: new Float32Array(gizmoPos), colors: new Uint8Array(gizmoCol), width: 2.4, depth: 'always', order: 7,
+    } : null);
 
     // Travel of the joint being moved: the allowed range along its axis, or
     // the allowed sweep around its pivot, with a mark at the current value.

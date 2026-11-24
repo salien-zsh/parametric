@@ -39,18 +39,19 @@ async function assembly(page: import('@playwright/test').Page) {
 }
 
 /** A pixel over the given component, found through the same pick the user triggers. */
-async function pixelOver(page: import('@playwright/test').Page, componentId: string) {
-  return page.evaluate((id) => {
+async function pixelOver(page: import('@playwright/test').Page, componentId: string, awayFrom?: { x: number; y: number }) {
+  return page.evaluate(({ id, away }) => {
     const a = (window as unknown as Handle).__parametric;
     const c = a.viewport.canvas.getBoundingClientRect();
     for (let y = c.top + 60; y < c.bottom - 40; y += 18) {
       for (let x = c.left + 40; x < c.right - 40; x += 18) {
+        if (away && Math.hypot(x - away.x, y - away.y) < 70) continue;
         const item = a.viewport.pickItem(x - c.left, y - c.top, { face: true });
         if (a.componentOfItem(item)?.id === id) return { x, y };
       }
     }
     throw new Error(`no pixel over ${id}`);
-  }, componentId);
+  }, { id: componentId, away: awayFrom ?? null });
 }
 
 test('clicking a component selects it, and Move drags it', async ({ page }) => {
@@ -65,13 +66,16 @@ test('clicking a component selects it, and Move drags it', async ({ page }) => {
   // Move the selected bracket by dragging it.
   await page.evaluate(() => (window as unknown as Handle).__parametric.commands.run('moveComponents'));
   await expect(page.getByRole('heading', { name: 'Move/Rotate' })).toBeVisible();
-  await page.mouse.move(bracket.x, bracket.y);
+  // Grab the part away from the axis handle so this is a free move.
+  const grab = await pixelOver(page, 'c2', bracket);
+  await page.mouse.move(grab.x, grab.y);
   await page.mouse.down();
-  await page.mouse.move(bracket.x - 40, bracket.y, { steps: 6 });
+  await page.mouse.move(grab.x - 40, grab.y, { steps: 6 });
   await page.mouse.up();
   await page.waitForTimeout(800);
   const moved = await page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.components!.find((c) => c.id === 'c2')!.transform.position);
-  expect(moved[0]).not.toBeCloseTo(120, 3);
+  // Free move or a handle drag: at least one axis changed.
+  expect(Math.hypot(moved[0] - 120, moved[1], moved[2])).toBeGreaterThan(1);
   await page.locator('.confirm-corner .ok').click();
   await expect.poll(() => page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.components!.find((c) => c.id === 'c2')!.transform.position[0])).not.toBe(120);
   expect(errors).toEqual([]);
@@ -240,5 +244,39 @@ test('dragging a jointed component stops at the joint limits', async ({ page }) 
   await page.waitForTimeout(600);
   const back = await page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.joints![0].value);
   expect(back).toBe(-20);
+  expect(errors).toEqual([]);
+});
+
+test('the three-axis handle drags a component along one axis', async ({ page }) => {
+  const errors = await openApp(page);
+  await assembly(page);
+  const bracket = await pixelOver(page, 'c2');
+  await page.mouse.click(bracket.x, bracket.y);
+  await page.evaluate(() => (window as unknown as Handle).__parametric.commands.run('moveComponents'));
+  await expect(page.getByRole('heading', { name: 'Move/Rotate' })).toBeVisible();
+  const gizmo = await page.evaluate(() => {
+    const a = (window as unknown as Handle).__parametric;
+    const g = a.gizmoGeometry()!;
+    const rect = a.viewport.canvas.getBoundingClientRect();
+    const o = a.viewport.project(g.o).map((v, i) => v + (i === 0 ? rect.left : rect.top));
+    const xTip = a.viewport.project([g.o[0] + g.size, g.o[1], g.o[2]]).map((v, i) => v + (i === 0 ? rect.left : rect.top));
+    return { o, xTip, size: g.size };
+  });
+  expect(gizmo).toBeTruthy();
+  const dx = gizmo.xTip[0] - gizmo.o[0];
+  const dy = gizmo.xTip[1] - gizmo.o[1];
+  const len = Math.hypot(dx, dy);
+  const ux = dx / len, uy = dy / len;
+  const start = { x: gizmo.o[0] + ux * 20, y: gizmo.o[1] + uy * 20 };
+  const before = await page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.components!.find((c) => c.id === 'c2')!.transform.position);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + ux * 60, start.y + uy * 60, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(900);
+  const after = await page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.components!.find((c) => c.id === 'c2')!.transform.position);
+  expect(after[0]).toBeGreaterThan(before[0] + 1);
+  expect(after[1]).toBeCloseTo(before[1], 6);
+  expect(after[2]).toBeCloseTo(before[2], 6);
   expect(errors).toEqual([]);
 });

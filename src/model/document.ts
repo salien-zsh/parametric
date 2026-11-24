@@ -166,7 +166,7 @@ export function parseDocument(text: string): PartDocument {
       } catch (e) {
         throw new Error(tr("The assembly file is damaged (component {0}: {1})", [rawComponent.name, (e as Error).message]));
       }
-      if (isAssembly(part)) throw new Error(tr("Nested assemblies are not supported yet."));
+      // A sub-assembly is allowed: it is built flattened into its parts.
       ids.add(rawComponent.id);
       const component: AssemblyComponent = {
         id: rawComponent.id,

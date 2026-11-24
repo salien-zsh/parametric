@@ -5,7 +5,7 @@ import type { BuildResult, EdgeInfo, FaceInfo, FeatureStatus } from '../kernel/p
 import { KernelClient, KernelRestartError } from '../kernel/client';
 import type { Frame, Vec3 } from '../math/vec';
 import { DocStore, configurationVariables, isAssembly, newAssembly as newAssemblyDocument, newDocument } from '../model/document';
-import { assemblyTransforms, frameToWorld, jointValue, movableJoints } from '../model/assembly';
+import { assemblyTransforms, composeTransform, frameToWorld, jointValue, movableJoints } from '../model/assembly';
 import { evaluateVariables } from '../model/expr';
 import { consumedSketches, defaultName, dependencies, newSketch } from '../model/features';
 import { BASE_FRAMES, BASE_PLANE_NAMES } from '../model/planes';
@@ -733,6 +733,25 @@ export class App {
 
   /** The joint whose travel is drawn (set by the Move panel while it is open). */
   visualJointId: Id | null = null;
+  /** The Move/Rotate panel shows the three-axis handle on the selected components. */
+  showGizmo = false;
+  /** Axis of the handle under the pointer, for the hover highlight. */
+  gizmoAxis: 'x' | 'y' | 'z' | null = null;
+
+  /** Origin and length of the three-axis handle (null while it is hidden). */
+  gizmoGeometry(): { o: Vec3; size: number } | null {
+    if (!this.isAssembly || !this.showGizmo) return null;
+    const ids = this.selection.ofKind('component').map((it) => it.id);
+    if (!ids.length) return null;
+    const solved = this.solvedComponentTransforms();
+    const points = ids.map((id) => solved.get(id)?.position).filter((p): p is Vec3 => !!p);
+    if (!points.length) return null;
+    const o: Vec3 = [0, 0, 0];
+    for (const p of points) { o[0] += p[0] / points.length; o[1] += p[1] / points.length; o[2] += p[2] / points.length; }
+    const b = this.bbox;
+    const diag = b ? Math.hypot(b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]) : 100;
+    return { o, size: Math.max(10, diag * 0.22) };
+  }
 
   /** World pivot and direction of a joint plus its travel, for the range display. */
   jointRangeVisual(): { id: Id; p: Vec3; d: Vec3; min: number; max: number; value: number; angle: boolean } | null {
@@ -762,7 +781,59 @@ export class App {
     if (!item) return null;
     const id = item.kind === 'face' ? this.faces[item.index]?.component
       : item.kind === 'edge' ? this.edges[item.index]?.component : undefined;
-    return id ? this.component(id) : null;
+    if (!id) return null;
+    // A part of a sub-assembly carries a path like "c3/c1": it belongs to the
+    // top-level component that holds the sub-assembly.
+    return this.component(id.split('/')[0]);
+  }
+
+  /**
+   * The parts to build: a sub-assembly is flattened into its parts with their
+   * placed transforms, each tagged with its path so picking maps back to the
+   * component that was inserted.
+   */
+  private assemblyBuildComponents(transforms: Map<Id, ComponentTransform> | null): import('../kernel/protocol').AssemblyBuildComponent[] {
+    const out: import('../kernel/protocol').AssemblyBuildComponent[] = [];
+    const walk = (components: AssemblyComponent[], parent: ComponentTransform | null, prefix: string) => {
+      for (const component of components) {
+        const placed = parent ? composeTransform(parent, component.transform) : component.transform;
+        const id = prefix ? `${prefix}/${component.id}` : component.id;
+        const part = component.part;
+        if (part.kind === 'assembly') {
+          walk(part.components ?? [], placed, id);
+          continue;
+        }
+        const partStore = new DocStore(part);
+        const partResolved = partStore.resolve();
+        out.push({
+          id,
+          name: component.name,
+          features: partResolved.features,
+          upTo: partStore.builtCount,
+          blobs: part.blobs,
+          transform: placed,
+          visible: component.visible,
+        });
+      }
+    };
+    for (const component of this.store.doc.components ?? []) {
+      const placed = transforms?.get(component.id) ?? component.transform;
+      if (component.part.kind === 'assembly') walk(component.part.components ?? [], placed, component.id);
+      else {
+        const partStore = new DocStore(component.part);
+        const partResolved = partStore.resolve();
+        out.push({
+          id: component.id,
+          name: component.name,
+          features: partResolved.features,
+          upTo: partStore.builtCount,
+          blobs: component.part.blobs,
+          transform: placed,
+          visible: component.visible,
+        });
+      }
+    }
+    return out;
   }
 
   /**
@@ -782,7 +853,10 @@ export class App {
     const add = (it: SelItem | null) => {
       if (!it) return;
       if (it.kind === 'component') {
-        for (let i = 0; i < this.faces.length; i++) if (this.faces[i].component === it.id) out.push({ kind: 'face', index: i, name: this.faces[i].name });
+        for (let i = 0; i < this.faces.length; i++) {
+          const owner = this.faces[i].component;
+          if (owner === it.id || owner?.startsWith(`${it.id}/`)) out.push({ kind: 'face', index: i, name: this.faces[i].name });
+        }
         return;
       }
       if (it.kind === 'face' || it.kind === 'edge') {
@@ -1249,21 +1323,7 @@ export class App {
     }
     const assembly = isAssembly(this.store.doc);
     const transforms = assembly ? assemblyTransforms(this.store.doc, this.jointOverrides()) : null;
-    const assemblyComponents = assembly
-      ? (this.store.doc.components ?? []).map((component) => {
-        const partStore = new DocStore(component.part);
-        const partResolved = partStore.resolve();
-        return {
-          id: component.id,
-          name: component.name,
-          features: partResolved.features,
-          upTo: partStore.builtCount,
-          blobs: component.part.blobs,
-          transform: transforms?.get(component.id) ?? component.transform,
-          visible: component.visible,
-        };
-      })
-      : undefined;
+    const assemblyComponents = assembly ? this.assemblyBuildComponents(transforms) : undefined;
     const componentKey = assemblyComponents?.map((c) => ({ ...c, blobs: Object.keys(c.blobs) }));
     const key = JSON.stringify([upTo, this.settings.quality, preview, resolved.features.slice(0, upTo), componentKey]);
     if (key === this.lastBuildKey) return;

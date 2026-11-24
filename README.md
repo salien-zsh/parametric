@@ -68,11 +68,11 @@ The **Mechanical** tab holds the power-transmission generators. Every generator 
 - Export to PDF or SVG.
 
 **Assemblies**
-- Create a new assembly and insert saved `.parametric` parts as independent components.
+- Create a new assembly and insert saved `.parametric` parts as independent components, by the picker or by dragging a part file onto the assembly. A saved assembly can be inserted as a sub-assembly: it is built from its parts and moves as one unit until it is opened for editing.
 - **New Part** in an assembly creates an empty in-place part and opens it for sketching and modeling; **Finish Part** writes it back into the component, and a double-click on a component opens its part again.
 - The assembly design tree shows every component; component properties edit its name, visibility, XYZ position and XYZ rotation, with full undo/redo.
 - Pick a component in the view (a click selects the whole component, highlighted as one part) or in the design tree; Ctrl-click adds to the selection.
-- **Move/Rotate**: drag a component in the view to move it, hold Shift while dragging to rotate it, or type X/Y/Z offsets and a rotation about X, Y or Z. A component joined to another moves by its joint value instead, and dragging it slides or turns the joint within its limits. The whole drag is one undo step.
+- **Move/Rotate** shows a three-axis handle on the selected components: drag the X, Y or Z arrow to move along that axis, drag the part itself to move it freely, hold Shift while dragging to rotate it, or type X/Y/Z offsets and a rotation about X, Y or Z. A component joined to another moves by its joint value instead, and dragging it slides or turns the joint within its limits. The whole drag is one undo step.
 - **Joint**: select two components, pick a face, an edge or the origins on each, and the driven part snaps into place with the picked geometry meeting the reference (mated faces, coaxial edges or coincident origins). Joints are rigid, revolute, slider, cylindrical, planar, ball or pin-slot; cylindrical, planar, ball and pin-slot joints expose a second axis and value with independent motion limits.
 - Every joint made between picked geometry stores where it was made, so moving the reference component carries the joined parts with it, and the joint value drives the motion from there.
 - **Assembly Mate** and **Joint** are the same constraint now: both pick a face, an edge or the origins on the two parts, so there is one kind of assembly constraint to learn. Old origin/axis mates still open and solve, and their editor points to the joint workflow.

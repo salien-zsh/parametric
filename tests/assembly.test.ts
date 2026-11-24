@@ -47,13 +47,16 @@ describe('assembly documents', () => {
     }]);
   });
 
-  it('refuses malformed component lists and nested assemblies', () => {
+  it('refuses malformed component lists but allows sub-assemblies', () => {
     const assembly = newAssembly();
     expect(() => parseDocument(JSON.stringify({ ...assembly, components: undefined }))).toThrow(/component list/);
-    expect(() => parseDocument(JSON.stringify({
+    // A saved assembly can be inserted as a sub-assembly component.
+    const nested = parseDocument(JSON.stringify({
       ...assembly,
-      components: [{ id: 'c1', name: 'Nested', part: newAssembly('Nested'), transform: {}, visible: true }],
-    }))).toThrow(/Nested assemblies/);
+      components: [{ id: 'c1', name: 'Nested', part: newAssembly('Nested'), transform: { position: [0, 0, 0], rotation: [0, 0, 0] }, visible: true }],
+    }));
+    expect(nested.components).toHaveLength(1);
+    expect(nested.components![0].part.kind).toBe('assembly');
     const part = newDocument('Part');
     assembly.components = [
       { id: 'c1', name: 'A', part, transform: { position: [0, 0, 0], rotation: [0, 0, 0] }, visible: true },

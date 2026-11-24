@@ -266,7 +266,7 @@
     {
       "file": "src/model/document.ts",
       "edits": 0,
-      "skipped": 21
+      "skipped": 20
     },
     {
       "file": "src/model/features.ts",

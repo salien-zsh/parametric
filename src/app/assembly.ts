@@ -460,13 +460,14 @@ function connectorKey(app: App, ref?: AssemblyJointRef | null): string {
 function jointConnectors(app: App, componentId: Id): { value: string; label: string }[] {
   const out: { value: string; label: string }[] = [{ value: 'origin', label: tr("Origin") }];
   let faces = 0, edges = 0;
+  const owned = (owner: string | undefined) => owner === componentId || !!owner?.startsWith(`${componentId}/`);
   app.faces.forEach((face, i) => {
-    if (face.component === componentId && face.type === 'plane') {
+    if (owned(face.component) && face.type === 'plane') {
       out.push({ value: `face:${i}`, label: tr("Face {0}", [++faces]) });
     }
   });
   app.edges.forEach((edge, i) => {
-    if (edge.component !== componentId) return;
+    if (!owned(edge.component)) return;
     if (edge.type === 'circle' || edge.type === 'line') out.push({ value: `edge:${i}`, label: tr("Edge {0}", [++edges]) });
   });
   return out;
@@ -482,11 +483,13 @@ function connectorFrame(app: App, componentId: Id, value: string): { p: Vec3; d:
   const index = Number(raw);
   if (kind === 'face') {
     const face = app.faces[index];
-    if (!face || face.component !== componentId || !face.normal) return null;
+    const owner = face?.component ?? '';
+    if (!face || !face.normal || (owner !== componentId && !owner.startsWith(`${componentId}/`))) return null;
     return { p: [...face.center], d: [...face.normal], kind: 'face', name: face.name };
   }
   const edge = app.edges[index];
-  if (!edge || edge.component !== componentId) return null;
+  const owner = edge?.component ?? '';
+  if (!edge || (owner !== componentId && !owner.startsWith(`${componentId}/`))) return null;
   const p = edge.type === 'circle' ? edge.center : edge.mid;
   const d = edge.type === 'circle' ? edge.axis : edge.dir;
   if (!p || !d) return null;
@@ -596,6 +599,10 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
   private dragFrom: { x: number; y: number; rotate: boolean } | null = null;
   private jointDrag: { id: Id; from: number; base: number; perPixel: number } | null = null;
   private rangeOut: HTMLElement | null = null;
+  private gizmoDrag: { axis: 'x' | 'y' | 'z'; sx: number; sy: number; ux: number; uy: number; worldPerPx: number } | null = null;
+  /** Transforms and joint values when the handle drag started. */
+  private gizmoBase: Map<Id, ComponentTransform> = new Map();
+  private gizmoJointBase: Map<Id, number> = new Map();
   private batching = false;
 
   constructor(private app: App) {
@@ -625,6 +632,7 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
     const el = super.mount();
     this.attachTool();
     this.app.visualJointId = this.jointOf(this.ids[0])?.id ?? null;
+    this.app.showGizmo = true;
     this.app.viewport.drawReferenceGeometry();
     return el;
   }
@@ -728,7 +736,67 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
     this.app.setComponentTransforms(transforms);
   }
 
+  /** The axis handle under a canvas pixel, with its screen direction and world scale. */
+  private gizmoPick(x: number, y: number): { axis: 'x' | 'y' | 'z'; sx: number; sy: number; ux: number; uy: number; worldPerPx: number } | null {
+    const g = this.app.gizmoGeometry();
+    if (!g) return null;
+    const o = this.app.viewport.project(g.o);
+    for (const axis of ['x', 'y', 'z'] as const) {
+      const d: Vec3 = axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+      const tip = this.app.viewport.project([g.o[0] + d[0] * g.size, g.o[1] + d[1] * g.size, g.o[2] + d[2] * g.size]);
+      if (screenSegDist(x, y, o[0], o[1], tip[0], tip[1]) > 12) continue;
+      const dx = tip[0] - o[0], dy = tip[1] - o[1];
+      const len = Math.hypot(dx, dy);
+      if (len < 4) continue;
+      return { axis, sx: x, sy: y, ux: dx / len, uy: dy / len, worldPerPx: g.size / len };
+    }
+    return null;
+  }
+
+  /** Moves the selected components along a world axis by `delta` millimetres. */
+  private applyGizmo(delta: number) {
+    const axis = this.gizmoDrag!.axis;
+    const dir: Vec3 = axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+    this.beginBatch();
+    const transforms = new Map<Id, ComponentTransform>();
+    for (const id of this.ids) {
+      const component = this.app.component(id);
+      const base = this.gizmoBase.get(id);
+      if (!component || !base) continue;
+      const joint = this.jointOf(id);
+      if (joint && joint.relativeTo) {
+        // A jointed part moves by its joint value, along the joint's own axis.
+        const world = this.app.jointRangeVisual()?.id === joint.id ? this.app.jointRangeVisual()! : null;
+        const jd = world?.d ?? dir;
+        const along = (jd[0] * dir[0] + jd[1] * dir[1] + jd[2] * dir[2]) * delta;
+        const from = this.gizmoJointBase.get(joint.id) ?? joint.value;
+        this.setJointValue(joint.id, snapJointValue(joint, from + along));
+        continue;
+      }
+      transforms.set(id, {
+        position: [base.position[0] + dir[0] * delta, base.position[1] + dir[1] * delta, base.position[2] + dir[2] * delta],
+        rotation: [...base.rotation],
+      });
+    }
+    if (transforms.size) this.app.setComponentTransforms(transforms);
+  }
+
   pointerDown = (e: VPEvent): boolean => {
+    // A handle grabbed first: drag along that world axis.
+    const handle = this.gizmoPick(e.x, e.y);
+    if (handle) {
+      this.beginBatch();
+      this.gizmoDrag = handle;
+      this.gizmoBase.clear();
+      this.gizmoJointBase.clear();
+      for (const id of this.ids) {
+        const component = this.app.component(id);
+        if (component) this.gizmoBase.set(id, { position: [...component.transform.position], rotation: [...component.transform.rotation] });
+        const joint = this.jointOf(id);
+        if (joint) this.gizmoJointBase.set(joint.id, joint.value);
+      }
+      return true;
+    }
     const item = this.app.viewport.pickItem(e.x, e.y, { face: true, edge: true });
     const component = this.app.componentOfItem(item);
     if (!component || !this.ids.includes(component.id)) return false;
@@ -743,6 +811,24 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
   };
 
   pointerMove = (e: VPEvent, dragging: boolean): void => {
+    if (!dragging && !this.dragFrom && !this.gizmoDrag) {
+      // Hover feedback for the axis handle.
+      const handle = this.gizmoPick(e.x, e.y);
+      const axis = handle?.axis ?? null;
+      if (axis !== this.app.gizmoAxis) {
+        this.app.gizmoAxis = axis;
+        this.app.viewport.drawReferenceGeometry();
+      }
+      return;
+    }
+    // A handle drag carries on without a component drag being open.
+    if (this.gizmoDrag && dragging) {
+      const g = this.gizmoDrag;
+      const along = ((e.x - g.sx) * g.ux + (e.y - g.sy) * g.uy) * g.worldPerPx;
+      this.applyGizmo(along);
+      this.app.setStatus(`${g.axis.toUpperCase()}: ${along.toFixed(2)} mm`);
+      return;
+    }
     const from = this.dragFrom;
     if (!from || !dragging) return;
     if (this.jointDrag) {
@@ -776,6 +862,9 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
     this.dragFrom = null;
     this.jointDrag = null;
     this.rotateLive = null;
+    this.gizmoDrag = null;
+    this.gizmoBase.clear();
+    this.gizmoJointBase.clear();
     // Keep what the drag produced as one undo step.
     this.endBatch(true);
   };
@@ -826,6 +915,8 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
   dispose(): void {
     if (this.app.viewport.tool === this) this.app.viewport.tool = null;
     this.app.visualJointId = null;
+    this.app.showGizmo = false;
+    this.app.gizmoAxis = null;
     this.app.setStatus(tr("Ready"));
     this.app.viewport.drawReferenceGeometry();
     this.endBatch(false);
@@ -840,4 +931,12 @@ function setField(field: HTMLElement, value: number, ctx: ReturnType<App['unitCo
   const input = field.querySelector<HTMLInputElement>('input');
   if (input && document.activeElement !== input) input.value = String(Math.round(value * 1000) / 1000);
   void ctx;
+}
+
+/** Distance from a point to a screen-space segment. */
+function screenSegDist(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 > 1e-9 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2)) : 0;
+  return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
 }

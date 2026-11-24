@@ -111,6 +111,19 @@ export class FileOps {
   async openDroppedFiles(files: File[]) {
     const file = this.pickOne(files.map((f) => ({ item: f, name: f.name })))?.item;
     if (!file) return;
+    // In an assembly a dropped part becomes a component, like Fusion's drag-in.
+    if (this.app.isAssembly && /\.parametric$/i.test(file.name)) {
+      const documentVersion = this.documentVersion;
+      try {
+        const part = parseDocument(await file.text());
+        if (documentVersion !== this.documentVersion) return;
+        this.insertPartDocument(part, file.name);
+        return;
+      } catch (e) {
+        toast({ kind: 'error', title: tr("Could not insert the component"), message: (e as Error).message });
+        return;
+      }
+    }
     const signal = this.beginOpen();
     if (await this.openBlob(file, file.name, null, signal)) this.app.store.dirty = true;
   }
@@ -538,12 +551,18 @@ export class FileOps {
     let part: PartDocument;
     try {
       part = parseDocument(await file.text());
-      if (part.kind === 'assembly') throw new Error(tr("An assembly cannot contain another assembly yet."));
     } catch (e) {
       toast({ kind: 'error', title: tr("Could not insert the component"), message: (e as Error).message });
       return;
     }
     if (documentVersion !== this.documentVersion || !app.isAssembly) return;
+    this.insertPartDocument(part, file.name);
+  }
+
+  /** Places a parsed part in the open assembly; the first component is grounded. */
+  insertPartDocument(part: PartDocument, label: string) {
+    const app = this.app;
+    if (!app.isAssembly) return false;
     const id = app.store.nextId('c');
     const used = new Set((app.store.doc.components ?? []).map((c) => c.name));
     let number = 1;
@@ -563,7 +582,8 @@ export class FileOps {
     app.selection.set([{ kind: 'component', id }]);
     app.openComponent(id);
     setTimeout(() => app.viewport.zoomToFit(), 200);
-    toast({ kind: 'success', message: tr("Inserted {0}.", [file.name]) });
+    toast({ kind: 'success', message: tr("Inserted {0}.", [label]) });
+    return true;
   }
 
   /** A delayed picker or file read must not act on a replacement document. */
