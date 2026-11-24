@@ -330,11 +330,16 @@ export class App {
   }
 
   setRibbonTab(id: string) {
+    // Assembly commands live on their own tab, as in Fusion.
+    if (id === 'assembly' && !this.isAssembly) id = 'features';
+    if (id === 'features' && this.isAssembly) id = 'assembly';
     this.ribbonTab = id;
     for (const b of this.shell.cmTabs.querySelectorAll<HTMLElement>('[role="tab"]')) {
       b.setAttribute('aria-selected', String(b.dataset.tab === id));
       // The drawing has its own tab; model tabs are hidden while it is open.
-      b.hidden = (b.dataset.tab === 'drawing') !== (id === 'drawing');
+      // The assembly tab only shows for assemblies.
+      const drawing = id === 'drawing';
+      b.hidden = (b.dataset.tab === 'drawing') !== drawing || (b.dataset.tab === 'assembly' && !this.isAssembly);
     }
     syncTabStops(this.shell.cmTabs);
     const tab = this.hooks.ribbonTabs.find((t) => t.id === id)!;
@@ -716,6 +721,7 @@ export class App {
     const doc = newAssemblyDocument(name ?? tr("Assembly1"), this.settings.defaultUnits);
     this.location = null;
     this.store.load(doc);
+    this.setRibbonTab('assembly');
     this.selection.clear();
     this.renderer.camera.setState(this.renderer.camera.fitState([0, 0, 0], 60));
     this.viewport.setView('trimetric', false);
@@ -1350,6 +1356,7 @@ export class App {
     this.exitModes();
     this.location = location;
     this.store.load(doc);
+    this.setRibbonTab(doc.kind === 'assembly' ? 'assembly' : 'features');
     this.selection.clear();
     this.lastBuildKey = '';
     this.fitOnNextBuild = true;
@@ -1533,7 +1540,7 @@ export class App {
     if (!this.drawing.active) return;
     this.drawing.close();
     this.syncSheetTabs();
-    this.setRibbonTab('features');
+    this.setRibbonTab(this.isAssembly ? 'assembly' : 'features');
     this.showLeft('tree');
     this.setStatus(tr("Ready"));
     this.commands.changed();
@@ -2092,7 +2099,7 @@ export class App {
     this.shell.confirm.hidden = true;
     this.renderConfirmCorner();
     this.selection.clear();
-    this.setRibbonTab('features');
+    this.setRibbonTab(this.isAssembly ? 'assembly' : 'features');
     this.showLeft('tree');
     this.updateSketchStatus();
     this.shell.statusCoords.textContent = '';

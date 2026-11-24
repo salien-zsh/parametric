@@ -123,18 +123,18 @@ export function availableRelations(sk: SketchFeature, ids: Id[]): RelationType[]
 }
 
 export const RELATION_LABELS: Record<RelationType, string> = {
-  coincident: 'Coincident',
-  horizontal: 'Horizontal',
-  vertical: 'Vertical',
-  parallel: 'Parallel',
-  perpendicular: 'Perpendicular',
-  tangent: 'Tangent',
-  equal: 'Equal',
-  concentric: 'Concentric',
-  midpoint: 'Midpoint',
-  collinear: 'Collinear',
-  fix: 'Fix',
-  symmetric: 'Symmetric',
+  coincident: tr('Coincident'),
+  horizontal: tr('Horizontal'),
+  vertical: tr('Vertical'),
+  parallel: tr('Parallel'),
+  perpendicular: tr('Perpendicular'),
+  tangent: tr('Tangent'),
+  equal: tr('Equal'),
+  concentric: tr('Concentric'),
+  midpoint: tr('Midpoint'),
+  collinear: tr('Collinear'),
+  fix: tr('Fix'),
+  symmetric: tr('Symmetric'),
 };
 
 /**

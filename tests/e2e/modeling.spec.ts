@@ -38,7 +38,7 @@ test.describe('part modeling', () => {
     await expect(page.locator('.dim-label', { hasText: '50.00' })).toBeVisible();
     await page.keyboard.press('Escape');
     // Extrude: finishing the sketch makes it the profile.
-    await page.getByRole('tab', { name: 'Features' }).click();
+    await page.getByRole('tab', { name: 'Solid' }).click();
     await page.locator('[data-cmd="extrude"]').first().click();
     await expect(page.getByRole('heading', { name: 'Extrude' })).toBeVisible();
     await page.getByRole('button', { name: 'OK', exact: true }).first().click();
@@ -204,7 +204,7 @@ test.describe('part modeling', () => {
     });
     await waitForFeature(page, 'Fillet1');
     await expect(page.locator('.ti.error')).toHaveCount(0);
-    await page.getByRole('tab', { name: 'Features' }).click();
+    await page.getByRole('tab', { name: 'Solid' }).click();
     await page.locator('[data-cmd="shell"]').first().click();
     await expect(page.getByRole('heading', { name: 'Shell' })).toBeVisible();
     await page.getByRole('button', { name: 'OK', exact: true }).first().click();

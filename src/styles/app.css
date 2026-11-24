@@ -219,12 +219,14 @@ a.icon-btn { text-decoration: none; }
 /* ---------- Command manager ---------- */
 .cm { background: var(--chrome); border-bottom: 1px solid var(--border); min-width: 0; }
 .cm-tools {
-  display: flex; align-items: stretch; gap: 0; padding: 4px 6px 2px; overflow-x: auto; overflow-y: hidden; min-height: 66px;
+  display: flex; align-items: stretch; gap: 0; padding: 4px 6px 2px; overflow-x: auto; overflow-y: hidden; min-height: 86px;
   scrollbar-width: none;
 }
 .cm-tools::-webkit-scrollbar { display: none; }
-.cm-group { display: flex; align-items: stretch; gap: 1px; padding: 0 4px; border-right: 1px solid var(--border); flex: none; }
-.cm-group:last-child { border-right: 0; }
+.cm-grp { display: flex; flex-direction: column; flex: none; padding: 0 4px; border-right: 1px solid var(--border); }
+.cm-grp:last-child { border-right: 0; }
+.cm-group { display: flex; align-items: stretch; gap: 1px; flex: 1; }
+.cm-grp-label { font-size: 11px; line-height: 1; color: var(--text-3); text-align: center; padding: 2px 0 3px; white-space: nowrap; }
 .cm-stack { display: flex; flex-direction: column; justify-content: center; gap: 1px; }
 @media (min-width: 761px) {
   /* Narrow windows: constraint buttons keep their icons; tooltips name them. */

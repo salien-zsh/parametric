@@ -658,42 +658,76 @@ function selectedFeature(app: App): Feature | undefined {
 
 export const RIBBON: RibbonTab[] = [
   {
-    id: 'features', label: tr("Features"),
+    id: 'features', label: tr("Solid"),
     groups: [
-      [{ cmd: 'extrude' }, { cmd: 'revolve' }, { stack: [{ cmd: 'sweep' }, { cmd: 'loft' }, { cmd: 'coil' }, { cmd: 'rib' }] }],
-      [{ cmd: 'extrudeCut' }, { cmd: 'revolveCut' }, { stack: [{ cmd: 'sweepCut' }, { cmd: 'loftCut' }] }],
-      [{ cmd: 'hole', menu: ['hole', 'thread'] }, { cmd: 'fillet', menu: ['fillet', 'chamfer'] }, { cmd: 'linearPattern', menu: ['linearPattern', 'circularPattern', 'mirror'] }],
-      [{ stack: [{ cmd: 'chamfer' }, { cmd: 'shell' }, { cmd: 'draft' }, { cmd: 'offsetFace' }, { cmd: 'moveBody' }, { cmd: 'scaleBody' }, { cmd: 'splitBody' }] }, { stack: [{ cmd: 'circularPattern' }, { cmd: 'mirror' }] }],
-      [{ cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle', 'planeTangent', 'planeTwoEdges', 'planeThreePoints'] },
+      // Fusion's Create group: one button per tool, with the cut variants in its menu.
+      [
+        { cmd: 'extrude', menu: ['extrude', 'extrudeCut'] },
+        { cmd: 'revolve', menu: ['revolve', 'revolveCut'] },
+        { cmd: 'sweep', menu: ['sweep', 'sweepCut'] },
+        { cmd: 'loft', menu: ['loft', 'loftCut'] },
+        { cmd: 'rib' },
+        { cmd: 'coil' },
+        { cmd: 'hole', menu: ['hole', 'thread'] },
+      ],
+      // Modify
+      [
+        { cmd: 'fillet', menu: ['fillet', 'chamfer'] },
+        { cmd: 'shell' },
+        { cmd: 'draft' },
+        { cmd: 'offsetFace' },
+        { cmd: 'moveBody' },
+        { cmd: 'scaleBody' },
+        { cmd: 'splitBody' },
+        { cmd: 'linearPattern', menu: ['linearPattern', 'circularPattern', 'mirror'] },
+      ],
+      // Construct
+      [
+        { cmd: 'plane', menu: ['plane', 'planeMidplane', 'planeAngle', 'planeTangent', 'planeTwoEdges', 'planeThreePoints'] },
         { cmd: 'axisCylinder', menu: ['axisCylinder', 'axisTwoPoints', 'axisEdge', 'axisPerpendicular'] },
         { cmd: 'pointVertex', menu: ['pointVertex', 'pointMidpoint', 'pointCenter', 'pointFaceCenter', 'pointIntersection'] },
-        { cmd: 'importStep' }],
-      [{ cmd: 'newAssembly' }, { cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'openDrawing' }],
-      [{ cmd: 'fixComponent' }, { cmd: 'duplicateComponent' }, { cmd: 'isolateComponents' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { stack: [{ cmd: 'addJoint' }, { cmd: 'autoMate' }] }, { cmd: 'mateSuggestions' }, { cmd: 'explodeView' }, { cmd: 'motionStudy' }],
-      [{ cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
+      ],
+      // Insert
+      [{ cmd: 'importStep' }],
     ],
+    labels: [tr("Create"), tr("Modify"), tr("Construct"), tr("Insert")],
   },
   {
     id: 'sketch', label: tr("Sketch"),
     groups: [
-      [{ cmd: 'sketch' }, { cmd: 'sketchOnPlane' }],
       [
+        { cmd: 'sketch' },
+        { cmd: 'sketchOnPlane' },
         { stack: [{ cmd: 'tool:line' }, { cmd: 'tool:centerline' }, { cmd: 'tool:point' }] },
         { stack: [{ cmd: 'tool:rectangle' }, { cmd: 'tool:centerRectangle' }, { cmd: 'tool:rectangle3Point' }, { cmd: 'tool:polygon' }] },
         { stack: [{ cmd: 'tool:circle' }, { cmd: 'tool:perimeterCircle' }, { cmd: 'tool:slot', menu: ['tool:slot', 'tool:slotOverall', 'tool:slotCenter'] }] },
         { stack: [{ cmd: 'tool:centerArc' }, { cmd: 'tool:tangentArc' }, { cmd: 'tool:arc3' }] },
         { stack: [{ cmd: 'tool:spline' }, { cmd: 'tool:sketchFillet' }] },
       ],
-      [{ stack: [{ cmd: 'tool:trim' }, { cmd: 'tool:extend' }, { cmd: 'offset' }] }, { stack: [{ cmd: 'mirrorEntities' }, { cmd: 'convertEntities' }, { cmd: 'construction' }] }],
       [
-        { cmd: 'tool:smartDimension' },
+        { stack: [{ cmd: 'tool:trim' }, { cmd: 'tool:extend' }, { cmd: 'offset' }] },
+        { stack: [{ cmd: 'mirrorEntities' }, { cmd: 'convertEntities' }, { cmd: 'construction' }] },
+      ],
+      [
         { stack: [{ cmd: 'constraint:coincident' }, { cmd: 'constraint:horizontal' }, { cmd: 'constraint:vertical' }] },
         { stack: [{ cmd: 'constraint:parallel' }, { cmd: 'constraint:perpendicular' }, { cmd: 'constraint:tangent' }] },
         { stack: [{ cmd: 'constraint:equal' }, { cmd: 'constraint:concentric' }, { cmd: 'constraint:midpoint' }] },
         { stack: [{ cmd: 'constraint:collinear' }, { cmd: 'constraint:symmetric' }, { cmd: 'constraint:fix' }] },
       ],
+      [{ cmd: 'tool:smartDimension' }],
+      [{ cmd: 'exitSketch' }],
     ],
-    labels: [tr("Sketch"), tr("Draw"), tr("Modify"), tr("Constrain")],
+    labels: [tr("Create"), tr("Modify"), tr("Constrain"), tr("Dimension"), tr("Finish")],
+  },
+  {
+    id: 'assembly', label: tr("Assembly"),
+    groups: [
+      [{ cmd: 'insertComponent' }, { cmd: 'newAssemblyPart' }, { cmd: 'newAssembly' }, { cmd: 'openDrawing' }],
+      [{ cmd: 'fixComponent' }, { cmd: 'moveComponents' }, { cmd: 'duplicateComponent' }, { cmd: 'componentPattern' }, { cmd: 'isolateComponents' }, { cmd: 'hideComponents' }, { cmd: 'showAllComponents' }, { cmd: 'selectAllComponents' }, { cmd: 'explodeView' }, { cmd: 'motionStudy' }],
+      [{ cmd: 'addJoint' }, { cmd: 'autoMate' }, { cmd: 'mateSuggestions' }],
+      [{ cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'replaceComponent' }, { cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
+    ],
+    labels: [tr("Insert"), tr("Position"), tr("Relations"), tr("Inspect")],
   },
   {
     id: 'mechanical', label: tr("Mechanical"),
@@ -711,14 +745,17 @@ export const RIBBON: RibbonTab[] = [
       [{ cmd: 'equations' }, { cmd: 'configurations' }, { cmd: 'material' }],
       [{ cmd: 'projectManager' }, { cmd: 'resourceCenter' }, { cmd: 'publishLibrary' }],
     ],
+    labels: [tr("Inspect"), tr("Manage"), tr("Library")],
   },
   {
     id: 'drawing', label: tr("Drawing"),
     groups: [
       [{ cmd: 'drawing:arrange' }, { stack: [{ cmd: 'drawing:add:front' }, { cmd: 'drawing:add:top' }, { cmd: 'drawing:add:right' }] }, { stack: [{ cmd: 'drawing:add:isometric' }, { cmd: 'drawing:add:left' }, { cmd: 'drawing:add:back' }] }],
-      [{ cmd: 'drawing:centers' }, { cmd: 'drawing:balloons' }, { cmd: 'drawing:pdf' }, { cmd: 'drawing:svg' }],
+      [{ cmd: 'drawing:centers' }, { cmd: 'drawing:balloons' }],
+      [{ cmd: 'drawing:pdf' }, { cmd: 'drawing:svg' }],
       [{ cmd: 'zoomFit' }, { cmd: 'backToModel' }],
     ],
+    labels: [tr("Views"), tr("Annotations"), tr("Export"), tr("Exit")],
   },
   {
     id: 'view', label: tr("View"),
@@ -727,6 +764,7 @@ export const RIBBON: RibbonTab[] = [
       [{ stack: [{ cmd: 'viewFront' }, { cmd: 'viewTop' }, { cmd: 'viewRight' }] }, { stack: [{ cmd: 'viewBack' }, { cmd: 'viewBottom' }, { cmd: 'viewLeft' }] }, { cmd: 'viewIsometric' }],
       [{ stack: [{ cmd: 'style:shadedEdges' }, { cmd: 'style:shaded' }, { cmd: 'style:wireframe' }] }, { stack: [{ cmd: 'style:hiddenRemoved' }, { cmd: 'style:hiddenVisible' }, { cmd: 'perspective' }] }],
     ],
+    labels: [tr("Zoom"), tr("Orientation"), tr("Display")],
   },
 ];
 

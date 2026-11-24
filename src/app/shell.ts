@@ -202,6 +202,8 @@ export function renderRibbon(target: HTMLElement, tab: RibbonTab, cmds: CommandR
   target.textContent = '';
   tab.groups.forEach((group, i) => {
     const name = tab.labels?.[i];
+    // Fusion-style groups: the tools sit above a caption naming the group.
+    const wrap = h('div', { class: 'cm-grp' });
     const g = h('div', { class: 'cm-group', role: 'group', ...(name ? { 'aria-label': name, 'data-group': name.toLowerCase() } : {}) });
     for (const it of group) {
       if ('stack' in it) {
@@ -210,7 +212,9 @@ export function renderRibbon(target: HTMLElement, tab: RibbonTab, cmds: CommandR
         g.append(st);
       } else g.append(commandButton(cmds, it.cmd, it.size === 'row' ? 'row' : 'big', 26, it.menu));
     }
-    target.append(g);
+    wrap.append(g);
+    if (name) wrap.append(h('div', { class: 'cm-grp-label' }, name));
+    target.append(wrap);
   });
   syncCommandButtons(target, cmds);
   fitRibbon(target);

@@ -1,3 +1,4 @@
+- The ribbon follows Fusion 360: a **Solid** tab with Create / Modify / Construct / Insert groups, a **Sketch** tab with Create / Modify / Constrain / Dimension / Finish groups, and a separate **Assembly** tab (shown only for assemblies).
 <p align="center"><img src="icon-128.png" width="96" height="96" alt=""></p>
 
 <h1 align="center">Parametric</h1>

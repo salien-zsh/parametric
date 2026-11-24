@@ -82,11 +82,13 @@ test.describe('constraints', () => {
   test('the Sketch tab keeps drawing tools, modify tools and constraints in separate groups', async ({ page }) => {
     const errors = await openApp(page);
     await startSketch(page);
-    const draw = page.getByRole('group', { name: 'Draw' });
+    const draw = page.getByRole('group', { name: 'Create' });
     const constrain = page.getByRole('group', { name: 'Constrain' });
     await expect(draw.getByRole('button', { name: 'Line', exact: true })).toBeVisible();
     await expect(page.getByRole('group', { name: 'Modify' }).getByRole('button', { name: 'Convert Entities' })).toBeVisible();
-    for (const name of ['Smart Dimension', 'Coincident', 'Horizontal', 'Vertical', 'Parallel', 'Perpendicular', 'Tangent', 'Equal', 'Concentric', 'Midpoint', 'Collinear', 'Symmetric', 'Fix']) {
+    await expect(page.getByRole('group', { name: 'Dimension' }).getByRole('button', { name: 'Smart Dimension', exact: true })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Finish' }).getByRole('button', { name: 'Exit Sketch' })).toBeVisible();
+    for (const name of ['Coincident', 'Horizontal', 'Vertical', 'Parallel', 'Perpendicular', 'Tangent', 'Equal', 'Concentric', 'Midpoint', 'Collinear', 'Symmetric', 'Fix']) {
       await expect(constrain.getByRole('button', { name, exact: true })).toBeVisible();
     }
     await expect(draw.getByRole('button', { name: 'Coincident' })).toHaveCount(0);
@@ -96,7 +98,7 @@ test.describe('constraints', () => {
     const fix = await constrain.getByRole('button', { name: 'Fix', exact: true }).boundingBox();
     expect(fix!.x + fix!.width).toBeLessThanOrEqual(1280);
     expect(await constrain.getByRole('button', { name: 'Fix', exact: true }).locator('.lbl').evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
-    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.setViewportSize({ width: 1600, height: 900 });
     await expect(page.locator('.cm-tools.compact')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
