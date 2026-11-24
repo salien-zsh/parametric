@@ -1676,5 +1676,13 @@
   "their axes": "同轴",
   "touching faces": "贴合的面",
   "{0} applied.": "已应用“{0}”。",
-  "{0} to {1}: {2}, {3} mm": "{0} 与 {1}：{2}，间距 {3} mm"
+  "{0} to {1}: {2}, {3} mm": "{0} 与 {1}：{2}，间距 {3} mm",
+  "SECTION": "剖视",
+  "Section": "剖视图",
+  "Cut along": "剖切方向",
+  "Section offset": "剖切偏移",
+  "Section axis": "剖切方向",
+  "Look from the other side": "从另一侧观察",
+  "Section side": "剖切查看侧",
+  "View scale": "视图比例"
 }

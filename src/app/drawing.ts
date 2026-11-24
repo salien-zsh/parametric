@@ -3,7 +3,8 @@
 // added and removed; the sheet exports to PDF and SVG.
 
 import type { ProjectionResult } from '../kernel/protocol';
-import type { DrawingDoc, DrawingView, DrawingViewKind, SheetSize } from '../model/types';
+import type { DrawingDoc, DrawingView, DrawingViewKind, SectionAxis, SheetSize } from '../model/types';
+import type { Vec3 } from '../math/vec';
 import { UNIT_SYSTEMS, formatNumber } from '../model/units';
 import { SHEET_LABELS, STANDARD_SCALES, VIEW_DIRS, VIEW_LABELS, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdf, toSvg, type ViewFrame } from '../drawing/sheet';
 import { download, safeName } from '../platform/files';
@@ -13,6 +14,24 @@ import { toast } from '../ui/overlay';
 import type { App } from './app';
 import { PropertyPanel, checkbox, section, selectField } from './pm';
 import { tr } from '../i18n';
+
+/**
+ * Where a drawing view looks from, and for a section view the plane it cuts at.
+ * `center` is the middle of the model, so the section offset reads from there.
+ */
+function viewRequest(v: DrawingView, center: Vec3): { dir: Vec3; x: Vec3; cut?: { p: Vec3; n: Vec3 } } {
+  if (v.kind !== 'section') return VIEW_DIRS[v.kind];
+  const s = v.section ?? { axis: 'z' as SectionAxis, offset: 0, flip: false };
+  const axis: Vec3 = s.axis === 'x' ? [1, 0, 0] : s.axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+  const sign = s.flip ? -1 : 1;
+  const dir: Vec3 = [axis[0] * sign, axis[1] * sign, axis[2] * sign];
+  const x: Vec3 = s.axis === 'x' ? [0, 1, 0] : [1, 0, 0];
+  const p: Vec3 = [center[0] + axis[0] * s.offset, center[1] + axis[1] * s.offset, center[2] + axis[2] * s.offset];
+  return { dir, x, cut: { p, n: dir } };
+}
+
+/** What a view's projection depends on, besides the model version. */
+const viewSig = (v: DrawingView) => v.kind === 'section' ? JSON.stringify(v.section ?? { axis: 'z', offset: 0, flip: false }) : '';
 
 /** YYYY-MM-DD in the user's time zone (toISOString gives the UTC day, a day off in the evening or morning). */
 function localDate(ms: number): string {
@@ -29,7 +48,7 @@ export class DrawingWorkspace {
   selected: string | null = null;
   private zoom = 1;
   private pan = { x: 0, y: 0 };
-  private cache = new Map<string, { kind: DrawingViewKind; version: number; result: ProjectionResult }>();
+  private cache = new Map<string, { kind: DrawingViewKind; version: number; sig: string; result: ProjectionResult }>();
   private frames: ViewFrame[] = [];
   private pending = false;
   /** A refresh was asked for while views were being projected. */
@@ -123,7 +142,7 @@ export class DrawingWorkspace {
   /** Rebuilds the PropertyManager if what it shows changed (not when a view only moved). */
   private syncPanel() {
     const d = this.doc;
-    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims])]) : '';
+    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section])]) : '';
     if (key === this.panelKey) return;
     this.panelKey = key;
     if (this.panelChanging) return;
@@ -157,15 +176,17 @@ export class DrawingWorkspace {
     const version = this.app.buildVersion;
     const need = d.views.filter((v) => {
       const c = this.cache.get(v.id);
-      return !c || c.kind !== v.kind || c.version !== version;
+      return !c || c.kind !== v.kind || c.version !== version || c.sig !== viewSig(v);
     });
     if (need.length && this.app.bbox) {
       this.pending = true;
       try {
-        const res = await this.app.kernel.project(need.map((v) => ({ id: v.id, ...VIEW_DIRS[v.kind] })));
+        const b = this.app.bbox;
+        const center: Vec3 = [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
+        const res = await this.app.kernel.project(need.map((v) => ({ id: v.id, ...viewRequest(v, center) })));
         for (const r of res) {
           const v = need.find((x) => x.id === r.id)!;
-          this.cache.set(r.id, { kind: v.kind, version, result: r });
+          this.cache.set(r.id, { kind: v.kind, version, sig: viewSig(v), result: r });
         }
       } catch (e) {
         toast({ kind: 'error', title: tr("Could not project the views"), message: (e as Error).message });
@@ -403,7 +424,10 @@ export class DrawingWorkspace {
     const d = this.doc;
     const b = this.app.bbox;
     if (!d || !b) return;
-    const [w, hh] = projectedSize(kind, b.min, b.max);
+    // A new section cuts across Z through the middle until it is moved.
+    const section = kind === 'section' ? { axis: 'z' as SectionAxis, offset: 0, flip: false } : undefined;
+    const sized = kind === 'section' ? 'front' : kind;
+    const [w, hh] = projectedSize(sized, b.min, b.max);
     const sheet = sheetDims(d);
     // Place it in the first free spot along the top row.
     let x = 40 + (w * d.scale) / 2, y = 30 + (hh * d.scale) / 2;
@@ -415,7 +439,9 @@ export class DrawingWorkspace {
     while (d.views.some((v) => v.id === `v${n}`)) n++;
     const id = `v${n}`;
     this.selected = id;
-    this.update((dd) => { dd.views.push({ id, kind, x, y, hidden: kind !== 'isometric', dims: kind !== 'isometric' }); }, tr("Add view"));
+    this.update((dd) => {
+      dd.views.push({ id, kind, x, y, hidden: kind !== 'isometric' && kind !== 'section', dims: kind !== 'isometric', ...(section ? { section } : {}) });
+    }, tr("Add view"));
   }
 
   // ---------- export ----------
@@ -532,6 +558,41 @@ export class DrawingPanel extends PropertyPanel {
       h('label', { class: 'check', title: tr("Hidden lines") }, hidden, h('span', { class: 'field-label' }, tr("Hidden"))),
       h('label', { class: 'check', title: tr("Overall dimensions") }, dims, h('span', { class: 'field-label' }, tr("Dims"))),
       del);
+    // Only the selected view opens its own controls, so the list stays short.
+    const extra = ws.selected === v.id ? h('div', { class: 'rel-extra' }) : null;
+    if (extra && v.kind === 'section') {
+      const sec = v.section ?? { axis: 'z' as SectionAxis, offset: 0, flip: false };
+      const axis = selectField<SectionAxis>(tr("Cut along"), sec.axis, [
+        { value: 'x', label: 'X' }, { value: 'y', label: 'Y' }, { value: 'z', label: 'Z' },
+      ], (value) => ws.updateFromPanel((x) => { const q = x.views.find((r) => r.id === v.id); if (q) q.section = { ...sec, axis: value }; }, tr("Section axis")));
+      const offsetInput = h('input', { class: 'input', value: String(sec.offset), 'aria-label': tr("Section offset") }) as HTMLInputElement;
+      offsetInput.addEventListener('change', () => {
+        const value = Number(offsetInput.value);
+        if (!Number.isFinite(value)) return;
+        ws.updateFromPanel((x) => { const q = x.views.find((r) => r.id === v.id); if (q?.section) q.section.offset = value; }, tr("Section offset"));
+      });
+      const offsetRow = h('div', { class: 'rel-field' },
+        h('div', { class: 'field-label' }, tr("Section offset")), offsetInput);
+      const flip = checkbox(tr("Look from the other side"), !!sec.flip, (value) => ws.updateFromPanel((x) => { const q = x.views.find((r) => r.id === v.id); if (q?.section) q.section.flip = value; }, tr("Section side")));
+      extra.append(axis, offsetRow, flip);
+    }
+    if (extra) {
+      const scaleSel = h('select', { class: 'input', 'aria-label': tr("View scale") }) as HTMLSelectElement;
+      scaleSel.append(h('option', { value: '' }, tr("Sheet scale")));
+      for (const sc of STANDARD_SCALES) scaleSel.append(h('option', { value: String(sc) }, scaleLabel(sc)));
+      if (v.scale != null && !STANDARD_SCALES.some((sc) => String(sc) === String(v.scale))) {
+        scaleSel.append(h('option', { value: String(v.scale) }, scaleLabel(v.scale)));
+      }
+      scaleSel.value = v.scale == null ? '' : String(v.scale);
+      scaleSel.addEventListener('change', () => ws.updateFromPanel((x) => {
+        const q = x.views.find((r) => r.id === v.id);
+        if (!q) return;
+        if (scaleSel.value === '') delete q.scale;
+        else q.scale = Number(scaleSel.value);
+      }, tr("View scale")));
+      extra.append(h('div', { class: 'rel-field' }, h('div', { class: 'field-label' }, tr("View scale")), scaleSel));
+      row.append(extra);
+    }
     return row;
   }
 }

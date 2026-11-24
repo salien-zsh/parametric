@@ -46,10 +46,13 @@ export const VIEW_DIRS: Record<DrawingViewKind, { dir: Vec3; x: Vec3 }> = {
   right: { dir: [1, 0, 0], x: [0, 0, -1] },
   left: { dir: [-1, 0, 0], x: [0, 0, 1] },
   isometric: { dir: isoDir, x: normalize(cross([0, 1, 0], isoDir)) },
+  // Section views compute their direction from the cut axis; this is only a placeholder.
+  section: { dir: [0, 0, 1], x: [1, 0, 0] },
 };
 
 export const VIEW_LABELS: Record<DrawingViewKind, string> = {
   front: tr("Front"), back: tr("Back"), top: tr("Top"), bottom: tr("Bottom"), right: tr("Right"), left: tr("Left"), isometric: tr("Isometric"),
+  section: tr("Section"),
 };
 
 /** Size of a view of a box, in model units (paper width, height). */
@@ -139,28 +142,40 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
   const items: Item[] = [];
   const frames: ViewFrame[] = [];
   items.push({ t: 'rect', x: MARGIN, y: MARGIN, w: w - 2 * MARGIN, h: h - 2 * MARGIN, sw: 0.5 });
-  const s = d.scale;
-  const placed: { v: DrawingView; pr: ProjectionResult; tx: number; ty: number; f: ViewFrame }[] = [];
+  const placed: { v: DrawingView; pr: ProjectionResult; tx: number; ty: number; f: ViewFrame; scale: number }[] = [];
   for (const v of d.views) {
     const pr = projections.get(v.id);
     if (!pr || !pr.bounds) continue;
+    const s = v.scale ?? d.scale;
     const [bx0, by0, bx1, by1] = pr.bounds;
     const tx = v.x - (s * (bx0 + bx1)) / 2;
     const ty = v.y - (s * (by0 + by1)) / 2;
     const f = { id: v.id, x0: tx + bx0 * s, y0: ty + by0 * s, x1: tx + bx1 * s, y1: ty + by1 * s };
     frames.push(f);
-    placed.push({ v, pr, tx, ty, f });
+    placed.push({ v, pr, tx, ty, f, scale: s });
   }
   // What a view label must stay clear of: every view with its dimensions,
   // the labels already placed and the title block.
   const taken: Box[] = placed.map(({ v, f }) => (hasDims(v) ? [f.x0 - DIM_LEFT, f.y0, f.x1, f.y1 + DIM_BELOW] : [f.x0, f.y0, f.x1, f.y1]));
   taken.push([w - MARGIN - TITLE_W, h - MARGIN - TITLE_H, w - MARGIN, h - MARGIN]);
-  for (const [i, { v, pr, tx, ty, f }] of placed.entries()) {
+  // Section views are lettered in the order they appear: A-A, B-B, ...
+  let sectionLetter = 0;
+  const letters = new Map<string, string>();
+  for (const v of d.views) if (v.kind === 'section') letters.set(v.id, String.fromCharCode(65 + sectionLetter++));
+  for (const [i, { v, pr, tx, ty, f, scale }] of placed.entries()) {
     const [bx0, by0, bx1, by1] = pr.bounds!;
-    if (v.hidden) for (const p of pr.hidden) items.push({ t: 'path', d: p, tx, ty, s, w: HIDDEN_W, dash: [1.6, 0.8], view: v.id });
-    for (const p of pr.visible) items.push({ t: 'path', d: p, tx, ty, s, w: VISIBLE_W, view: v.id });
+    if (v.hidden) for (const p of pr.hidden) items.push({ t: 'path', d: p, tx, ty, s: scale, w: HIDDEN_W, dash: [1.6, 0.8], view: v.id });
+    for (const p of pr.visible) items.push({ t: 'path', d: p, tx, ty, s: scale, w: VISIBLE_W, view: v.id });
+    // The cut face of a section view is hatched; its outline is already drawn.
+    if (v.kind === 'section' && pr.section?.length) {
+      const loops = parseLoops(pr.section).map((loop) => loop.map(([x, y]) => [tx + x * scale, ty + y * scale] as [number, number]));
+      hatchLoops(items, loops, Math.max(1.6, 2.4 / Math.max(0.25, scale)));
+    }
     const { x0: fx0, x1: fx1, y0: fy0, y1: fy1 } = f;
-    const label = viewLabel(VIEW_LABELS[v.kind].toUpperCase(), f, hasDims(v), taken.filter((_, j) => j !== i), w, h);
+    const letter = letters.get(v.id);
+    const base = letter ? `${tr("SECTION")} ${letter}-${letter}` : VIEW_LABELS[v.kind].toUpperCase();
+    const scaled = v.scale != null && v.scale !== d.scale ? `${base} (${scaleLabel(v.scale)})` : base;
+    const label = viewLabel(scaled, f, hasDims(v), taken.filter((_, j) => j !== i), w, h);
     items.push(label.item);
     taken.push(label.box);
     if (hasDims(v)) {
@@ -202,6 +217,82 @@ function viewLabel(s: string, f: ViewFrame, dims: boolean, taken: Box[], w: numb
     b[0] >= MARGIN && b[1] >= MARGIN && b[2] <= w - MARGIN && b[3] <= h - MARGIN &&
     !taken.some((o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
   return candidates.find((c) => free(c.box)) ?? below;
+}
+
+/**
+ * Polyline loops from projected SVG paths (M/L/Z, absolute or relative).
+ * Other commands are skipped, which loses curved segments but never the shape.
+ */
+export function parseLoops(paths: string[]): [number, number][][] {
+  const out: [number, number][][] = [];
+  for (const d of paths) {
+    const tokens = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:[eE][-+]?\d+)?/g);
+    if (!tokens) continue;
+    let i = 0;
+    let cmd = '';
+    let cur: [number, number] = [0, 0];
+    let start: [number, number] = [0, 0];
+    let loop: [number, number][] = [];
+    const num = () => Number(tokens[i++]);
+    const finish = () => {
+      if (loop.length >= 3) out.push(loop);
+      loop = [];
+    };
+    while (i < tokens.length) {
+      if (/^[a-zA-Z]$/.test(tokens[i])) {
+        cmd = tokens[i++];
+        if (cmd === 'Z' || cmd === 'z') {
+          if (loop.length) loop.push([start[0], start[1]]);
+          finish();
+          continue;
+        }
+      }
+      switch (cmd) {
+        case 'M': finish(); cur = [num(), num()]; start = [...cur]; loop = [[...cur]]; cmd = 'L'; break;
+        case 'm': finish(); cur = [cur[0] + num(), cur[1] + num()]; start = [...cur]; loop = [[...cur]]; cmd = 'l'; break;
+        case 'L': cur = [num(), num()]; loop.push([...cur]); break;
+        case 'l': cur = [cur[0] + num(), cur[1] + num()]; loop.push([...cur]); break;
+        case 'H': cur = [num(), cur[1]]; loop.push([...cur]); break;
+        case 'h': cur = [cur[0] + num(), cur[1]]; loop.push([...cur]); break;
+        case 'V': cur = [cur[0], num()]; loop.push([...cur]); break;
+        case 'v': cur = [cur[0], cur[1] + num()]; loop.push([...cur]); break;
+        default: i++; break;
+      }
+    }
+    finish();
+  }
+  return out;
+}
+
+/**
+ * 45 degree section hatching inside the loops (even-odd, so holes stay clear),
+ * as thin lines in sheet millimetres.
+ */
+export function hatchLoops(items: Item[], loops: [number, number][][], spacing = 2.4) {
+  if (!loops.length) return;
+  const a = Math.PI / 4;
+  const cos = Math.cos(a), sin = Math.sin(a);
+  const rot = ([x, y]: [number, number]): [number, number] => [x * cos + y * sin, -x * sin + y * cos];
+  const back = ([x, y]: [number, number]): [number, number] => [x * cos - y * sin, x * sin + y * cos];
+  const poly = loops.map((loop) => loop.map(rot));
+  let minY = Infinity, maxY = -Infinity;
+  for (const loop of poly) for (const [, y] of loop) { if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  for (let y = Math.ceil(minY / spacing) * spacing; y < maxY; y += spacing) {
+    const xs: number[] = [];
+    for (const loop of poly) {
+      for (let i = 0; i < loop.length; i++) {
+        const [x1, y1] = loop[i];
+        const [x2, y2] = loop[(i + 1) % loop.length];
+        if ((y1 <= y && y2 > y) || (y2 <= y && y1 > y)) xs.push(x1 + ((y - y1) / (y2 - y1)) * (x2 - x1));
+      }
+    }
+    xs.sort((p, q) => p - q);
+    for (let i = 0; i + 1 < xs.length; i += 2) {
+      const p1 = back([xs[i], y]);
+      const p2 = back([xs[i + 1], y]);
+      items.push({ t: 'line', x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1], w: 0.13 });
+    }
+  }
 }
 
 /** Overall dimension between two points (horizontal below, vertical left). */

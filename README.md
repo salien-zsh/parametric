@@ -63,6 +63,8 @@ The **Mechanical** tab holds the power-transmission generators. Every generator 
 
 **Drawings**
 - A 2D drawing sheet for each part or assembly (Drawing tab in the status bar): front, top, right, left, back, bottom and isometric views projected from the solid, with hidden lines and overall dimensions.
+- Section views cut the model along X, Y or Z at an offset from its centre (seen from either side) and hatch the cut face; the sheet letters them A-A, B-B and so on.
+- Each view can take its own scale; the selected view's controls (hidden lines, dimensions, section plane, scale) open in the drawing panel.
 - Sheet sizes A4 to A1, Letter and Tabloid, standard scales, drag to arrange views, title block.
 - Assembly drawings include an aggregated bill of materials with item number, part, quantity and material.
 - Export to PDF or SVG.

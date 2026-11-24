@@ -712,7 +712,17 @@ export interface ParameterConfiguration {
 // ---- Drawings ----
 
 export type SheetSize = 'A4' | 'A3' | 'A2' | 'A1' | 'Letter' | 'Tabloid';
-export type DrawingViewKind = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom' | 'isometric';
+export type DrawingViewKind = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom' | 'isometric' | 'section';
+
+/** The axis a section view cuts along, and how far from the model centre. */
+export type SectionAxis = 'x' | 'y' | 'z';
+
+export interface DrawingViewSection {
+  axis: SectionAxis;
+  offset: number;
+  /** Look from the other side of the cut plane. */
+  flip?: boolean;
+}
 
 export interface DrawingView {
   id: Id;
@@ -723,6 +733,10 @@ export interface DrawingView {
   hidden: boolean;
   /** Show overall width and height dimensions. */
   dims: boolean;
+  /** Per-view scale (paper mm per model mm); the sheet scale when missing. */
+  scale?: number;
+  /** Section views: the cut plane. */
+  section?: DrawingViewSection;
 }
 
 export interface DrawingDoc {

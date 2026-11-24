@@ -153,6 +153,8 @@ export interface ProjectionRequest {
   dir: Vec3;
   /** Paper x axis in model space. */
   x: Vec3;
+  /** Section view: remove the half in front of this plane before projecting. */
+  cut?: { p: Vec3; n: Vec3 };
 }
 
 export interface ProjectionResult {
@@ -160,6 +162,8 @@ export interface ProjectionResult {
   /** SVG path data in model millimetres, y pointing down. */
   visible: string[];
   hidden: string[];
+  /** Section views: the cut face outlines, in the same space as the visible paths. */
+  section?: string[];
   /** [minX, minY, maxX, maxY] of the visible lines (y down). */
   bounds: [number, number, number, number] | null;
 }

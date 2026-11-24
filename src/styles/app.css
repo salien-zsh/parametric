@@ -740,3 +740,10 @@ a.icon-btn { text-decoration: none; }
   background: var(--accent-weak);
 }
 .pm-suggestion-apply:hover { background: var(--accent); color: var(--accent-text); }
+
+/* A drawing view's row: title on the first line, its own controls below. */
+.rel-btn { flex-wrap: wrap; }
+.rel-btn > .grow { min-width: 90px; }
+.rel-extra { flex-basis: 100%; display: flex; flex-direction: column; gap: 6px; padding: 4px 0 2px; }
+.rel-field { display: flex; flex-direction: column; gap: 2px; }
+.rel-extra .checkbox, .rel-extra label.check { display: flex; align-items: center; gap: 6px; }

@@ -1868,12 +1868,66 @@ export class ModelBuilder {
   /** Hidden-line removal projections of the current body. */
   project(views: ProjectionRequest[]): ProjectionResult[] {
     const body = this.current.body;
+    const flat = (p: string[] | string[][]) => (p as (string | string[])[]).flat();
     return views.map((v) => {
       if (!body) return { id: v.id, visible: [], hidden: [], bounds: null };
+      // A section view removes the material in front of the cut plane, then
+      // projects what is left and hatches the face the cut left behind.
+      let shape = body;
+      let section: string[] = [];
+      if (v.cut) {
+        const cutSpec = v.cut;
+        const n = normalize(cutSpec.n);
+        const b = bbox(body);
+        if (b) {
+          const pad = Math.max(10, len(sub(b.max, b.min)) * 2);
+          const min: Vec3 = [b.min[0] - pad, b.min[1] - pad, b.min[2] - pad];
+          const max: Vec3 = [b.max[0] + pad, b.max[1] + pad, b.max[2] + pad];
+          for (let i = 0; i < 3; i++) {
+            if (Math.abs(n[i]) < 0.5) continue;
+            if (n[i] > 0) min[i] = cutSpec.p[i];
+            else max[i] = cutSpec.p[i];
+          }
+          shape = cut(body, R.makeBox(min, max) as unknown as Sh);
+          const cutFaces = subShapes(shape, 'face').filter((face) => {
+            const d = describeFace(face);
+            return d.type === 'plane' && dot(d.d, n) > 0.999 && Math.abs(dot(sub(d.center, cutSpec.p), n)) < 1e-4;
+          });
+          if (cutFaces.length) {
+            // The cut face is flat: project its wires straight onto the paper
+            // (the hidden-line projector needs a solid, not a face).
+            const u = normalize(v.x);
+            const up = cross(v.dir, u);
+            const flat2 = (p: Vec3): [number, number] => [dot(p, u), -dot(p, up)];
+            type WireLike = { edges: { pointAt(t?: number): { x: number; y: number; z: number } }[]; delete(): void };
+            type FaceLike = { clone(): { outerWire(): WireLike; innerWires(): WireLike[]; delete(): void } };
+            for (const face of cutFaces) {
+              // subShapes hands back replicad faces; outerWire()/innerWires()
+              // consume the face they are called on, so each call gets a clone.
+              const rf = face as unknown as FaceLike;
+              const outer = rf.clone().outerWire();
+              const inners = rf.clone().innerWires();
+              for (const wire of [outer, ...inners]) {
+                const pts: [number, number][] = [];
+                for (const edge of wire.edges) {
+                  const steps = 24;
+                  for (let i = 0; i <= steps; i++) {
+                    const q = edge.pointAt(i / steps);
+                    pts.push(flat2([q.x, q.y, q.z]));
+                  }
+                }
+                if (pts.length >= 3) {
+                  section.push('M ' + pts.map((q, i) => `${i ? 'L ' : ''}${q[0].toFixed(4)} ${q[1].toFixed(4)}`).join(' ') + ' Z');
+                }
+                wire.delete();
+              }
+            }
+          }
+        }
+      }
       const cam = new R.ProjectionCamera([0, 0, 0], v.dir, v.x);
       try {
-        const { visible, hidden } = R.drawProjection(body as unknown as R.AnyShape, cam);
-        const flat = (p: string[] | string[][]) => (p as (string | string[])[]).flat();
+        const { visible, hidden } = R.drawProjection(shape as unknown as R.AnyShape, cam);
         let bounds: ProjectionResult['bounds'] = null;
         try {
           const b = visible.boundingBox.bounds;
@@ -1882,7 +1936,7 @@ export class ModelBuilder {
         } catch {
           bounds = null;
         }
-        return { id: v.id, visible: flat(visible.toSVGPaths()), hidden: flat(hidden.toSVGPaths()), bounds };
+        return { id: v.id, visible: flat(visible.toSVGPaths()), hidden: flat(hidden.toSVGPaths()), section, bounds };
       } finally {
         cam.delete();
       }

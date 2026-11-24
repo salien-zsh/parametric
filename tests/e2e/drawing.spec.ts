@@ -406,3 +406,35 @@ test('drawing pinch stops when a touch loses capture and a fresh pinch still wor
   expect((await state()).zoom).toBeCloseTo(interrupted.zoom * 2, 6);
   expect(errors).toEqual([]);
 });
+
+test('adds a section view, hatches the cut and labels it', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.getByRole('button', { name: /Mounting Bracket/ }).click();
+  await waitForFeature(page, 'Fillet1');
+  await page.getByRole('tab', { name: 'Drawing' }).click();
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(4, { timeout: 30_000 });
+  await page.evaluate(() => {
+    type AppT = { drawing: { addView(kind: string): void } };
+    (window as unknown as { __parametric: AppT }).__parametric.drawing.addView('section');
+  });
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(5, { timeout: 30_000 });
+  await expect(page.locator('.paper svg text').filter({ hasText: 'SECTION A-A' })).toBeVisible({ timeout: 30_000 });
+  const stats = await page.evaluate(() => {
+    const svg = document.querySelector('.paper svg')!;
+    return {
+      lines: svg.querySelectorAll('line').length,
+      strokeWidths: [...new Set([...svg.querySelectorAll('line')].map((l) => l.getAttribute('stroke-width')))],
+    };
+  });
+  // The hatch adds thin (0.13 mm) lines inside the cut.
+  expect(stats.lines).toBeGreaterThan(30);
+  expect(stats.strokeWidths).toContain('0.13');
+  // The section is a real view of the document, with its cut settings.
+  const view = await page.evaluate(() => {
+    type AppT = { store: { doc: { drawing?: { views: { kind: string; section?: unknown }[] } } } };
+    const app = (window as unknown as { __parametric: AppT }).__parametric;
+    return app.store.doc.drawing!.views.find((v) => v.kind === 'section');
+  });
+  expect(view?.section).toEqual({ axis: 'z', offset: 0, flip: false });
+  expect(errors).toEqual([]);
+});
