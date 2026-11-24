@@ -737,6 +737,8 @@ export class App {
   showGizmo = false;
   /** Axis of the handle under the pointer, for the hover highlight. */
   gizmoAxis: 'x' | 'y' | 'z' | null = null;
+  /** Axis of the rotation ring under the pointer, for the hover highlight. */
+  gizmoRing: 'x' | 'y' | 'z' | null = null;
 
   /** Origin and length of the three-axis handle (null while it is hidden). */
   gizmoGeometry(): { o: Vec3; size: number } | null {

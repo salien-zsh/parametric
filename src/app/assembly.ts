@@ -7,7 +7,7 @@ import {
 import type {
   AssemblyAxis, AssemblyJoint, AssemblyJointRef, AssemblyJointType, AssemblyMate, AssemblyMateType, ComponentTransform, Id,
 } from '../model/types';
-import type { Vec3 } from '../math/vec';
+import { cross, dot, perpendicular, type Vec3 } from '../math/vec';
 import { h } from '../ui/dom';
 import { tr } from '../i18n';
 import type { App } from './app';
@@ -603,6 +603,7 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
   /** Transforms and joint values when the handle drag started. */
   private gizmoBase: Map<Id, ComponentTransform> = new Map();
   private gizmoJointBase: Map<Id, number> = new Map();
+  private ringDrag: { axis: 'x' | 'y' | 'z'; u: Vec3; v: Vec3; start: number; pivot: Vec3 } | null = null;
   private batching = false;
 
   constructor(private app: App) {
@@ -753,6 +754,67 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
     return null;
   }
 
+  /** Point on the plane through `pivot` facing `normal` under a canvas pixel. */
+  private planePointAt(x: number, y: number, pivot: Vec3, normal: Vec3): Vec3 | null {
+    const ray = this.app.renderer.camera.ray(x, y);
+    const den = ray.d[0] * normal[0] + ray.d[1] * normal[1] + ray.d[2] * normal[2];
+    if (Math.abs(den) < 1e-9) return null;
+    const t = ((pivot[0] - ray.o[0]) * normal[0] + (pivot[1] - ray.o[1]) * normal[1] + (pivot[2] - ray.o[2]) * normal[2]) / den;
+    return [ray.o[0] + ray.d[0] * t, ray.o[1] + ray.d[1] * t, ray.o[2] + ray.d[2] * t];
+  }
+
+  /** The rotation ring under a canvas pixel, with the plane it turns in. */
+  private ringPick(x: number, y: number): { axis: 'x' | 'y' | 'z'; u: Vec3; v: Vec3; pivot: Vec3; start: number } | null {
+    const g = this.app.gizmoGeometry();
+    if (!g) return null;
+    const radius = g.size * 0.78;
+    for (const axis of ['x', 'y', 'z'] as const) {
+      const n: Vec3 = axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+      const u = perpendicular(n);
+      const v = cross(n, u);
+      let best = Infinity;
+      let prev: [number, number] | null = null;
+      for (let i = 0; i <= 48; i++) {
+        const a = (Math.PI * 2 * i) / 48;
+        const p = this.app.viewport.project([
+          g.o[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * radius,
+          g.o[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * radius,
+          g.o[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * radius,
+        ]);
+        if (prev) best = Math.min(best, screenSegDist(x, y, prev[0], prev[1], p[0], p[1]));
+        prev = p;
+      }
+      if (best > 10) continue;
+      const hit = this.planePointAt(x, y, g.o, n);
+      if (!hit) continue;
+      const rel: Vec3 = [hit[0] - g.o[0], hit[1] - g.o[1], hit[2] - g.o[2]];
+      const start = Math.atan2(dot(rel, v), dot(rel, u));
+      return { axis, u, v, pivot: g.o, start };
+    }
+    return null;
+  }
+
+  /** Turns the selected components about the handle origin around one axis. */
+  private applyRing(deltaDeg: number) {
+    const drag = this.ringDrag!;
+    const dir: Vec3 = drag.axis === 'x' ? [1, 0, 0] : drag.axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+    this.beginBatch();
+    const transforms = new Map<Id, ComponentTransform>();
+    for (const id of this.ids) {
+      const component = this.app.component(id);
+      const base = this.gizmoBase.get(id);
+      if (!component || !base) continue;
+      const joint = this.jointOf(id);
+      if (joint && joint.relativeTo && (joint.type === 'revolute' || joint.type === 'ball')) {
+        const from = this.gizmoJointBase.get(joint.id) ?? joint.value;
+        this.setJointValue(joint.id, snapJointValue(joint, from + deltaDeg));
+        continue;
+      }
+      transforms.set(id, rotateAbout(base, drag.pivot, dir, deltaDeg));
+    }
+    if (transforms.size) this.app.setComponentTransforms(transforms);
+  }
+
   /** Moves the selected components along a world axis by `delta` millimetres. */
   private applyGizmo(delta: number) {
     const axis = this.gizmoDrag!.axis;
@@ -782,7 +844,21 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
   }
 
   pointerDown = (e: VPEvent): boolean => {
-    // A handle grabbed first: drag along that world axis.
+    // A handle grabbed first: drag along that world axis (arrows) or turn a ring.
+    const ring = this.ringPick(e.x, e.y);
+    if (ring) {
+      this.beginBatch();
+      this.ringDrag = ring;
+      this.gizmoBase.clear();
+      this.gizmoJointBase.clear();
+      for (const id of this.ids) {
+        const component = this.app.component(id);
+        if (component) this.gizmoBase.set(id, { position: [...component.transform.position], rotation: [...component.transform.rotation] });
+        const joint = this.jointOf(id);
+        if (joint) this.gizmoJointBase.set(joint.id, joint.value);
+      }
+      return true;
+    }
     const handle = this.gizmoPick(e.x, e.y);
     if (handle) {
       this.beginBatch();
@@ -811,13 +887,32 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
   };
 
   pointerMove = (e: VPEvent, dragging: boolean): void => {
-    if (!dragging && !this.dragFrom && !this.gizmoDrag) {
-      // Hover feedback for the axis handle.
+    if (!dragging && !this.dragFrom && !this.gizmoDrag && !this.ringDrag) {
+      // Hover feedback for the handle arrows and rings.
       const handle = this.gizmoPick(e.x, e.y);
+      const ring = handle ? null : this.ringPick(e.x, e.y);
       const axis = handle?.axis ?? null;
-      if (axis !== this.app.gizmoAxis) {
+      const ringAxis = ring?.axis ?? null;
+      if (axis !== this.app.gizmoAxis || ringAxis !== this.app.gizmoRing) {
         this.app.gizmoAxis = axis;
+        this.app.gizmoRing = ringAxis;
         this.app.viewport.drawReferenceGeometry();
+      }
+      return;
+    }
+    // A ring drag turns the selected components about the handle origin.
+    if (this.ringDrag && dragging) {
+      const drag = this.ringDrag;
+      const axis: Vec3 = drag.axis === 'x' ? [1, 0, 0] : drag.axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+      const hit = this.planePointAt(e.x, e.y, drag.pivot, axis);
+      if (hit) {
+        const rel: Vec3 = [hit[0] - drag.pivot[0], hit[1] - drag.pivot[1], hit[2] - drag.pivot[2]];
+        const angle = Math.atan2(dot(rel, drag.v), dot(rel, drag.u));
+        let delta = ((angle - drag.start) * 180) / Math.PI;
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        this.applyRing(delta);
+        this.app.setStatus(`${drag.axis.toUpperCase()}: ${delta.toFixed(1)}°`);
       }
       return;
     }
@@ -863,6 +958,7 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
     this.jointDrag = null;
     this.rotateLive = null;
     this.gizmoDrag = null;
+    this.ringDrag = null;
     this.gizmoBase.clear();
     this.gizmoJointBase.clear();
     // Keep what the drag produced as one undo step.
@@ -917,6 +1013,7 @@ export class AssemblyMovePanel extends PropertyPanel implements ViewportTool {
     this.app.visualJointId = null;
     this.app.showGizmo = false;
     this.app.gizmoAxis = null;
+    this.app.gizmoRing = null;
     this.app.setStatus(tr("Ready"));
     this.app.viewport.drawReferenceGeometry();
     this.endBatch(false);

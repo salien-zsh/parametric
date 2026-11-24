@@ -280,3 +280,34 @@ test('the three-axis handle drags a component along one axis', async ({ page }) 
   expect(after[2]).toBeCloseTo(before[2], 6);
   expect(errors).toEqual([]);
 });
+
+test('a rotation ring turns the selected component', async ({ page }) => {
+  const errors = await openApp(page);
+  await assembly(page);
+  const bracket = await pixelOver(page, 'c2');
+  await page.mouse.click(bracket.x, bracket.y);
+  await page.evaluate(() => (window as unknown as Handle).__parametric.commands.run('moveComponents'));
+  await expect(page.getByRole('heading', { name: 'Move/Rotate' })).toBeVisible();
+  // The Z ring passes through origin + (radius, 0, 0): grab it there and drag
+  // along the tangent so the component turns about Z.
+  const grab = await page.evaluate(() => {
+    const a = (window as unknown as Handle).__parametric;
+    const g = a.gizmoGeometry()!;
+    const rect = a.viewport.canvas.getBoundingClientRect();
+    const radius = g.size * 0.78;
+    const onRing = a.viewport.project([g.o[0] + radius, g.o[1], g.o[2]]).map((v, i) => v + (i === 0 ? rect.left : rect.top));
+    const tangent = a.viewport.project([g.o[0] + radius, g.o[1] + radius, g.o[2]]).map((v, i) => v + (i === 0 ? rect.left : rect.top));
+    const dx = tangent[0] - onRing[0], dy = tangent[1] - onRing[1];
+    const len = Math.hypot(dx, dy);
+    return { x: onRing[0], y: onRing[1], ux: dx / len, uy: dy / len };
+  });
+  const before = await page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.components!.find((c) => c.id === 'c2')!.transform.rotation);
+  await page.mouse.move(grab.x, grab.y);
+  await page.mouse.down();
+  await page.mouse.move(grab.x + grab.ux * 60, grab.y + grab.uy * 60, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(900);
+  const after = await page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.components!.find((c) => c.id === 'c2')!.transform.rotation);
+  expect(Math.hypot(after[0] - before[0], after[1] - before[1], after[2] - before[2])).toBeGreaterThan(5);
+  expect(errors).toEqual([]);
+});

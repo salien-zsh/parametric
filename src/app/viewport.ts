@@ -723,6 +723,39 @@ export class Viewport {
       positions: new Float32Array(gizmoPos), colors: new Uint8Array(gizmoCol), width: 2.4, depth: 'always', order: 7,
     } : null);
 
+    // Rotation rings: one circle per axis, in the plane the axis turns in.
+    const ringPos: number[] = [];
+    const ringCol: number[] = [];
+    if (gizmo) {
+      const radius = gizmo.size * 0.78;
+      const colors: Record<'x' | 'y' | 'z', number[]> = {
+        x: cssColor('--axis-x'), y: cssColor('--axis-y'), z: cssColor('--axis-z'),
+      };
+      for (const axis of ['x', 'y', 'z'] as const) {
+        const n: Vec3 = axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+        const u = perpendicular(n);
+        const v = cross(n, u);
+        const hot = app.gizmoRing === axis;
+        const c = hot ? this.renderer.theme.selection : colors[axis];
+        const rgba = [Math.round(c[0] * 255), Math.round(c[1] * 255), Math.round(c[2] * 255), hot ? 255 : 190];
+        let prev: Vec3 = [gizmo.o[0] + u[0] * radius, gizmo.o[1] + u[1] * radius, gizmo.o[2] + u[2] * radius];
+        for (let i = 1; i <= 48; i++) {
+          const a = (Math.PI * 2 * i) / 48;
+          const cur: Vec3 = [
+            gizmo.o[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * radius,
+            gizmo.o[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * radius,
+            gizmo.o[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * radius,
+          ];
+          ringPos.push(...prev, ...cur);
+          ringCol.push(...rgba, ...rgba);
+          prev = cur;
+        }
+      }
+    }
+    r.setLines('gizmo-rings', ringPos.length ? {
+      positions: new Float32Array(ringPos), colors: new Uint8Array(ringCol), width: 1.6, depth: 'always', order: 6,
+    } : null);
+
     // Travel of the joint being moved: the allowed range along its axis, or
     // the allowed sweep around its pivot, with a mark at the current value.
     const jointRange = app.jointRangeVisual();

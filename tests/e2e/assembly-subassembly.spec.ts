@@ -136,3 +136,64 @@ test('dropping a part file in an assembly inserts it as a component', async ({ p
   expect(await page.evaluate(() => !!(window as unknown as Handle).__parametric.bbox)).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('a sub-assembly opens for editing and writes back', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.getByRole('button', { name: /New part/ }).click();
+  await app(page);
+  await page.evaluate(async () => {
+    const a = (window as unknown as Handle).__parametric;
+    a.newAssembly('Top');
+    const now = Date.now();
+    const part = {
+      format: 'parametric-part', version: 1, kind: 'part', name: 'Plate', units: 'MMGS', decimals: 2, material: null, color: '#b8c4d2',
+      variables: [], rollback: null, blobs: {}, components: [], nextId: 3, created: now, modified: now,
+      features: [
+        {
+          id: 's1', name: 'Sketch1', type: 'sketch', plane: { kind: 'base', plane: 'front' }, constraints: [], entities: [
+            { id: 'p1', t: 'point', x: 0, y: 0 }, { id: 'p2', t: 'point', x: 40, y: 0 }, { id: 'p3', t: 'point', x: 40, y: 40 }, { id: 'p4', t: 'point', x: 0, y: 40 },
+            { id: 'l1', t: 'line', a: 'p1', b: 'p2' }, { id: 'l2', t: 'line', a: 'p2', b: 'p3' }, { id: 'l3', t: 'line', a: 'p3', b: 'p4' }, { id: 'l4', t: 'line', a: 'p4', b: 'p1' },
+          ],
+        },
+        { id: 'e1', name: 'Extrude1', type: 'extrude', sketch: 's1', cut: false, end: 'blind', depth: 20, flip: false, dir2: null, draft: 0, draftOutward: false, thin: null },
+      ],
+    };
+    const sub = {
+      ...part, kind: 'assembly', features: [],
+      components: [{ id: 'sc1', name: 'Plate1', part, transform: { position: [0, 0, 0], rotation: [0, 0, 0] }, visible: true, fixed: true }],
+      mates: [], joints: [],
+    };
+    a.store.change('Insert sub', (doc) => {
+      doc.components = [{ id: 'top1', name: 'Sub', part: sub, transform: { position: [0, 0, 0], rotation: [0, 0, 0] }, visible: true, fixed: false }] as unknown as typeof doc.components;
+    });
+    await a.whenBuilt();
+    a.selection.set([{ kind: 'component', id: 'top1' }]);
+    a.editComponentPart('top1');
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const a = (window as unknown as Handle).__parametric;
+    return { kind: a.store.doc.kind, name: a.store.doc.name, editing: a.componentEdit?.componentId ?? null };
+  })).toMatchObject({ kind: 'assembly', name: 'Plate' });
+  // Change a nested component's position inside the sub-assembly, then close it.
+  await page.evaluate(async () => {
+    const a = (window as unknown as Handle).__parametric;
+    a.store.change('Move plate', (doc) => { doc.components![0].transform.position = [10, 0, 0]; });
+    await a.whenBuilt();
+    a.finishComponentEdit(true);
+  });
+  await page.waitForTimeout(800);
+  const back = await page.evaluate(() => {
+    const a = (window as unknown as Handle).__parametric;
+    return {
+      kind: a.store.doc.kind,
+      name: a.store.doc.name,
+      nested: a.store.doc.components?.[0]?.part.kind,
+      nestedX: (a.store.doc.components?.[0]?.part as { components?: { transform: { position: number[] } }[] }).components?.[0]?.transform.position[0],
+    };
+  });
+  expect(back.kind).toBe('assembly');
+  expect(back.name).toBe('Top');
+  expect(back.nested).toBe('assembly');
+  expect(back.nestedX).toBe(10);
+  expect(errors).toEqual([]);
+});

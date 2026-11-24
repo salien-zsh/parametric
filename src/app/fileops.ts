@@ -144,6 +144,19 @@ export class FileOps {
     const picked = this.pickOne(files.map((f) => ({ item: f, name: f.name || f.path.replace(/\/+$/, '').split('/').pop() || f.path })));
     if (!picked) return;
     const { item: it, name } = picked;
+    // A part dropped into an open assembly from the drive becomes a component.
+    if (this.app.isAssembly && /\.parametric$/i.test(name)) {
+      const documentVersion = this.documentVersion;
+      try {
+        const blob = it.read ? await it.read() : await puter()!.fs.read(it.path);
+        if (documentVersion !== this.documentVersion) return;
+        const part = parseDocument(await blob.text());
+        if (documentVersion === this.documentVersion) this.insertPartDocument(part, name);
+      } catch (e) {
+        toast({ kind: 'error', title: tr("Could not insert the component"), message: (e as Error).message });
+      }
+      return;
+    }
     const loc: Location = { type: 'cloud', path: it.path };
     if (sameLocation(loc, this.app.location)) {
       toast({ message: `"${this.app.store.doc.name}" is already open.` });
