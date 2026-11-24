@@ -50,12 +50,15 @@ export const VIEW_DIRS: Record<DrawingViewKind, { dir: Vec3; x: Vec3 }> = {
   section: { dir: [0, 0, 1], x: [1, 0, 0] },
   // Detail views reuse their source view's projection.
   detail: { dir: [0, 0, 1], x: [1, 0, 0] },
+  // Auxiliary views supply their own direction from a planar face.
+  auxiliary: { dir: [0, 0, 1], x: [1, 0, 0] },
 };
 
 export const VIEW_LABELS: Record<DrawingViewKind, string> = {
   front: tr("Front"), back: tr("Back"), top: tr("Top"), bottom: tr("Bottom"), right: tr("Right"), left: tr("Left"), isometric: tr("Isometric"),
   section: tr("Section"),
   detail: tr("Detail"),
+  auxiliary: tr("Auxiliary"),
 };
 
 /** Size of a view of a box, in model units (paper width, height). */
@@ -198,10 +201,12 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
   // Section views are lettered in the order they appear: A-A, B-B, ...
   let sectionLetter = 0;
   let detailLetter = 0;
+  let auxLetter = 0;
   const letters = new Map<string, string>();
   for (const v of d.views) {
     if (v.kind === 'section') letters.set(v.id, String.fromCharCode(65 + sectionLetter++));
     else if (v.kind === 'detail') letters.set(v.id, String.fromCharCode(65 + detailLetter++));
+    else if (v.kind === 'auxiliary') letters.set(v.id, String.fromCharCode(65 + auxLetter++));
   }
   for (const [i, { v, pr, tx, ty, f, scale }] of placed.entries()) {
     const [bx0, by0, bx1, by1] = pr.bounds!;
@@ -219,7 +224,8 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
     const letter = letters.get(v.id);
     const base = v.kind === 'section' && letter
       ? `${tr("SECTION")} ${letter}-${letter}`
-      : v.kind === 'detail' && letter ? `${tr("DETAIL")} ${letter}` : VIEW_LABELS[v.kind].toUpperCase();
+      : v.kind === 'detail' && letter ? `${tr("DETAIL")} ${letter}`
+        : v.kind === 'auxiliary' && letter ? `${tr("AUXILIARY")} ${letter}` : VIEW_LABELS[v.kind].toUpperCase();
     const scaled = v.kind === 'detail' && v.detail
       ? `${base} (${scaleLabel(v.detail.scale)})`
       : v.scale != null && v.scale !== d.scale ? `${base} (${scaleLabel(v.scale)})` : base;

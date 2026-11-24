@@ -553,3 +553,19 @@ test('a detail view magnifies a window of another view', async ({ page }) => {
   expect((await texts()).some((t) => t.includes('3:1'))).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('adds an auxiliary view taken from a planar face', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.getByRole('button', { name: /Mounting Bracket/ }).click();
+  await waitForFeature(page, 'Fillet1');
+  await page.getByRole('tab', { name: 'Drawing' }).click();
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(4, { timeout: 30_000 });
+  await page.evaluate(() => {
+    type AppT = { drawing: { addView(kind: string): void } };
+    (window as unknown as { __parametric: AppT }).__parametric.drawing.addView('auxiliary');
+  });
+  await expect(page.locator('.paper g[data-view]')).toHaveCount(5, { timeout: 30_000 });
+  await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('.paper svg text')].map((t) => t.textContent ?? '')))
+    .toEqual(expect.arrayContaining([expect.stringContaining('AUXILIARY A')]));
+  expect(errors).toEqual([]);
+});

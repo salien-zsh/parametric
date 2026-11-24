@@ -3,7 +3,7 @@
 // added and removed; the sheet exports to PDF and SVG.
 
 import type { ProjectionResult } from '../kernel/protocol';
-import type { DrawingDoc, DrawingView, DrawingViewKind, SectionAxis, SheetSize } from '../model/types';
+import type { DrawingDoc, DrawingView, DrawingViewKind, FaceRef, SectionAxis, SheetSize } from '../model/types';
 import type { Vec3 } from '../math/vec';
 import { UNIT_SYSTEMS, formatNumber } from '../model/units';
 import { SHEET_LABELS, STANDARD_SCALES, VIEW_DIRS, VIEW_LABELS, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdf, toSvg, type ViewAnnotations, type ViewFrame } from '../drawing/sheet';
@@ -22,7 +22,20 @@ import { tr } from '../i18n';
  * Where a drawing view looks from, and for a section view the plane it cuts at.
  * `center` is the middle of the model, so the section offset reads from there.
  */
-function viewRequest(v: DrawingView, center: Vec3): { dir: Vec3; x: Vec3; cut?: { p: Vec3; n: Vec3 } } {
+function viewRequest(
+  v: DrawingView,
+  center: Vec3,
+  face?: { type: string; normal?: Vec3; frame?: { x: Vec3 } } | null,
+): { dir: Vec3; x: Vec3; cut?: { p: Vec3; n: Vec3 } } {
+  // An auxiliary view looks square on at a planar face.
+  if (v.kind === 'auxiliary' && face?.normal) {
+    const dir = face.normal;
+    const fx = face.frame?.x;
+    // A paper x axis in the face plane: the face frame unless it is parallel to the normal.
+    const perp = fx && Math.abs(dot(fx, dir)) < 0.999 ? fx : (Math.abs(dir[0]) > 0.9 ? [0, 1, 0] as Vec3 : [1, 0, 0] as Vec3);
+    const x = normalize(cross(perp, dir));
+    return { dir, x };
+  }
   if (v.kind !== 'section') return VIEW_DIRS[v.kind];
   const s = v.section ?? { axis: 'z' as SectionAxis, offset: 0, flip: false };
   const axis: Vec3 = s.axis === 'x' ? [1, 0, 0] : s.axis === 'y' ? [0, 1, 0] : [0, 0, 1];
@@ -34,7 +47,9 @@ function viewRequest(v: DrawingView, center: Vec3): { dir: Vec3; x: Vec3; cut?: 
 }
 
 /** What a view's projection depends on, besides the model version. */
-const viewSig = (v: DrawingView) => v.kind === 'section' ? JSON.stringify(v.section ?? { axis: 'z', offset: 0, flip: false }) : '';
+const viewSig = (v: DrawingView) => v.kind === 'section'
+  ? JSON.stringify(v.section ?? { axis: 'z', offset: 0, flip: false })
+  : v.kind === 'auxiliary' ? JSON.stringify(v.auxiliary ?? null) : '';
 
 /** YYYY-MM-DD in the user's time zone (toISOString gives the UTC day, a day off in the evening or morning). */
 function localDate(ms: number): string {
@@ -145,7 +160,7 @@ export class DrawingWorkspace {
   /** Rebuilds the PropertyManager if what it shows changed (not when a view only moved). */
   private syncPanel() {
     const d = this.doc;
-    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section, v.detail, v.centers, v.balloons])]) : '';
+    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section, v.detail, v.auxiliary, v.centers, v.balloons])]) : '';
     if (key === this.panelKey) return;
     this.panelKey = key;
     if (this.panelChanging) return;
@@ -188,7 +203,11 @@ export class DrawingWorkspace {
       try {
         const b = this.app.bbox;
         const center: Vec3 = [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
-        const res = await this.app.kernel.project(need.map((v) => ({ id: v.id, ...viewRequest(v, center) })));
+        const res = await this.app.kernel.project(need.map((v) => {
+          const face = v.kind === 'auxiliary' && v.auxiliary
+            ? this.app.faces.find((f) => f.name === v.auxiliary!.face.name) ?? null : null;
+          return { id: v.id, ...viewRequest(v, center, face) };
+        }));
         for (const r of res) {
           const v = need.find((x) => x.id === r.id)!;
           this.cache.set(r.id, { kind: v.kind, version, sig: viewSig(v), result: r });
@@ -248,7 +267,7 @@ export class DrawingWorkspace {
     const center: Vec3 = [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
     const groups = this.bomGroups();
     for (const v of d.views) {
-      if (v.kind === 'detail') continue;
+      if (v.kind === 'detail' || v.kind === 'auxiliary') continue;
       const pr = projections.get(v.id);
       if (!pr?.bounds) continue;
       const { dir, x } = viewRequest(v, center);
@@ -489,6 +508,24 @@ export class DrawingWorkspace {
     if (!d || !b) return;
     if (kind === 'detail') {
       this.addDetailView();
+      return;
+    }
+    if (kind === 'auxiliary') {
+      const faces = this.app.faces.filter((f) => f.type === 'plane' && f.normal && f.frame);
+      const face = faces[Math.min(faces.length - 1, 0)];
+      if (!face) {
+        toast({ kind: 'warning', message: tr("Build a planar face before adding an auxiliary view.") });
+        return;
+      }
+      const sheet = sheetDims(d);
+      let n = d.views.length + 1;
+      while (d.views.some((v) => v.id === `v${n}`)) n++;
+      const id = `v${n}`;
+      const ref: FaceRef = { name: face.name, sig: { type: face.type, c: face.center, n: face.normal, area: face.area } };
+      this.selected = id;
+      this.update((dd) => {
+        dd.views.push({ id, kind: 'auxiliary', x: Math.min(sheet.w - 40, 120), y: Math.max(70, sheet.h * 0.6), hidden: false, dims: false, auxiliary: { face: ref } });
+      }, tr("Add auxiliary view"));
       return;
     }
     // A new section cuts across Z through the middle until it is moved.

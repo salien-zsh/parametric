@@ -1791,5 +1791,9 @@
   "The face could not be offset": "该面无法偏置",
   "The offset must not be zero": "偏置量不能为零",
   "There is no body to edit": "没有可编辑的实体",
-  "direct edit push pull face offset": "直接编辑 推拉 面 偏置"
+  "direct edit push pull face offset": "直接编辑 推拉 面 偏置",
+  "AUXILIARY": "辅助视图",
+  "Auxiliary": "辅助视图",
+  "Build a planar face before adding an auxiliary view.": "请先构建一个平面，再添加辅助视图。",
+  "Add auxiliary view": "添加辅助视图"
 }

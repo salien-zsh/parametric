@@ -64,6 +64,7 @@ The **Mechanical** tab holds the power-transmission generators. Every generator 
 **Drawings**
 - A 2D drawing sheet for each part or assembly (Drawing tab in the status bar): front, top, right, left, back, bottom and isometric views projected from the solid, with hidden lines and overall dimensions.
 - Section views cut the model along X, Y or Z at an offset from its centre (seen from either side) and hatch the cut face; the sheet letters them A-A, B-B and so on.
+- **Auxiliary views** look square on at a picked planar face (the face's normal is the view direction).
 - **Detail views** magnify a circular window of another view (centred on a hole when there is one), clipped to the window and labelled DETAIL A (2:1) with the window's circle drawn.
 - Each view can take its own scale; the selected view's controls (hidden lines, dimensions, section plane, detail window, scale) open in the drawing panel.
 - Centre marks on the circular holes facing a view, and numbered balloons for assembly drawings that match the bill of materials.

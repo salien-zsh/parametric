@@ -63,3 +63,24 @@ describe('detail view on the sheet', () => {
     expect(back.drawing?.views[1].detail).toEqual({ source: 'v1', x: 4, y: -4, radius: 10, scale: 2 });
   });
 });
+
+describe('auxiliary view', () => {
+  it('labels a view taken square on at a face', () => {
+    const doc: DrawingDoc = {
+      sheet: 'A4', landscape: true, scale: 1, title: '', drawnBy: '', notes: '',
+      views: [
+        { id: 'v1', kind: 'front', x: 100, y: 80, hidden: false, dims: false },
+        {
+          id: 'v2', kind: 'auxiliary', x: 100, y: 160, hidden: false, dims: false,
+          auxiliary: { face: { name: 'f1', sig: { type: 'plane', c: [0, 0, 0], n: [0, 0, 1], area: 10 } } },
+        },
+      ],
+    };
+    const sheet = buildSheet(doc, new Map([
+      ['v1', projection],
+      ['v2', { id: 'v2', visible: ['M 10 0 L 30 0 L 30 -20 Z'], hidden: [], bounds: [10, -20, 30, 0] as [number, number, number, number] }],
+    ]), info);
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts.some((t) => t.includes('AUXILIARY A'))).toBe(true);
+  });
+});

@@ -1,7 +1,7 @@
 import type { DrawingDoc } from './types';
 
 const sheets = new Set(['A4', 'A3', 'A2', 'A1', 'Letter', 'Tabloid']);
-const kinds = new Set(['front', 'back', 'left', 'right', 'top', 'bottom', 'isometric', 'section', 'detail']);
+const kinds = new Set(['front', 'back', 'left', 'right', 'top', 'bottom', 'isometric', 'section', 'detail', 'auxiliary']);
 const axes = new Set(['x', 'y', 'z']);
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -22,6 +22,7 @@ export function validDrawing(value: unknown): value is DrawingDoc {
     if (v.balloons != null && typeof v.balloons !== 'boolean') return false;
     if (v.section != null && (!object(v.section) || typeof v.section.axis !== 'string' || !axes.has(v.section.axis)
       || !finite(v.section.offset) || (v.section.flip != null && typeof v.section.flip !== 'boolean'))) return false;
+    if (v.auxiliary != null && (!object(v.auxiliary) || !object(v.auxiliary.face) || typeof v.auxiliary.face.name !== 'string' || !v.auxiliary.face.name)) return false;
     if (v.detail != null && (!object(v.detail) || typeof v.detail.source !== 'string' || !v.detail.source
       || !finite(v.detail.x) || !finite(v.detail.y) || !finite(v.detail.radius) || v.detail.radius <= 0
       || !finite(v.detail.scale) || v.detail.scale <= 0)) return false;

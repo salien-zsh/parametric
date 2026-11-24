@@ -815,7 +815,7 @@ export interface ParameterConfiguration {
 // ---- Drawings ----
 
 export type SheetSize = 'A4' | 'A3' | 'A2' | 'A1' | 'Letter' | 'Tabloid';
-export type DrawingViewKind = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom' | 'isometric' | 'section' | 'detail';
+export type DrawingViewKind = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom' | 'isometric' | 'section' | 'detail' | 'auxiliary';
 
 /** A magnified circular window onto another view. */
 export interface DrawingViewDetail {
@@ -859,6 +859,8 @@ export interface DrawingView {
   section?: DrawingViewSection;
   /** Detail views: where the magnified window sits on its source view. */
   detail?: DrawingViewDetail;
+  /** Auxiliary views: the planar face they look at square on. */
+  auxiliary?: { face: FaceRef };
 }
 
 export interface DrawingDoc {
