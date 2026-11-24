@@ -34,6 +34,16 @@ describe('move body', () => {
     expect(after).toEqual(before);
   });
 
+  it('rotates the body about the world axes', async () => {
+    const features = plate();
+    const turned = await build([...features, { ...newMoveBody('m1', 'Move1'), dx: 0, dy: 0, dz: 0, rotZ: 90 }]);
+    expect(turned.status[turned.status.length - 1].ok).toBe(true);
+    // 0..60 x 0..40 turned 90 degrees about Z becomes -40..0 x 0..60.
+    expect(turned.bbox!.min[0]).toBeCloseTo(-40, 4);
+    expect(turned.bbox!.max[0]).toBeCloseTo(0, 4);
+    expect(turned.bbox!.max[1]).toBeCloseTo(60, 4);
+  });
+
   it('does nothing for a zero move and needs a body', async () => {
     const zero = await build([...plate(), { ...newMoveBody('m1', 'Move1'), dx: 0, dy: 0, dz: 0 }]);
     expect(zero.status[zero.status.length - 1].ok).toBe(true);

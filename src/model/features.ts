@@ -57,6 +57,9 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
     { path: 'dx', kind: 'length', label: tr("X offset") },
     { path: 'dy', kind: 'length', label: tr("Y offset") },
     { path: 'dz', kind: 'length', label: tr("Z offset") },
+    { path: 'rotX', kind: 'angle', label: tr("X rotation") },
+    { path: 'rotY', kind: 'angle', label: tr("Y rotation") },
+    { path: 'rotZ', kind: 'angle', label: tr("Z rotation") },
   ],
   thread: [
     { path: 'pitch', kind: 'length', label: tr("Pitch") },
@@ -336,7 +339,7 @@ export const newPoint = (id: Id, name: string): PointFeature => ({
 });
 
 export const newMoveBody = (id: Id, name: string): MoveBodyFeature => ({
-  id, name, type: 'moveBody', dx: 10, dy: 0, dz: 0,
+  id, name, type: 'moveBody', dx: 10, dy: 0, dz: 0, rotX: 0, rotY: 0, rotZ: 0,
 });
 
 export const newOffsetFace = (id: Id, name: string): OffsetFaceFeature => ({

@@ -1662,6 +1662,11 @@ export class MoveBodyPanel extends FeaturePanel<MoveBodyFeature> {
         field(tr("Y offset"), () => f.dy, (v) => { f.dy = v; }),
         field(tr("Z offset"), () => f.dz, (v) => { f.dz = v; }),
       ]),
+      section(tr("Rotation"), [
+        numberField({ label: tr("X rotation"), icon: 'revolve', value: f.rotX ?? 0, kind: 'angle', ctx, onChange: (v) => { if (typeof v === 'number') f.rotX = v; this.changed(); } }),
+        numberField({ label: tr("Y rotation"), icon: 'revolve', value: f.rotY ?? 0, kind: 'angle', ctx, onChange: (v) => { if (typeof v === 'number') f.rotY = v; this.changed(); } }),
+        numberField({ label: tr("Z rotation"), icon: 'revolve', value: f.rotZ ?? 0, kind: 'angle', ctx, onChange: (v) => { if (typeof v === 'number') f.rotZ = v; this.changed(); } }),
+      ]),
     ];
   }
 

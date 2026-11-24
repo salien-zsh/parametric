@@ -454,6 +454,10 @@ export interface MoveBodyFeature extends FeatureBase {
   dx: Param;
   dy: Param;
   dz: Param;
+  /** Rotation about the world X/Y/Z axes, in degrees, applied after the offset. */
+  rotX?: Param;
+  rotY?: Param;
+  rotZ?: Param;
 }
 
 export interface LoftFeature extends FeatureBase {

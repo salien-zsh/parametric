@@ -1609,17 +1609,36 @@ export class ModelBuilder {
     this.applyTool(f.id, st, slab, this.nameTool(f.id, slab, (_d, k) => `o${k}`), off < 0);
   }
 
-  /** Moves the whole body and keeps every face name attached to its face. */
+  /** Moves and rotates the whole body, keeping every face name attached to its face. */
   private applyMoveBody(f: MoveBodyFeature, st: State) {
     if (!st.body) throw new FeatureError(tr("There is no body to move"));
     const v: Vec3 = [num(f.dx), num(f.dy), num(f.dz)];
-    if (len(v) < 1e-12) return;
-    st.body = translated(st.body, v);
-    st.faces = st.faces.map((nf) => ({
-      ...nf,
-      shape: translated(nf.shape, v),
-      desc: { ...nf.desc, p: add(nf.desc.p, v), center: add(nf.desc.center, v) },
-    }));
+    const rotX = num(f.rotX ?? 0), rotY = num(f.rotY ?? 0), rotZ = num(f.rotZ ?? 0);
+    const rotate = (p: Vec3): Vec3 => {
+      let [x, y, z] = p;
+      if (rotX) { const a = (rotX * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a); [y, z] = [y * c - z * s, y * s + z * c]; }
+      if (rotY) { const a = (rotY * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a); [x, z] = [x * c + z * s, -x * s + z * c]; }
+      if (rotZ) { const a = (rotZ * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a); [x, y] = [x * c - y * s, x * s + y * c]; }
+      return [x, y, z];
+    };
+    const rotateShape = (shape: Sh): Sh => {
+      let out = shape;
+      const axes: [Vec3, number][] = [[[1, 0, 0], rotX], [[0, 1, 0], rotY], [[0, 0, 1], rotZ]];
+      for (const [axis, angle] of axes) if (angle) out = rotated(out, [0, 0, 0], axis, (angle * Math.PI) / 180);
+      return out;
+    };
+    if (len(v) > 1e-12) st.body = translated(st.body, v);
+    if (rotX || rotY || rotZ) st.body = rotateShape(st.body);
+    st.faces = st.faces.map((nf) => {
+      let shape = nf.shape;
+      if (len(v) > 1e-12) shape = translated(shape, v);
+      shape = rotateShape(shape);
+      return {
+        ...nf,
+        shape,
+        desc: { ...nf.desc, p: rotate(add(nf.desc.p, v)), center: rotate(add(nf.desc.center, v)), d: rotate(nf.desc.d) },
+      };
+    });
     st.edges = null;
   }
 
