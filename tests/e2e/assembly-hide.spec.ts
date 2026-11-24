@@ -33,6 +33,13 @@ test('Hide hides the selected components and Show All brings them back', async (
     await a.whenBuilt();
     a.selection.set([{ kind: 'component', id: 'c2' }]);
   });
+  // Hide and Isolate are offered by the selection quick actions too.
+  const quick = await page.evaluate(() => {
+    const a = (window as unknown as { __parametric: { hooks: { quickActions(): { cmd: string }[] } } }).__parametric;
+    return a.hooks.quickActions().map((action) => action.cmd);
+  });
+  expect(quick).toContain('hideComponents');
+  expect(quick).toContain('isolateComponents');
   await page.evaluate(() => (window as unknown as Handle).__parametric.commands.run('hideComponents'));
   await page.waitForTimeout(900);
   const hidden = await page.evaluate(() => {

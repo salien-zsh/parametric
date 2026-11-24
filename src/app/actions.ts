@@ -908,7 +908,7 @@ export function quickActions(app: App): { cmd: string }[] {
     if (app.selection.ofKind('assemblyJoint').length) return [{ cmd: 'motionStudy' }, { cmd: 'interference' }, { cmd: 'zoomFit' }];
     if (components.length === 2) return [{ cmd: 'autoMate' }, { cmd: 'addJoint' }, { cmd: 'mateSuggestions' }, { cmd: 'openDrawing' }];
     return components.length
-      ? [{ cmd: 'editComponent' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { cmd: 'addJoint' }, { cmd: 'zoomToSelection' }, { cmd: 'fixComponent' }]
+      ? [{ cmd: 'editComponent' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { cmd: 'addJoint' }, { cmd: 'zoomToSelection' }, { cmd: 'fixComponent' }, { cmd: 'hideComponents' }, { cmd: 'isolateComponents' }]
       : [{ cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'selectAllComponents' }, { cmd: 'autoMate' }, { cmd: 'mateSuggestions' }, { cmd: 'zoomFit' }];
   }
   const it = app.selection.items[0];
