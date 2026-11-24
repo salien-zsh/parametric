@@ -4,7 +4,7 @@ import type { Frame, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newAxis, newBevelGear, newCoil, newMirror, newOffsetFace, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBevelGear, newCoil, newMirror, newMoveBody, newOffsetFace, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -14,7 +14,7 @@ import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel
 import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import type {
-  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, OffsetFaceFeature, RibFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
@@ -1649,6 +1649,31 @@ export class SweepPanel extends FeaturePanel<SweepFeature> {
 
 // ---------- factory ----------
 
+export class MoveBodyPanel extends FeaturePanel<MoveBodyFeature> {
+  render(): HTMLElement[] {
+    const f = this.f;
+    const ctx = this.ctx();
+    const field = (label: string, get: () => unknown, set: (v: number) => void) =>
+      numberField({ label, icon: 'ruler', value: get() as never, kind: 'length', ctx, onChange: (v) => { if (typeof v === 'number') set(v); this.changed(); } });
+    return [
+      section(tr("Move"), [
+        h('p', { class: 'field-label' }, tr("Moves the whole body by the given offsets; face names stay with their faces.")),
+        field(tr("X offset"), () => f.dx, (v) => { f.dx = v; }),
+        field(tr("Y offset"), () => f.dy, (v) => { f.dy = v; }),
+        field(tr("Z offset"), () => f.dz, (v) => { f.dz = v; }),
+      ]),
+    ];
+  }
+
+  protected validate() {
+    return null;
+  }
+
+  preview() {
+    return this.f;
+  }
+}
+
 export class OffsetFacePanel extends FeaturePanel<OffsetFaceFeature> {
   render(): HTMLElement[] {
     const f = this.f;
@@ -1791,6 +1816,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'rib': return new RibPanel(app, f, editing);
     case 'thread': return new ThreadPanel(app, f, editing);
     case 'offsetFace': return new OffsetFacePanel(app, f, editing);
+    case 'moveBody': return new MoveBodyPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
     case 'axis': return new AxisPanel(app, f, editing);
@@ -1878,6 +1904,12 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
+    case 'moveBody': {
+      const x = newMoveBody(id, name);
+      x.dx = Math.max(size / 10, app.store.unitScale);
+      f = x;
+      break;
+    }
     case 'offsetFace': {
       const x = newOffsetFace(id, name);
       x.face = faces[0] ?? null;

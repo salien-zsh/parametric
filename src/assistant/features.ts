@@ -413,6 +413,7 @@ export class FeatureCodec {
         hub_diameter: L(f.hubDiameter), hub_length: L(f.hubLength), material: f.material,
         power: f.power, speed: f.speed, service_factor: f.serviceFactor,
       };
+      case 'moveBody': return { dx: L(f.dx), dy: L(f.dy), dz: L(f.dz) };
       case 'offsetFace': return { face: f.face?.name ?? null, offset: L(f.offset) };
       case 'thread': return { face: f.face?.name ?? null, pitch: L(f.pitch), length: L(f.length), depth: L(f.depth), left: f.left };
       case 'rib': return { sketch: f.sketch, thickness: L(f.thickness), depth: L(f.depth), symmetric: f.symmetric, flip: f.flip, cut: f.cut };

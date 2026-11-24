@@ -448,6 +448,14 @@ export interface OffsetFaceFeature extends FeatureBase {
   offset: Param;
 }
 
+/** Moves the whole body by a vector (Fusion's Move Body, translation only). */
+export interface MoveBodyFeature extends FeatureBase {
+  type: 'moveBody';
+  dx: Param;
+  dy: Param;
+  dz: Param;
+}
+
 export interface LoftFeature extends FeatureBase {
   type: 'loft';
   profiles: Id[];
@@ -628,6 +636,7 @@ export type Feature =
   | RibFeature
   | ThreadFeature
   | OffsetFaceFeature
+  | MoveBodyFeature
   | AxisFeature
   | PointFeature
   | LoftFeature

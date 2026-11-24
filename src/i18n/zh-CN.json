@@ -1819,5 +1819,12 @@
   "suppress component assembly exclude": "抑制 零部件 装配 排除",
   "Suppress components": "抑制零部件",
   "Unsuppress components": "解除抑制零部件",
-  "Suppress the selected components: they keep their place but are not built or listed.": "抑制所选零部件：位置保留，但不参与构建和显示。"
+  "Suppress the selected components: they keep their place but are not built or listed.": "抑制所选零部件：位置保留，但不参与构建和显示。",
+  "Move Body": "移动实体",
+  "X offset": "X 偏移",
+  "Y offset": "Y 偏移",
+  "Z offset": "Z 偏移",
+  "Move the whole body by offsets without changing its shape.": "按偏移量移动整个实体，不改变形状。",
+  "Moves the whole body by the given offsets; face names stay with their faces.": "按给定偏移移动整个实体，面名称保持跟随。",
+  "move body translate direct edit": "移动 实体 平移 直接编辑"
 }

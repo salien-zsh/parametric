@@ -83,6 +83,7 @@ export function validFeature(f: Feature): boolean {
     case 'sweep':
       return (r.profile == null || id(r.profile)) && (r.path == null || id(r.path));
     case 'offsetFace': return named(r.face) && numeric(r.offset);
+    case 'moveBody': return numeric(r.dx) && numeric(r.dy) && numeric(r.dz);
     case 'thread': {
       return named(r.face) && numeric(r.pitch) && numeric(r.length) && numeric(r.depth) && typeof r.left === 'boolean';
     }

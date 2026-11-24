@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, OffsetFaceFeature, RibFeature, ThreadFeature,
+  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ThreadFeature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -418,6 +418,7 @@ export class ModelBuilder {
       case 'rib': this.applyRib(f, st); return 'tool';
       case 'thread': this.applyThread(f, st); return 'tool';
       case 'offsetFace': this.applyOffsetFace(f, st); return 'tool';
+      case 'moveBody': this.applyMoveBody(f, st); return 'body';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -1606,6 +1607,20 @@ export class ModelBuilder {
     const slab = R.basicFaceExtrusion(profile, new R.Vector(scale(d.d, off))) as unknown as Sh;
     if (isEmpty(slab)) throw new FeatureError(tr("The face could not be offset"));
     this.applyTool(f.id, st, slab, this.nameTool(f.id, slab, (_d, k) => `o${k}`), off < 0);
+  }
+
+  /** Moves the whole body and keeps every face name attached to its face. */
+  private applyMoveBody(f: MoveBodyFeature, st: State) {
+    if (!st.body) throw new FeatureError(tr("There is no body to move"));
+    const v: Vec3 = [num(f.dx), num(f.dy), num(f.dz)];
+    if (len(v) < 1e-12) return;
+    st.body = translated(st.body, v);
+    st.faces = st.faces.map((nf) => ({
+      ...nf,
+      shape: translated(nf.shape, v),
+      desc: { ...nf.desc, p: add(nf.desc.p, v), center: add(nf.desc.center, v) },
+    }));
+    st.edges = null;
   }
 
   /** A thread: a triangular groove swept along a helix on a cylindrical face and cut in. */

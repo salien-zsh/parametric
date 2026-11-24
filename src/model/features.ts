@@ -1,7 +1,7 @@
 // Feature factories, display names and parameter metadata.
 
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, CoilFeature, OffsetFaceFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
+  AxisFeature, AxisRef, BevelGearFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
   Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShaftFeature, ShellFeature,
   PointFeature, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature, SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from './types';
@@ -53,6 +53,11 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
     { path: 'depth', kind: 'length', label: tr("Depth") },
   ],
   offsetFace: [{ path: 'offset', kind: 'length', label: tr("Offset") }],
+  moveBody: [
+    { path: 'dx', kind: 'length', label: tr("X offset") },
+    { path: 'dy', kind: 'length', label: tr("Y offset") },
+    { path: 'dz', kind: 'length', label: tr("Z offset") },
+  ],
   thread: [
     { path: 'pitch', kind: 'length', label: tr("Pitch") },
     { path: 'length', kind: 'length', label: tr("Thread length") },
@@ -166,6 +171,7 @@ const BASE_NAMES: Record<FeatureType, string> = {
   rib: tr('Rib'),
   thread: tr('Thread'),
   offsetFace: tr('Offset Face'),
+  moveBody: tr('Move Body'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -197,6 +203,7 @@ export const FEATURE_LABELS: Record<FeatureType, string> = {
   rib: tr('Rib'),
   thread: tr('Thread'),
   offsetFace: tr('Offset Face'),
+  moveBody: tr('Move Body'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -222,6 +229,7 @@ export function featureIcon(f: Feature): string {
     case 'rib': return 'extrude';
     case 'thread': return 'hole';
     case 'offsetFace': return 'edit';
+    case 'moveBody': return 'select';
     case 'import': return 'part';
     default: return f.type;
   }
@@ -325,6 +333,10 @@ export const newAxis = (id: Id, name: string): AxisFeature => ({
 
 export const newPoint = (id: Id, name: string): PointFeature => ({
   id, name, type: 'point', kind: 'vertex', point: null, edge: null, face: null, edge2: null, plane: null,
+});
+
+export const newMoveBody = (id: Id, name: string): MoveBodyFeature => ({
+  id, name, type: 'moveBody', dx: 10, dy: 0, dz: 0,
 });
 
 export const newOffsetFace = (id: Id, name: string): OffsetFaceFeature => ({
