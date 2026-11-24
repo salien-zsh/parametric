@@ -1814,5 +1814,10 @@
   "Hide the selected components. Show All Components brings them back.": "隐藏所选零部件，“显示全部零部件”可恢复。",
   "Select All": "全选",
   "select all geometry entities components": "全选 几何 实体 零部件",
-  "Select every sketch entity while sketching, or every visible component in an assembly.": "草图中选中全部图元，或装配中选中全部可见零部件。"
+  "Select every sketch entity while sketching, or every visible component in an assembly.": "草图中选中全部图元，或装配中选中全部可见零部件。",
+  "Suppress/Unsuppress Component": "抑制/解除抑制零部件",
+  "suppress component assembly exclude": "抑制 零部件 装配 排除",
+  "Suppress components": "抑制零部件",
+  "Unsuppress components": "解除抑制零部件",
+  "Suppress the selected components: they keep their place but are not built or listed.": "抑制所选零部件：位置保留，但不参与构建和显示。"
 }

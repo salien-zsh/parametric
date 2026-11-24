@@ -674,6 +674,8 @@ export interface AssemblyComponent {
   visible: boolean;
   /** A grounded component is the reference for assembly mates. */
   fixed?: boolean;
+  /** Suppressed components keep their place but are not built, drawn or listed in the BOM. */
+  suppressed?: boolean;
 }
 
 export type AssemblyAxis = 'x' | 'y' | 'z';

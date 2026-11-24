@@ -295,6 +295,17 @@ export function registerCommands(app: App, files: FileOps) {
       },
     },
     {
+      id: 'suppressComponent', label: tr("Suppress/Unsuppress Component"), icon: 'eyeOff',
+      keywords: tr("suppress component assembly exclude"),
+      description: tr("Suppress the selected components: they keep their place but are not built or listed."),
+      enabled: () => app.isAssembly && app.selection.ofKind('component').length >= 1,
+      checked: () => app.componentsSuppressed(app.selection.ofKind('component').map((c) => c.id)),
+      run: () => {
+        const ids = app.selection.ofKind('component').map((c) => c.id);
+        app.setComponentsSuppressed(ids, !app.componentsSuppressed(ids));
+      },
+    },
+    {
       id: 'hideComponents', label: tr("Hide"), icon: 'eyeOff',
       keywords: tr("hide components assembly visibility"),
       description: tr("Hide the selected components. Show All Components brings them back."),
@@ -811,6 +822,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
       { label: tr("Replace Component..."), icon: 'import', disabled: !c.isEnabled('replaceComponent'), run: () => c.run('replaceComponent') },
       { label: tr("Duplicate Component"), icon: 'copy', run: () => c.run('duplicateComponent') },
       { label: tr("Hide"), icon: 'eyeOff', run: () => c.run('hideComponents') },
+      { label: tr("Suppress/Unsuppress Component"), icon: 'eyeOff', run: () => c.run('suppressComponent') },
       { label: tr("Isolate"), icon: 'eyeOff', run: () => c.run('isolateComponents') },
       { label: tr("Show All Components"), icon: 'eye', disabled: !c.isEnabled('showAllComponents'), run: () => c.run('showAllComponents') },
       sep,

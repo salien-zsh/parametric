@@ -822,6 +822,7 @@ export class App {
       solvedHere: Map<Id, ComponentTransform> | null,
     ) => {
       for (const component of components) {
+        if (component.suppressed) continue;
         const placed = !prefix && solvedHere
           ? solvedHere.get(component.id) ?? component.transform
           : parent ? composeTransform(parent, component.transform) : component.transform;
@@ -1126,6 +1127,24 @@ export class App {
       }
     });
     if (created.length) this.selection.set(created.map((id) => ({ kind: 'component' as const, id })));
+  }
+
+  /** Suppresses (or resumes) the given components. */
+  setComponentsSuppressed(ids: Id[], suppressed: boolean) {
+    if (!ids.length) return;
+    const picked = new Set(ids);
+    this.store.change(suppressed ? tr("Suppress components") : tr("Unsuppress components"), (doc) => {
+      for (const component of doc.components ?? []) {
+        if (!picked.has(component.id)) continue;
+        if (suppressed) component.suppressed = true;
+        else delete component.suppressed;
+      }
+    });
+  }
+
+  /** Whether every given component is suppressed. */
+  componentsSuppressed(ids: Id[]): boolean {
+    return ids.length > 0 && ids.every((id) => !!this.component(id)?.suppressed);
   }
 
   /** Hides the given components (Fusion's Hide for a selection). */

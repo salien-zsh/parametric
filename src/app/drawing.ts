@@ -242,7 +242,7 @@ export class DrawingWorkspace {
     if (doc.kind !== 'assembly') return [];
     const groups = new Map<string, { part: string; material: string; components: string[]; quantity: number; description?: string }>();
     for (const component of doc.components ?? []) {
-      if (!component.visible) continue;
+      if (!component.visible || component.suppressed) continue;
       const material = component.part.material?.name ?? tr("Not specified");
       const key = JSON.stringify([component.part.name, material]);
       // Pattern copies count towards the quantity, like separate instances.

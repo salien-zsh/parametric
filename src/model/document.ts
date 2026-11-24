@@ -176,6 +176,7 @@ export function parseDocument(text: string): PartDocument {
         transform: normalizeTransform(rawComponent.transform),
         visible: typeof rawComponent.visible === 'boolean' ? rawComponent.visible : true,
         fixed: rawComponent.fixed === true,
+        ...(rawComponent.suppressed === true ? { suppressed: true } : {}),
       };
       return component;
     });
