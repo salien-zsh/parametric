@@ -1829,5 +1829,12 @@
   "move body translate direct edit": "移动 实体 平移 直接编辑",
   "X rotation": "X 旋转",
   "Y rotation": "Y 旋转",
-  "Z rotation": "Z 旋转"
+  "Z rotation": "Z 旋转",
+  "Exploded View": "爆炸视图",
+  "Explode distance": "爆炸距离",
+  "Exploded view": "爆炸视图",
+  "Reset explode": "重置爆炸",
+  "explode exploded assembly view": "爆炸 视图 装配",
+  "Move the components apart for an exploded view; drawings show the exploded state too.": "把零部件向外分开形成爆炸视图，工程图也使用爆炸位置。",
+  "Every component moves this far away from the assembly centre in the viewport and the drawings.": "每个零部件沿远离装配中心的方向移动该距离，视口与工程图同步生效。"
 }

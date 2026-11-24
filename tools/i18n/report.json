@@ -1,12 +1,12 @@
 {
   "files": 82,
   "edits": 0,
-  "uniqueKeys": 2077,
+  "uniqueKeys": 2084,
   "perFile": [
     {
       "file": "src/app/actions.ts",
       "edits": 0,
-      "skipped": 485
+      "skipped": 487
     },
     {
       "file": "src/app/app.ts",
@@ -21,7 +21,7 @@
     {
       "file": "src/app/assembly.ts",
       "edits": 0,
-      "skipped": 169
+      "skipped": 178
     },
     {
       "file": "src/app/assistant-host.ts",

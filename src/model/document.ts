@@ -290,12 +290,14 @@ export function parseDocument(text: string): PartDocument {
         count2: countOf(rawPattern.count2, 1),
       };
     }) : [];
+    doc.explode = typeof d.explode === 'number' && Number.isFinite(d.explode) && d.explode > 0 ? d.explode : undefined;
   } else {
     doc.components = [];
     doc.mates = [];
     doc.joints = [];
     // Part files do not carry assembly data; do not add an empty array either.
     delete doc.componentPatterns;
+    delete doc.explode;
   }
   for (const f of doc.features) if (typeof f.name !== 'string' || !f.name) f.name = f.id;
   // New feature ids must not collide with existing ones, even when the file's

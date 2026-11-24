@@ -815,6 +815,8 @@ export interface PartDocument {
   joints?: AssemblyJoint[];
   /** Component patterns (circular/rectangular arrays of parts). */
   componentPatterns?: ComponentPattern[];
+  /** Exploded-view offset (mm) applied to every component away from the assembly centre; 0/undefined is assembled. */
+  explode?: number;
   nextId: number;
   created: number;
   modified: number;

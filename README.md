@@ -79,6 +79,7 @@ The **Mechanical** tab holds the power-transmission generators. Every generator 
 - **Component patterns** copy components around an axis or along up to two directions; the copies are built as part of the assembly, light up with their seed and count in the bill of materials.
 - **Replace Component** swaps a component's part file while keeping its position, name and joints.
 - **Duplicate Component** copies the selected components beside the originals and selects the copies.
+- **Exploded View** pushes every component away from the assembly centre; the viewport and the drawings show the exploded state.
 - **Fix/Float** toggles one component, and grounds (or floats) all of several selected components at once.
 - **Isolate** hides every other component and **Show All Components** brings them back. A saved assembly can be inserted as a sub-assembly: it is built from its parts and moves as one unit until it is opened for editing.
 - **New Part** in an assembly creates an empty in-place part and opens it for sketching and modeling; **Finish Part** writes it back into the component, and a double-click on a component opens its part again.

@@ -861,6 +861,31 @@ export class App {
       }
     };
     walk(this.store.doc.components ?? [], null, '', patterns, transforms);
+    // Exploded view: push every instance away from the assembly centre so the
+    // parts separate without touching their stored transforms or joints.
+    const explode = Number(this.store.doc.explode ?? 0);
+    if (explode > 0 && out.length > 1) {
+      const centre: [number, number, number] = [0, 0, 0];
+      for (const entry of out) for (let i = 0; i < 3; i++) centre[i] += entry.transform.position[i];
+      for (let i = 0; i < 3; i++) centre[i] /= out.length;
+      for (const entry of out) {
+        const delta: [number, number, number] = [
+          entry.transform.position[0] - centre[0],
+          entry.transform.position[1] - centre[1],
+          entry.transform.position[2] - centre[2],
+        ];
+        const length = Math.hypot(delta[0], delta[1], delta[2]);
+        const dir: [number, number, number] = length > 1e-9 ? [delta[0] / length, delta[1] / length, delta[2] / length] : [1, 0, 0];
+        entry.transform = {
+          ...entry.transform,
+          position: [
+            entry.transform.position[0] + dir[0] * explode,
+            entry.transform.position[1] + dir[1] * explode,
+            entry.transform.position[2] + dir[2] * explode,
+          ],
+        };
+      }
+    }
     return out;
   }
 

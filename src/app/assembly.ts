@@ -945,6 +945,58 @@ export class ComponentPatternPanel extends PropertyPanel {
   }
 }
 
+/** Exploded view: every component moves away from the assembly centre. */
+export class ExplodePanel extends PropertyPanel {
+  readonly title = tr("Exploded View");
+  icon = 'move';
+  confirm = false;
+  closeLabel = tr("Close");
+
+  constructor(private app: App) {
+    super();
+    this.onCloseClick = () => void this.app.closePanel(false);
+  }
+
+  ok(): boolean {
+    return true;
+  }
+
+  render(): HTMLElement[] {
+    const ctx = this.app.unitContext();
+    const current = Number(this.app.store.doc.explode ?? 0);
+    const distance = numberField({
+      label: tr("Explode distance"),
+      icon: 'ruler',
+      value: current,
+      kind: 'length',
+      ctx,
+      min: 0,
+      onChange: (value) => {
+        if (typeof value !== 'number') return;
+        this.app.store.change(tr("Exploded view"), (doc) => {
+          if (value > 0) doc.explode = value;
+          else delete doc.explode;
+        });
+        this.app.requestRebuild(true);
+        this.app.refreshPanel();
+      },
+    });
+    const reset = h('button', { class: 'btn small', type: 'button' }, tr("Reset explode"));
+    reset.addEventListener('click', () => {
+      this.app.store.change(tr("Exploded view"), (doc) => { delete doc.explode; });
+      this.app.requestRebuild(true);
+      this.app.refreshPanel();
+    });
+    return [
+      section(tr("Exploded View"), [
+        h('p', { class: 'field-label' }, tr("Every component moves this far away from the assembly centre in the viewport and the drawings.")),
+        distance,
+        reset,
+      ]),
+    ];
+  }
+}
+
 export class MotionStudyPanel extends PropertyPanel {
   readonly title = tr("Motion Study");
   icon = 'play';

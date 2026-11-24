@@ -360,6 +360,13 @@ export function registerCommands(app: App, files: FileOps) {
       },
     },
     {
+      id: 'explodeView', label: tr("Exploded View"), icon: 'move',
+      keywords: tr("explode exploded assembly view"),
+      description: tr("Move the components apart for an exploded view; drawings show the exploded state too."),
+      enabled: () => app.isAssembly && (app.store.doc.components ?? []).length > 0,
+      run: () => { void import('./assembly').then(({ ExplodePanel }) => app.openPanel(new ExplodePanel(app))); },
+    },
+    {
       id: 'motionStudy', label: tr("Motion Study"), icon: 'play',
       enabled: () => app.isAssembly && !!(app.store.doc.joints?.length),
       run: () => {
@@ -648,7 +655,7 @@ export const RIBBON: RibbonTab[] = [
         { cmd: 'pointVertex', menu: ['pointVertex', 'pointMidpoint', 'pointCenter', 'pointFaceCenter', 'pointIntersection'] },
         { cmd: 'importStep' }],
       [{ cmd: 'newAssembly' }, { cmd: 'newAssemblyPart' }, { cmd: 'insertComponent' }, { cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'openDrawing' }],
-      [{ cmd: 'fixComponent' }, { cmd: 'duplicateComponent' }, { cmd: 'isolateComponents' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { stack: [{ cmd: 'addJoint' }, { cmd: 'autoMate' }] }, { cmd: 'mateSuggestions' }, { cmd: 'motionStudy' }],
+      [{ cmd: 'fixComponent' }, { cmd: 'duplicateComponent' }, { cmd: 'isolateComponents' }, { cmd: 'moveComponents' }, { cmd: 'componentPattern' }, { stack: [{ cmd: 'addJoint' }, { cmd: 'autoMate' }] }, { cmd: 'mateSuggestions' }, { cmd: 'explodeView' }, { cmd: 'motionStudy' }],
       [{ cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
     ],
   },
@@ -761,7 +768,7 @@ export function buildMenus(app: App): { label: string; items: () => MenuItem[] }
         { label: tr("Sketch Tools"), icon: 'trim', submenu: () => [m('tool:sketchFillet'), m('tool:trim'), m('tool:extend'), m('offset'), m('mirrorEntities'), m('convertEntities'), m('construction')] },
         { label: tr("Dimensions and Constraints"), icon: 'smartDimension', submenu: () => [m('tool:smartDimension'), sep, ...CONSTRAINTS.map((t) => m(`constraint:${t}`))] },
         { label: tr("Evaluate"), icon: 'measure', submenu: () => [m('measure'), m('massProperties'), m('sectionView')] },
-        sep, m('fixComponent'), m('motionStudy'), m('interference'), m('assemblyDiagnostics'), sep,
+        sep, m('fixComponent'), m('explodeView'), m('motionStudy'), m('interference'), m('assemblyDiagnostics'), sep,
         m('equations'), m('configurations'), m('material'), m('projectManager'), m('resourceCenter'), m('options'),
       ],
     },
