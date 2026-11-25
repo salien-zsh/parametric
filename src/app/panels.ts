@@ -1,6 +1,6 @@
 // PropertyManager panels for creating and editing features.
 
-import type { Frame, Vec3 } from '../math/vec';
+import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
@@ -13,6 +13,7 @@ import { BaseFeaturePanel } from './pm';
 import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel, WormGearPanel } from './panels-pt';
 import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
+import { buildProfiles, inRegion } from '../sketch/profiles';
 import type {
   AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
@@ -155,6 +156,27 @@ abstract class FeaturePanel<T extends Feature> extends BaseFeaturePanel<T> {
 
 // ---------- extrude ----------
 
+/** Fusion-style profile picking: one checkbox per closed region of the sketch. */
+function profilesField(app: App, f: { sketch: string; contours?: Vec2[] }, changed: () => void): HTMLElement | null {
+  const sk = app.store.feature(f.sketch);
+  if (sk?.type !== 'sketch') return null;
+  let regions;
+  try { regions = buildProfiles(sk.entities).regions; } catch { return null; }
+  if (!regions.length) return null;
+  const selected = new Set<number>();
+  regions.forEach((r, i) => { if (!f.contours || f.contours.some((p) => inRegion(p, r))) selected.add(i); });
+  const sync = () => {
+    // No contours means every profile, which keeps the feature following edits.
+    f.contours = selected.size === regions.length ? undefined : [...selected].sort((a, b) => a - b).map((i) => regions[i].sample);
+    changed();
+  };
+  const rows = regions.map((_, i) => checkbox(tr("Profile {0}", [String(i + 1)]), selected.has(i), (v) => {
+    if (v) selected.add(i); else selected.delete(i);
+    sync();
+  }));
+  return h('div', { class: 'selbox', role: 'group', 'aria-label': tr("Profiles") }, ...rows);
+}
+
 export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
   helpText = '';
   private depthField: HTMLElement | null = null;
@@ -206,7 +228,8 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
       d2depth,
     ], { collapsed: !f.dir2, checkbox: { checked: !!f.dir2, onChange: (v) => { f.dir2 = v ? { end: 'blind', depth: f.depth } : null; this.changed(); } } });
     dir2sec.hidden = f.end === 'midPlane';
-    return [section(tr("Profile"), [sketch.el]), dir1, dir2sec];
+    const profiles = profilesField(this.app, f, () => this.changed());
+    return [section(tr("Profile"), profiles ? [sketch.el, profiles] : [sketch.el]), dir1, dir2sec];
   }
 
   protected validate() {
@@ -267,8 +290,9 @@ export class RevolvePanel extends FeaturePanel<RevolveFeature> {
     if (f.axis) axis.setItems([{ item: axisItem(this.app, f.axis), data: f.axis, label: axisLabel(this.app, f.axis) }]);
     const angle = numberField({ label: tr("Angle"), icon: 'revolve', value: f.angle, kind: 'angle', ctx, min: 1e-6, onChange: (v) => { f.angle = v; this.syncAngle(); this.changed(); } });
     this.angleField = angle;
+    const profiles = profilesField(this.app, f, () => this.changed());
     return [
-      section(tr("Profile"), [sketch.el]),
+      section(tr("Profile"), profiles ? [sketch.el, profiles] : [sketch.el]),
       section(tr("Axis"), [axis.el]),
       section(tr("Direction 1"), [
         h('div', { class: 'row' }, flipButton(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); }), h('div', { class: 'grow' },

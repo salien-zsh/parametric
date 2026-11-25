@@ -991,6 +991,7 @@ export class App {
     this.exitModes();
     this.location = null;
     this.store.load(structuredClone(component.part));
+    this.setRibbonTab('features');
     this.selection.clear();
     this.lastBuildKey = '';
     this.fitOnNextBuild = true;
@@ -1009,6 +1010,7 @@ export class App {
     this.componentEdit = null;
     this.hideComponentBanner();
     this.store.load(edit.assembly);
+    this.setRibbonTab('assembly');
     this.location = edit.location;
     this.store.dirty = edit.assemblyDirty;
     if (apply) {
@@ -1783,8 +1785,9 @@ export class App {
     const item = this.viewport.pickItem(e.x, e.y, { face: true, plane: true });
     const component = this.componentOfItem(item);
     if (component && this.isAssembly) {
+      // Fusion: a double-click activates the component for in-place editing.
       this.selection.set([{ kind: 'component', id: component.id }]);
-      this.openComponent(component.id);
+      this.editComponentPart(component.id);
       return;
     }
     if (item?.kind === 'face') {
@@ -2099,6 +2102,9 @@ export class App {
     this.shell.confirm.hidden = true;
     this.renderConfirmCorner();
     this.selection.clear();
+    // Finishing a sketch leaves it selected as the profile for the next feature.
+    const finished = keep ? this.store.feature(ed.sketchId) : null;
+    if (finished) this.selection.set([{ kind: 'feature', id: finished.id }]);
     this.setRibbonTab(this.isAssembly ? 'assembly' : 'features');
     this.showLeft('tree');
     this.updateSketchStatus();

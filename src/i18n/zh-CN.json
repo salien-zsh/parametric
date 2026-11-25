@@ -1895,5 +1895,6 @@
   "Concentric": "同心",
   "Midpoint": "中点",
   "Collinear": "共线",
-  "Fix": "固定"
+  "Fix": "固定",
+  "Profile {0}": "轮廓 {0}"
 }
