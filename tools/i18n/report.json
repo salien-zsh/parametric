@@ -1,12 +1,12 @@
 {
   "files": 82,
   "edits": 0,
-  "uniqueKeys": 2190,
+  "uniqueKeys": 2202,
   "perFile": [
     {
       "file": "src/app/actions.ts",
       "edits": 0,
-      "skipped": 527
+      "skipped": 532
     },
     {
       "file": "src/app/app.ts",
@@ -66,7 +66,7 @@
     {
       "file": "src/app/panels.ts",
       "edits": 0,
-      "skipped": 416
+      "skipped": 424
     },
     {
       "file": "src/app/pm.ts",
@@ -236,7 +236,7 @@
     {
       "file": "src/kernel/build.ts",
       "edits": 0,
-      "skipped": 200
+      "skipped": 203
     },
     {
       "file": "src/kernel/client.ts",
@@ -281,7 +281,7 @@
     {
       "file": "src/model/features.ts",
       "edits": 0,
-      "skipped": 159
+      "skipped": 163
     },
     {
       "file": "src/model/ids.ts",

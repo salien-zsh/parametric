@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature,
+  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -435,6 +435,7 @@ export class ModelBuilder {
       case 'moveBody': this.applyMoveBody(f, st); return 'body';
       case 'scaleBody': this.applyScaleBody(f, st); return 'body';
       case 'splitBody': this.applySplitBody(f, st); return 'tool';
+      case 'baseFlange': this.applyBaseFlange(f, st); return 'body';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -1669,6 +1670,26 @@ export class ModelBuilder {
     const slab = R.basicFaceExtrusion(profile, new R.Vector(scale(d.d, off))) as unknown as Sh;
     if (isEmpty(slab)) throw new FeatureError(tr("The face could not be offset"));
     this.applyTool(f.id, st, slab, this.nameTool(f.id, slab, (_d, k) => `o${k}`), off < 0);
+  }
+
+  /** Thickens a sketch profile into a sheet-metal body (base flange). */
+  private applyBaseFlange(f: BaseFlangeFeature, st: State) {
+    const thickness = num(f.thickness);
+    const bendRadius = num(f.bendRadius ?? 0);
+    if (!(thickness > 0)) throw new FeatureError(tr("The sheet thickness must be greater than zero"));
+    if (bendRadius < 0) throw new FeatureError(tr("The bend radius cannot be negative"));
+    const { regions, frame } = this.sketchRegions(f.sketch, st, f.contours);
+    const dir = scale(frame.n, f.flip ? -1 : 1);
+    const pieces: Sh[] = regions.map((r) => R.basicFaceExtrusion(this.regionFace(r, frame), new R.Vector(scale(dir, thickness))) as unknown as Sh);
+    const tool = pieces.length === 1 ? pieces[0] : this.fuseAll(pieces);
+    if (isEmpty(tool)) throw new FeatureError(tr("The flange could not be created"));
+    const named = this.nameTool(f.id, tool, (_d, k) => `s${k}`);
+    st.tools.set(f.id, { shape: tool, cut: false, faces: named });
+    // With an existing body the flange becomes its own body, like Fusion.
+    if (st.body) { this.addBody(st, tool, named); return; }
+    st.body = tool;
+    this.setFaces(st, named);
+    st.edges = null;
   }
 
   /** Splits the body with an axis-aligned plane and keeps the requested side. */

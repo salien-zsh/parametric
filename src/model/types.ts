@@ -235,6 +235,19 @@ export interface FilletFeature extends FeatureBase {
   radius: Param;
 }
 
+/** A sheet-metal base flange: a sketched profile thickened to the sheet thickness. */
+export interface BaseFlangeFeature extends FeatureBase {
+  type: 'baseFlange';
+  sketch: Id;
+  thickness: Param;
+  /** Inner bend radius kept for edge flanges and the flat pattern. */
+  bendRadius: Param;
+  /** Extrude against the sketch normal. */
+  flip: boolean;
+  /** Optional sample points choosing which sketch regions to use. */
+  contours?: Vec2[];
+}
+
 export interface ChamferFeature extends FeatureBase {
   type: 'chamfer';
   edges: EdgeRef[];
@@ -670,6 +683,7 @@ export type Feature =
   | MoveBodyFeature
   | ScaleBodyFeature
   | SplitBodyFeature
+  | BaseFlangeFeature
   | AxisFeature
   | PointFeature
   | LoftFeature

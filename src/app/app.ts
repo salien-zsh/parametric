@@ -384,7 +384,9 @@ export class App {
       // The drawing has its own tab; model tabs are hidden while it is open.
       // The assembly tab only shows for assemblies.
       const drawing = id === 'drawing';
-      b.hidden = (b.dataset.tab === 'drawing') !== drawing || (b.dataset.tab === 'assembly' && !this.isAssembly);
+      b.hidden = (b.dataset.tab === 'drawing') !== drawing
+        || (b.dataset.tab === 'assembly' && !this.isAssembly)
+        || (b.dataset.tab === 'sheetmetal' && this.isAssembly);
     }
     syncTabStops(this.shell.cmTabs);
     const tab = this.hooks.ribbonTabs.find((t) => t.id === id)!;

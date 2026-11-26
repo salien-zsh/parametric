@@ -1,7 +1,7 @@
 // Feature factories, display names and parameter metadata.
 
 import type {
-  AxisFeature, AxisRef, BevelGearFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, ScaleBodyFeature, SplitBodyFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
+  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, ScaleBodyFeature, SplitBodyFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
   Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShaftFeature, ShellFeature,
   PointFeature, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature, SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from './types';
@@ -56,6 +56,10 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
   offsetFace: [{ path: 'offset', kind: 'length', label: tr("Offset") }],
   scaleBody: [{ path: 'factor', kind: 'count', label: tr("Scale factor") }],
   splitBody: [{ path: 'offset', kind: 'length', label: tr("Split offset") }],
+  baseFlange: [
+    { path: 'thickness', kind: 'length', label: tr("Sheet thickness") },
+    { path: 'bendRadius', kind: 'length', label: tr("Bend radius") },
+  ],
   moveBody: [
     { path: 'dx', kind: 'length', label: tr("X offset") },
     { path: 'dy', kind: 'length', label: tr("Y offset") },
@@ -180,6 +184,7 @@ const BASE_NAMES: Record<FeatureType, string> = {
   moveBody: tr('Move Body'),
   scaleBody: tr('Scale Body'),
   splitBody: tr('Split Body'),
+  baseFlange: tr('Base Flange'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -214,6 +219,7 @@ export const FEATURE_LABELS: Record<FeatureType, string> = {
   moveBody: tr('Move Body'),
   scaleBody: tr('Scale Body'),
   splitBody: tr('Split Body'),
+  baseFlange: tr('Base Flange'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -242,6 +248,8 @@ export function featureIcon(f: Feature): string {
     case 'moveBody': return 'select';
     case 'scaleBody': return 'select';
     case 'splitBody': return 'select';
+    case 'baseFlange': return 'sheetMetal';
+    case 'baseFlange': return 'sheetMetal';
     case 'import': return 'part';
     default: return f.type;
   }
@@ -345,6 +353,10 @@ export const newAxis = (id: Id, name: string): AxisFeature => ({
 
 export const newPoint = (id: Id, name: string): PointFeature => ({
   id, name, type: 'point', kind: 'vertex', point: null, edge: null, face: null, edge2: null, plane: null,
+});
+
+export const newBaseFlange = (id: Id, name: string): BaseFlangeFeature => ({
+  id, name, type: 'baseFlange', sketch: '', thickness: 2, bendRadius: 2, flip: false,
 });
 
 export const newSplitBody = (id: Id, name: string): SplitBodyFeature => ({
@@ -463,6 +475,7 @@ export function dependencies(f: Feature): Id[] {
   if (f.type === 'offsetFace') {
     if (f.face) visitName(f.face.name);
   }
+  if (f.type === 'baseFlange') visitName(f.sketch);
   if (f.type === 'thread') {
     if (f.face) visitName(f.face.name);
   }

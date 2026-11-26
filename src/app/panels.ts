@@ -4,7 +4,7 @@ import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newAxis, newBevelGear, newCoil, newMirror, newMoveBody, newOffsetFace, newScaleBody, newSplitBody, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBaseFlange, newBevelGear, newCoil, newMirror, newMoveBody, newOffsetFace, newScaleBody, newSplitBody, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -15,7 +15,7 @@ import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import { buildProfiles, inRegion } from '../sketch/profiles';
 import type {
-  AxisFeature, AxisKind, AxisRef, ChamferFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  AxisFeature, AxisKind, AxisRef, BaseFlangeFeature, ChamferFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
@@ -1687,6 +1687,37 @@ export class SweepPanel extends FeaturePanel<SweepFeature> {
 
 // ---------- factory ----------
 
+export class BaseFlangePanel extends FeaturePanel<BaseFlangeFeature> {
+  render(): HTMLElement[] {
+    const f = this.f;
+    const ctx = this.ctx();
+    const sketch = this.sketchBox(tr("Profile sketch"), () => f.sketch, (id) => { f.sketch = id ?? ''; });
+    const thickness = numberField({ label: tr("Sheet thickness"), icon: 'ruler', value: f.thickness, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.thickness = v; this.changed(); } });
+    const bend = numberField({ label: tr("Bend radius"), icon: 'ruler', value: f.bendRadius, kind: 'length', ctx, min: 0, onChange: (v) => { f.bendRadius = v; this.changed(); } });
+    const flip = checkbox(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); });
+    return [
+      section(tr("Profile"), [
+        sketch.el,
+        h('p', { class: 'field-label' }, tr("The closed sketch profile becomes a flat sheet-metal face; its outside lines become bend lines.")),
+      ]),
+      section(tr("Sheet Metal"), [
+        thickness,
+        bend,
+        flip,
+        h('p', { class: 'field-label' }, tr("When the part already has a body, the flange is kept as its own body.")),
+      ]),
+    ];
+  }
+
+  protected validate() {
+    return this.f.sketch ? null : tr("Select a sketch for the flange");
+  }
+
+  preview() {
+    return this.f.sketch ? this.f : null;
+  }
+}
+
 export class SplitBodyPanel extends FeaturePanel<SplitBodyFeature> {
   render(): HTMLElement[] {
     const f = this.f;
@@ -1911,6 +1942,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'moveBody': return new MoveBodyPanel(app, f, editing);
     case 'scaleBody': return new ScaleBodyPanel(app, f, editing);
     case 'splitBody': return new SplitBodyPanel(app, f, editing);
+    case 'baseFlange': return new BaseFlangePanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
     case 'axis': return new AxisPanel(app, f, editing);
@@ -1998,6 +2030,15 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
+    case 'baseFlange': {
+      const x = newBaseFlange(id, name);
+      const sketchFeature = app.selection.items.find((it) => it.kind === 'feature');
+      if (sketchFeature) x.sketch = sketchFeature.id;
+      x.thickness = Math.max(1, app.store.unitScale);
+      x.bendRadius = x.thickness;
+      f = x;
+      break;
+    }
     case 'splitBody': {
       const x = newSplitBody(id, name);
       x.offset = size / 2;

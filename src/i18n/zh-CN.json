@@ -1940,5 +1940,17 @@
   "Add sheet": "添加图纸",
   "Delete sheet": "删除图纸",
   "New body": "新实体",
-  "Keep both sides": "保留两侧"
+  "Keep both sides": "保留两侧",
+  "Sheet Metal": "钣金",
+  "Base Flange": "基体法兰",
+  "Sheet thickness": "板厚",
+  "Bend radius": "折弯半径",
+  "The sheet thickness must be greater than zero": "板厚必须大于零",
+  "The bend radius cannot be negative": "折弯半径不能为负",
+  "The flange could not be created": "无法创建法兰",
+  "Thicken a sketch profile into a sheet-metal body.": "将草图轮廓加厚为钣金实体。",
+  "sheet metal flange plate": "钣金 法兰 底板",
+  "The closed sketch profile becomes a flat sheet-metal face; its outside lines become bend lines.": "封闭草图轮廓成为钣金平面，其外边成为折弯线。",
+  "When the part already has a body, the flange is kept as its own body.": "零件已有实体时，法兰作为独立实体保留。",
+  "Select a sketch for the flange": "请选择法兰的草图"
 }

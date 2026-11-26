@@ -532,6 +532,7 @@ export function registerCommands(app: App, files: FileOps) {
     feature('moveBody', tr("Move Body"), 'select', tr("Move the whole body by offsets without changing its shape."), { needsBody: true, keywords: tr("move body translate direct edit") }),
     feature('scaleBody', tr("Scale Body"), 'select', tr("Scale the whole body uniformly about the origin."), { needsBody: true, keywords: tr("scale body resize direct edit") }),
     feature('splitBody', tr("Split Body"), 'select', tr("Split the body with a plane and keep one side."), { needsBody: true, keywords: tr("split body trim plane") }),
+    feature('baseFlange', tr("Base Flange"), 'sheetMetal', tr("Thicken a sketch profile into a sheet-metal body."), { keywords: tr("sheet metal flange plate") }),
     feature('loft', tr("Lofted Boss"), 'loft', tr("Blend between two or more profiles."), { keywords: 'blend' }),
     feature('loft', tr("Lofted Cut"), 'loft', tr("Blend between profiles to remove material."), { cut: true, needsBody: true }),
     feature('fillet', tr("Fillet"), 'fillet', tr("Round selected edges."), { needsBody: true, keywords: tr("round radius blend") }),
@@ -733,6 +734,13 @@ export const RIBBON: RibbonTab[] = [
       [{ cmd: 'exitSketch' }],
     ],
     labels: [tr("Create"), tr("Modify"), tr("Constrain"), tr("Dimension"), tr("Finish")],
+  },
+  {
+    id: 'sheetmetal', label: tr("Sheet Metal"),
+    groups: [
+      [{ cmd: 'baseFlange' }],
+    ],
+    labels: [tr("Create")],
   },
   {
     id: 'assembly', label: tr("Assembly"),

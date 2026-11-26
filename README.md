@@ -1,3 +1,4 @@
+- **Sheet metal**: a Base Flange thickens a closed sketch profile to the sheet thickness (with a bend radius kept for later flanges); a second flange becomes its own body.
 - **Multiple bodies**: Extrude can keep its solid as a new body, and Split Body can keep both halves; the viewport, mass properties and drawing projections see every body.
 - **Multi-sheet drawings**: extra sheets with their own views, dimensions, callouts and title block; sheet tabs in the panel, and PDF export writes one page per sheet.
 - **Tolerance callouts** place a feature-control frame with a leader on a drawing view; the frame text is editable in the panel and exports with PDF/SVG/DXF.

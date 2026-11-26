@@ -24,6 +24,7 @@ const CUBE_LEFT = 'M4 7l8 4v10l-8-4z';
 const CUBE_RIGHT = 'M20 7l-8 4v10l8-4z';
 
 const CAD: Record<string, IconNode> = {
+  sheetMetal: [P('M3 13.5l8-2.5 5 2-8 2.5z', 'a'), P('M3 13.5v4l4 1.5v-4'), P('M11 13l5 2v4l-5-2'), P('M3 17.5l4 1.5 8 2.5')],
   sketch: [P('M2.5 18.5l5-4h14l-5 4z', 'a'), P('M14.5 3.5l2.5 2.5-7 7H7.5V10.5z'), P('M12.5 5.5l2.5 2.5')],
   smartDimension: [P('M4 6v12M20 6v12'), P('M4 12h16'), P('M7 9.5L4 12l3 2.5M17 9.5l3 2.5-3 2.5'), P('M9.5 5.5h5', 'thin')],
   line: [P('M5 19L19 5'), DOT(5, 19), DOT(19, 5)],
