@@ -223,6 +223,22 @@ a.icon-btn { text-decoration: none; }
   scrollbar-width: none;
 }
 .cm-tools::-webkit-scrollbar { display: none; }
+/* Floating command dialogs over the graphics area, as in Fusion. */
+.panel-layer { position: absolute; inset: 0; z-index: 60; pointer-events: none; }
+.panel-layer[hidden] { display: none; }
+.panel-layer .pm {
+  pointer-events: auto; position: absolute; top: 54px; right: 14px; width: 340px;
+  max-width: calc(100% - 28px); max-height: calc(100% - 84px); overflow: auto;
+  background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px;
+  box-shadow: 0 14px 36px var(--shadow, rgba(0, 0, 0, 0.38)); padding-bottom: 4px;
+}
+.panel-layer .pm-head { cursor: move; position: sticky; top: 0; background: var(--panel); z-index: 1; border-radius: 10px 10px 0 0; }
+.panel-layer .pm-head .title { pointer-events: none; }
+.panel-layer .pm-content { padding: 2px 2px 6px; }
+@media (max-width: 760px) {
+  .panel-layer { display: none !important; }
+}
+
 .cm-grp { display: flex; flex-direction: column; flex: none; padding: 0 4px; border-right: 1px solid var(--border); }
 .cm-grp:last-child { border-right: 0; }
 .cm-group { display: flex; align-items: stretch; gap: 1px; flex: 1; }
@@ -414,16 +430,16 @@ a.icon-btn { text-decoration: none; }
 .dim-label:hover, .dim-label.selected { color: var(--sketch-selected); }
 
 /* On-model value box (Fusion-style): a drag grip, the value, and a small menu. */
-.cv-leader { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; overflow: visible; }
+.cv-leader { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; overflow: visible; }
 .cv-line { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 2; opacity: 0.85; }
 .cv-dot {
   position: absolute; left: 0; top: 0; width: 9px; height: 9px; border-radius: 50%;
   transform: translate(-50%, -50%); background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--panel) 90%, transparent);
-  pointer-events: auto; cursor: grab; z-index: 6;
+  pointer-events: auto; cursor: grab; z-index: 72;
 }
 .cv-dot:active { cursor: grabbing; }
 .cv-value {
-  position: absolute; z-index: 7; display: flex; align-items: center; height: 26px;
+  position: absolute; z-index: 71; display: flex; align-items: center; height: 26px;
   background: color-mix(in srgb, var(--panel) 96%, transparent); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22); color: var(--text); font: var(--fs-sm) var(--font); user-select: none;
 }

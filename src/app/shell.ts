@@ -46,6 +46,8 @@ export interface Shell {
   viewport: HTMLElement;
   hud: HTMLElement;
   confirm: HTMLElement;
+  /** Floating container for command dialogs (Fusion-style), over the graphics area. */
+  panelLayer: HTMLElement;
   taskpane: HTMLElement;
   tpStrip: HTMLElement;
   tpPanel: HTMLElement;
@@ -176,7 +178,8 @@ export function buildShell(cmds: CommandRegistry, menus: { label: string; items:
   const splitter = h('div', { class: 'splitter', role: 'separator', 'aria-orientation': 'vertical', 'aria-label': tr("Resize panel"), tabindex: '0', 'aria-valuemin': '200', 'aria-valuemax': '520', 'aria-valuenow': '280' });
   const hud = h('div', { class: 'hud', role: 'toolbar', 'aria-label': tr("View") });
   const confirm = h('div', { class: 'confirm-corner', hidden: true });
-  const viewport = h('section', { class: 'viewport', id: 'main', 'aria-label': tr("Graphics area") }, hud, confirm);
+  const panelLayer = h('div', { class: 'panel-layer', hidden: true });
+  const viewport = h('section', { class: 'viewport', id: 'main', 'aria-label': tr("Graphics area") }, hud, panelLayer, confirm);
   const tpStrip = h('div', { class: 'tp-strip', role: 'tablist', 'aria-label': tr("Task pane"), 'aria-orientation': 'vertical' });
   const tpPanel = h('div', { class: 'tp-panel', hidden: true });
   const taskpane = h('aside', { class: 'taskpane', 'aria-label': tr("Task pane") }, tpStrip, tpPanel);
@@ -193,7 +196,7 @@ export function buildShell(cmds: CommandRegistry, menus: { label: string; items:
   const root = h('div', { class: 'app' }, titlebar, cm, workspace, statusbar);
   return {
     root, menubar, docTitle, docState, search, searchResults, account, apps, userMenu, cmTools, cmTabs, leftpane, lpTabs, lpBody, splitter, viewport, hud,
-    confirm, taskpane, tpStrip, tpPanel, statusMsg, statusSketch, statusUnits, statusRebuild, statusCoords, treeToggle, mobileMenu,
+    confirm, panelLayer, taskpane, tpStrip, tpPanel, statusMsg, statusSketch, statusUnits, statusRebuild, statusCoords, treeToggle, mobileMenu,
   };
 }
 

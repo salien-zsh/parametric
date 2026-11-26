@@ -47,25 +47,60 @@ export function lineTool(ed: SketchEditor, construction = false): SkTool {
   /** The current press started the line (rather than continuing a chain). */
   let pressStarted = false;
   let chain = 0;
+  /** Fusion's line command can continue as a tangent arc after a segment. */
+  let mode: 'line' | 'arc' = 'line';
+  /** Outgoing tangent at the chain's current end point. */
+  let tangent: Vec2 | null = null;
+  let lastCurve: Id | null = null;
   const commitSegment = (end: Snap) => {
     if (!start || dist2(start.p, end.p) < ed.px * 2) return;
+    const from = start;
     let endId: Id = '';
+    let lineId: Id | null = null;
     ed.edit(construction ? tr("Add centerline") : tr("Add line"), (sk, newId) => {
-      const a = start!.id ?? ed.commitPoint(sk, start!.s, newId);
+      const a = from.id ?? ed.commitPoint(sk, from.s, newId);
       const b = ed.commitPoint(sk, end, newId);
       const lid = newId('l');
       sk.entities.push({ id: lid, t: 'line', a, b, construction: construction || undefined });
       directionRelation(sk, lid, end, newId);
       endId = b;
+      lineId = lid;
     });
     chain++;
     // Chain from the new end point (it now exists, so it is reused).
     start = { s: { ...end, kind: 'point', pointId: endId }, id: endId, p: end.p };
+    tangent = norm2(sub2(end.p, from.p));
+    lastCurve = lineId;
+  };
+
+  /** Continues the chain with an arc tangent to the previous segment. */
+  const commitArc = (end: Snap) => {
+    if (!start || !tangent || !lastCurve || dist2(start.p, end.p) < ed.px * 2) { commitSegment(end); return; }
+    const g = tangentArcGeometry(start.p, tangent, end.p);
+    if (!g) { commitSegment(end); return; }
+    const from = start;
+    const prev = lastCurve;
+    let endId: Id = '';
+    let arcId: Id | null = null;
+    ed.edit(tr("Add tangent arc"), (sk, newId) => {
+      endId = ed.commitPoint(sk, end, newId);
+      const cid = newId('p');
+      sk.entities.push({ id: cid, t: 'point', x: g.c[0], y: g.c[1] });
+      const id = newId('a');
+      sk.entities.push(g.ccw ? { id, t: 'arc', c: cid, a: from.id!, b: endId } : { id, t: 'arc', c: cid, a: endId, b: from.id! });
+      sk.constraints.push({ id: newId('r'), type: 'tangent', refs: [prev!, id] });
+      arcId = id;
+    });
+    chain++;
+    start = { s: { ...end, kind: 'point', pointId: endId }, id: endId, p: end.p };
+    const r = sub2(end.p, g.c);
+    tangent = g.ccw ? norm2([-r[1], r[0]]) : norm2([r[1], -r[0]]);
+    lastCurve = arcId;
   };
   return {
     id: construction ? 'centerline' : 'line',
     label: construction ? tr("Centerline") : tr("Line"),
-    hint: tr("Click to start a line, click again to add segments. Double-click or press Esc to finish."),
+    hint: tr("Click to start a line, click again to add segments. Switch to Arc in the options to chain tangent arcs. Double-click or press Esc to finish."),
     from: () => start?.p ?? null,
     exclude: () => new Set<Id>(),
     down(s, e) {
@@ -81,7 +116,18 @@ export function lineTool(ed: SketchEditor, construction = false): SkTool {
     },
     move(s, _e, dragging) {
       void dragging;
-      if (start) ed.setPreview([[start.p, s.p]], [start.p]);
+      if (!start) return;
+      if (mode === 'arc' && tangent) {
+        const g = tangentArcGeometry(start.p, tangent, s.p);
+        if (g) {
+          const a0 = angle2(sub2(g.ccw ? start.p : s.p, g.c));
+          let sw = angle2(sub2(g.ccw ? s.p : start.p, g.c)) - a0;
+          while (sw <= 0) sw += 2 * Math.PI;
+          ed.setPreview([arcPts(g.c, g.r, a0, sw)], [start.p]);
+          return;
+        }
+      }
+      ed.setPreview([[start.p, s.p]], [start.p]);
     },
     up(s, e) {
       // Click-drag-release draws a single line.
@@ -95,11 +141,28 @@ export function lineTool(ed: SketchEditor, construction = false): SkTool {
     click(s) {
       if (!start) { start = { s, id: null, p: s.p }; return true; }
       if (dist2(start.p, s.p) < ed.px * 2) return true;
+      if (mode === 'arc' && tangent && lastCurve) {
+        commitArc(s);
+        return true;
+      }
       const closing = s.kind === 'point' && chain > 0 && s.pointId && s.pointId !== start.id;
       commitSegment(s);
       // Closing onto an existing point ends the chain.
       if (closing) { start = null; ed.setPreview([]); }
       return true;
+    },
+    options() {
+      // Fusion shows the line/arc switch while the line command is active.
+      const make = (label: string, m: 'line' | 'arc') => {
+        const b = h('button', { class: `btn small${mode === m ? ' primary' : ''}`, type: 'button', 'aria-pressed': String(mode === m) }, label);
+        b.addEventListener('click', () => {
+          mode = m;
+          ed.setPreview([]);
+          ed.app.refreshSketchPanel();
+        });
+        return b;
+      };
+      return [h('div', { class: 'relations-list' }, make(tr("Line"), 'line'), make(tr("Tangent Arc"), 'arc'))];
     },
     dbl() {
       start = null;
@@ -454,6 +517,17 @@ export function threePointArcTool(ed: SketchEditor): SkTool {
     },
     cancel() { const was = !!p1; p1 = p2 = null; ed.setPreview([]); return was; },
   };
+}
+
+/** Circle through p and q, tangent to direction t at p. */
+function tangentArcGeometry(p: Vec2, t: Vec2, q: Vec2): { c: Vec2; r: number; ccw: boolean } | null {
+  const n: Vec2 = [-t[1], t[0]];
+  const d = sub2(q, p);
+  const den = 2 * (d[0] * n[0] + d[1] * n[1]);
+  if (Math.abs(den) < 1e-12) return null;
+  const r = (d[0] * d[0] + d[1] * d[1]) / den;
+  const c: Vec2 = [p[0] + n[0] * r, p[1] + n[1] * r];
+  return { c, r: Math.abs(r), ccw: r > 0 };
 }
 
 /** Arc tangent to the line or arc ending at the start point. */

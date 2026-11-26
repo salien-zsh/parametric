@@ -968,7 +968,7 @@ export function contextItems(app: App, target: 'viewport' | 'feature' | 'referen
       );
     }
     const assemblyItems: MenuItem[] = components.length
-      ? [m('moveComponents'), m('componentPattern'), m('replaceComponent'), m('hideComponents'), m('isolateComponents'), m('showAllComponents'), m('autoMate'), m('addJoint'), m('fixComponent'), sep]
+      ? [m('moveComponents'), m('componentPattern'), m('replaceComponent'), m('duplicateComponent'), m('hideComponents'), m('isolateComponents'), m('showAllComponents'), m('autoMate'), m('addJoint'), m('mateSuggestions'), m('fixComponent'), sep]
       : [m('insertComponent'), m('newAssemblyPart'), m('autoMate'), m('mateSuggestions'), m('showAllComponents'), m('motionStudy'), m('interference'), sep];
     items.push(...assemblyItems);
   }

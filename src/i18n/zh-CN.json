@@ -1896,5 +1896,6 @@
   "Midpoint": "中点",
   "Collinear": "共线",
   "Fix": "固定",
-  "Profile {0}": "轮廓 {0}"
+  "Profile {0}": "轮廓 {0}",
+  "Click to start a line, click again to add segments. Switch to Arc in the options to chain tangent arcs. Double-click or press Esc to finish.": "单击开始画线，再次单击继续线段；在选项中切到“圆弧”可续接相切圆弧。双击或按 Esc 结束。"
 }

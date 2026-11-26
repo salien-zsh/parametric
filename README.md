@@ -1,3 +1,4 @@
+- **Fusion interaction**: the Line tool can continue into tangent arcs from its options (Line / Tangent Arc), and command panels float as draggable dialogs over the graphics area instead of taking the left pane.
 - **Fusion workflow**: Extrude and Revolve list each closed sketch region as a Profile checkbox, finishing a sketch leaves it selected as the next profile, and double-clicking a component in an assembly activates its part for in-place editing (Finish Part returns to the assembly).
 - The ribbon follows Fusion 360: a **Solid** tab with Create / Modify / Construct / Insert groups, a **Sketch** tab with Create / Modify / Constrain / Dimension / Finish groups, and a separate **Assembly** tab (shown only for assemblies).
 <p align="center"><img src="icon-128.png" width="96" height="96" alt=""></p>

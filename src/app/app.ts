@@ -79,6 +79,8 @@ export class App {
   tree!: FeatureTree;
   hooks!: AppHooks;
   panel: PropertyPanel | null = null;
+  /** The command panel is a floating dialog over the graphics area (Fusion), not a left-pane sheet. */
+  private panelFloating = false;
   /** Fusion-style value box beside the feature being edited. */
   private valueHandle: CanvasValueHandle | null = null;
   /** An assembly component whose part is open for editing (Fusion's in-place part edit). */
@@ -288,6 +290,14 @@ export class App {
       body.replaceChildren(this.tree.el);
       this.tree.render();
     } else if (this.panel) {
+      if (this.panelFloating) {
+        // Fusion floats command dialogs over the graphics area; the tree stays behind.
+        this.shell.panelLayer.hidden = false;
+        this.shell.panelLayer.replaceChildren(this.floatingElement(this.panel));
+        body.replaceChildren(this.tree.el);
+        this.tree.render();
+        return;
+      }
       body.replaceChildren(this.panelElement(this.panel));
     } else {
       body.replaceChildren(h('div', { class: 'pm-msg info', style: { margin: '12px' } }, tr("Start a command to see its properties here.")));
@@ -300,6 +310,39 @@ export class App {
     lp.classList.toggle('open', v);
     if (!v) this.setLeftPanePeek(false);
     this.shell.treeToggle.setAttribute('aria-expanded', String(v));
+  }
+
+  /** Wraps a panel as a draggable floating command dialog. */
+  private floatingElement(p: PropertyPanel): HTMLElement {
+    const el = this.panelElement(p);
+    el.classList.add('pm-float');
+    const head = el.querySelector<HTMLElement>('.pm-head');
+    if (head) {
+      head.addEventListener('pointerdown', (ev) => {
+        if ((ev.target as HTMLElement).closest('button')) return;
+        ev.preventDefault();
+        head.setPointerCapture(ev.pointerId);
+        const layer = this.shell.panelLayer.getBoundingClientRect();
+        const start = el.getBoundingClientRect();
+        const base = { x: start.x - layer.x, y: start.y - layer.y };
+        const move = (e: PointerEvent) => {
+          const x = Math.max(0, Math.min(layer.width - 120, base.x + e.clientX - ev.clientX));
+          const y = Math.max(0, Math.min(layer.height - 40, base.y + e.clientY - ev.clientY));
+          el.style.left = x + 'px';
+          el.style.top = y + 'px';
+          el.style.right = 'auto';
+        };
+        const up = () => {
+          head.removeEventListener('pointermove', move);
+          head.removeEventListener('pointerup', up);
+          head.removeEventListener('pointercancel', up);
+        };
+        head.addEventListener('pointermove', move);
+        head.addEventListener('pointerup', up);
+        head.addEventListener('pointercancel', up);
+      });
+    }
+    return el;
   }
 
   private panelElement(p: PropertyPanel): HTMLElement {
@@ -1918,11 +1961,14 @@ export class App {
     if (this.panel) await this.closePanel(false);
     this.hideContextToolbar();
     this.panel = p;
+    this.panelFloating = !window.matchMedia('(max-width: 760px)').matches;
     // Opened from the design tree with the keyboard: the panel replaces the
     // tree, so keyboard focus moves to the panel instead of being lost.
     const fromPane = this.shell.leftpane.contains(document.activeElement);
     this.showLeft('pm');
-    if (fromPane || document.activeElement === document.body) this.shell.lpBody.querySelector<HTMLElement>('.pm-head .title')?.focus();
+    if (fromPane || document.activeElement === document.body) {
+      (this.shell.panelLayer.querySelector<HTMLElement>('.pm-head .title') ?? this.shell.lpBody.querySelector<HTMLElement>('.pm-head .title'))?.focus();
+    }
     this.shell.confirm.hidden = !p.confirm;
     this.renderConfirmCorner();
     this.setStatus(p.title);
@@ -1951,6 +1997,9 @@ export class App {
     } else p.cancel();
     p.dispose();
     this.panel = null;
+    this.panelFloating = false;
+    this.shell.panelLayer.hidden = true;
+    this.shell.panelLayer.replaceChildren();
     this.clearCanvasValue();
     if (ok) this.selection.clear();
     this.updateFlyout();

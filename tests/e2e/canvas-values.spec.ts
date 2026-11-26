@@ -21,7 +21,7 @@ test('a plane offset is edited on the model and the panel follows it', async ({ 
   await valueInput(page).click();
   await valueInput(page).fill('25');
   await valueInput(page).press('Enter');
-  await expect(page.locator('.pm-content input').first()).toHaveValue('25');
+  await expect(page.getByRole('textbox', { name: 'Offset distance', exact: true }).first()).toHaveValue('25');
   await page.locator('.confirm-corner .ok').click();
   await expect(page.getByRole('treeitem', { name: 'Plane1' })).toBeVisible();
   await expect(valueBox(page)).toHaveCount(0);
@@ -73,7 +73,7 @@ test('a fillet radius is typed on the model', async ({ page }) => {
   await valueInput(page).click();
   await valueInput(page).fill('4');
   await valueInput(page).press('Enter');
-  await expect(page.locator('.pm-content input').first()).toHaveValue('4');
+  await expect(page.getByRole('textbox', { name: 'Radius', exact: true }).first()).toHaveValue('4');
   await page.locator('.confirm-corner .ok').click();
   await expect(page.getByRole('treeitem', { name: 'Fillet1', exact: true })).toBeVisible();
   await expect(valueBox(page)).toHaveCount(0);
@@ -109,7 +109,7 @@ test('an extrusion depth is dragged on the model and committed', async ({ page }
   await valueInput(page).click();
   await valueInput(page).fill('12');
   await valueInput(page).press('Enter');
-  await expect(page.locator('.pm-content input').first()).toHaveValue('12');
+  await expect(page.getByRole('textbox', { name: 'Depth', exact: true }).first()).toHaveValue('12');
 
   // Dragging the anchor dot changes the depth as well.
   await page.evaluate(() => (window as unknown as Handle).__parametric.whenBuilt());
