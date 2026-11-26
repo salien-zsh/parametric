@@ -109,6 +109,8 @@ export class App {
   /** Sketches with projected model geometry, as the last rebuild placed it. */
   linkedSketches: NonNullable<BuildResult['sketches']> = {};
   bbox: { min: Vec3; max: Vec3 } | null = null;
+  /** Bodies in the part after the last rebuild (1 unless new bodies were kept). */
+  bodyCount = 1;
   colors!: Colors;
   kernelReady = false;
   private statuses = new Map<Id, FeatureStatus>();
@@ -1702,6 +1704,7 @@ export class App {
     this.points = res.points ?? {};
     this.linkedSketches = res.sketches ?? {};
     this.bbox = res.bbox;
+    this.bodyCount = res.bodies ?? 1;
     if (!res.meshUnchanged) {
       this.vertices = res.mesh?.vertices ?? new Float32Array(0);
       this.renderer.setModel(res.mesh, res.faces.length, res.edges.length);

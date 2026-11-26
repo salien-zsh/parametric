@@ -203,6 +203,8 @@ export interface ExtrudeFeature extends FeatureBase {
   thin: ThinOptions | null;
   /** Keep only the intersection of the extrusion and the body (Fusion's Intersect). */
   intersect?: boolean;
+  /** Keep the new solid as its own body instead of joining the existing one. */
+  newBody?: boolean;
   /** Start the extrusion this far from the sketch plane along the direction (Fusion's Start offset). */
   startOffset?: Param;
   /** To Object: the planar face the extrusion stops at. */
@@ -481,6 +483,8 @@ export interface SplitBodyFeature extends FeatureBase {
   offset: Param;
   /** Keep the side below the plane instead of above. */
   flip: boolean;
+  /** Keep both halves as separate bodies instead of discarding one. */
+  keepBoth?: boolean;
 }
 
 export interface LoftFeature extends FeatureBase {

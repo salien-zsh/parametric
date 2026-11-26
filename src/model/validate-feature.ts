@@ -53,6 +53,7 @@ export function validFeature(f: Feature): boolean {
   switch (f.type) {
     case 'extrude':
       return sketchId(r.sketch) && (r.intersect == null || typeof r.intersect === 'boolean')
+        && (r.newBody == null || typeof r.newBody === 'boolean')
         && (r.startOffset == null || numeric(r.startOffset))
         && (r.end !== 'toObject' || named(r.toFace));
     case 'hole':
@@ -85,7 +86,8 @@ export function validFeature(f: Feature): boolean {
     case 'sweep':
       return (r.profile == null || id(r.profile)) && (r.path == null || id(r.path));
     case 'offsetFace': return named(r.face) && numeric(r.offset);
-    case 'splitBody': return ['x', 'y', 'z'].includes(String(r.axis)) && numeric(r.offset) && typeof r.flip === 'boolean';
+    case 'splitBody': return ['x', 'y', 'z'].includes(String(r.axis)) && numeric(r.offset) && typeof r.flip === 'boolean'
+      && (r.keepBoth == null || typeof r.keepBoth === 'boolean');
     case 'scaleBody': return numeric(r.factor);
     case 'moveBody': return numeric(r.dx) && numeric(r.dy) && numeric(r.dz)
       && (r.rotX == null || numeric(r.rotX)) && (r.rotY == null || numeric(r.rotY)) && (r.rotZ == null || numeric(r.rotZ));

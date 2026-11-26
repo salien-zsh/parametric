@@ -102,6 +102,8 @@ export interface BuildResult {
   points?: Record<Id, Vec3>;
   /** Resolved axes used by features (for display). */
   bbox: { min: Vec3; max: Vec3 } | null;
+  /** How many separate solids the part has (1 unless bodies were kept apart). */
+  bodies?: number;
   /**
    * Sketches with geometry projected from the model, as built: projected
    * entities moved onto their model edges and the sketch solved again. `lost`

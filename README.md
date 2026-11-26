@@ -1,3 +1,4 @@
+- **Multiple bodies**: Extrude can keep its solid as a new body, and Split Body can keep both halves; the viewport, mass properties and drawing projections see every body.
 - **Multi-sheet drawings**: extra sheets with their own views, dimensions, callouts and title block; sheet tabs in the panel, and PDF export writes one page per sheet.
 - **Tolerance callouts** place a feature-control frame with a leader on a drawing view; the frame text is editable in the panel and exports with PDF/SVG/DXF.
 - **Manual dimensions** on drawings: the Dimension tool snaps to projected vertices and places an aligned linear dimension with its true model length; dimensions are listed and deletable in the drawing panel.

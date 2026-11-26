@@ -1938,5 +1938,7 @@
   "Show this sheet": "显示此图纸",
   "Delete sheet {0}": "删除图纸 {0}",
   "Add sheet": "添加图纸",
-  "Delete sheet": "删除图纸"
+  "Delete sheet": "删除图纸",
+  "New body": "新实体",
+  "Keep both sides": "保留两侧"
 }

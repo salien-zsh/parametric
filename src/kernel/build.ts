@@ -71,6 +71,10 @@ interface Tool {
 
 interface State {
   body: Sh | null;
+  /** Solids kept apart from the active body (new-body extrusions, split-off halves). */
+  bodies: Sh[];
+  /** Named faces of those extra bodies, kept when the active body is renamed. */
+  extraFaces: NamedFace[];
   faces: NamedFace[];
   edges: NamedEdge[] | null;
   frames: Map<Id, Frame>;
@@ -89,10 +93,12 @@ interface Step {
   status: FeatureStatus;
 }
 
-const emptyState = (): State => ({ body: null, faces: [], edges: null, frames: new Map(), axes: new Map(), points: new Map(), sketches: new Map(), lostRefs: new Map(), tools: new Map() });
+const emptyState = (): State => ({ body: null, bodies: [], extraFaces: [], faces: [], edges: null, frames: new Map(), axes: new Map(), points: new Map(), sketches: new Map(), lostRefs: new Map(), tools: new Map() });
 
 const cloneState = (s: State): State => ({
   body: s.body,
+  bodies: s.bodies,
+  extraFaces: s.extraFaces,
   faces: s.faces,
   edges: s.edges,
   frames: new Map(s.frames),
@@ -102,6 +108,13 @@ const cloneState = (s: State): State => ({
   lostRefs: new Map(s.lostRefs),
   tools: new Map(s.tools),
 });
+
+/** The active body together with every extra body, for display, picking and mass properties. */
+function displayShape(st: State): Sh | null {
+  if (!st.body) return null;
+  if (!st.bodies.length) return st.body;
+  return compound([st.body, ...st.bodies]) as unknown as Sh;
+}
 
 const num = (p: unknown): number => {
   const v = typeof p === 'number' ? p : Number(p);
@@ -252,7 +265,8 @@ export class ModelBuilder {
       frames,
       axes,
       points,
-      bbox: state.body ? boxOf(state.body) : null,
+      bbox: displayShape(state) ? boxOf(displayShape(state)!) : null,
+      bodies: state.body ? 1 + state.bodies.length : 0,
       ms: performance.now() - t0,
       preview: null,
       sketches,
@@ -561,8 +575,9 @@ export class ModelBuilder {
 
   edgesOf(st: State): NamedEdge[] {
     if (st.edges) return st.edges;
-    if (!st.body) return (st.edges = []);
-    const edges = subShapes(st.body, 'edge');
+    const display = displayShape(st);
+    if (!display) return (st.edges = []);
+    const edges = subShapes(display, 'edge');
     const index = new ShapeIndex(edges);
     const adj: number[][] = edges.map(() => []);
     st.faces.forEach((f, fi) => {
@@ -633,10 +648,25 @@ export class ModelBuilder {
     if (!st.body) throw new FeatureError(tr("There is no body to intersect with"));
     const body = common(st.body, tool);
     if (isEmpty(body)) throw new FeatureError(tr("The intersect leaves no material"));
-    st.faces = this.nameFaces(featId, body, st, toolFaces);
+    this.setFaces(st, this.nameFaces(featId, body, st, toolFaces));
     st.body = body;
     st.edges = null;
     st.tools.set(featId, { shape: tool, cut: false, faces: toolFaces });
+  }
+
+  /** Replaces the active body's names, keeping the extra bodies' faces. */
+  private setFaces(st: State, named: NamedFace[]) {
+    st.faces = [...named, ...st.extraFaces];
+  }
+
+  /** Adds a solid as an extra body instead of joining it to the active one. */
+  private addBody(st: State, tool: Sh, faceNames: NamedFace[]) {
+    const suffix = st.bodies.length + 1;
+    const named = faceNames.map((nf, i) => ({ ...nf, name: `${nf.name}@b${suffix}.${i}` }));
+    st.bodies = [...st.bodies, tool];
+    st.extraFaces = [...st.extraFaces, ...named];
+    st.faces = [...st.faces, ...named];
+    st.edges = null;
   }
 
   private applyTool(featId: Id, st: State, tool: Sh, toolFaces: NamedFace[], isCut: boolean) {
@@ -650,7 +680,7 @@ export class ModelBuilder {
     } else {
       body = st.body ? fuse(st.body, tool) : tool;
     }
-    st.faces = this.nameFaces(featId, body, st, toolFaces);
+    this.setFaces(st, this.nameFaces(featId, body, st, toolFaces));
     st.body = body;
     st.edges = null;
     st.tools.set(featId, { shape: tool, cut: isCut, faces: toolFaces });
@@ -990,6 +1020,7 @@ export class ModelBuilder {
       return 'side:' + this.nearestSrc(regions, toLocal(frame, faceMidPoint(shape)));
     };
     const named = this.nameTool(f.id, tool, classify);
+    if (f.newBody && !f.cut) { this.addBody(st, tool, named); return; }
     if (f.intersect && !f.cut) this.applyIntersect(f.id, st, tool, named);
     else this.applyTool(f.id, st, tool, named, f.cut);
   }
@@ -1139,7 +1170,7 @@ export class ModelBuilder {
     // OpenCascade sometimes returns a degenerate solid instead of failing.
     if (degenerate(body, st.body)) throw new FeatureError(tr("The fillet could not be created. Try a smaller radius."));
     const mids = ids.map((i) => ({ m: all[i].desc.mid, name: all[i].name }));
-    st.faces = this.nameFaces(f.id, body, st, [], (d) => `${f.id}:f:${nearestName(mids, d.center)}`);
+    this.setFaces(st, this.nameFaces(f.id, body, st, [], (d) => `${f.id}:f:${nearestName(mids, d.center)}`));
     st.body = body;
     st.edges = null;
   }
@@ -1183,7 +1214,7 @@ export class ModelBuilder {
     }
     if (degenerate(body, st.body)) throw new FeatureError(tr("The chamfer could not be created. Try a smaller distance."));
     const mids = ids.map((i) => ({ m: all[i].desc.mid, name: all[i].name }));
-    st.faces = this.nameFaces(f.id, body, st, [], (d) => `${f.id}:c:${nearestName(mids, d.center)}`);
+    this.setFaces(st, this.nameFaces(f.id, body, st, [], (d) => `${f.id}:c:${nearestName(mids, d.center)}`));
     st.body = body;
     st.edges = null;
   }
@@ -1206,7 +1237,7 @@ export class ModelBuilder {
       }));
     }
     const prev = st.faces;
-    st.faces = this.nameFaces(f.id, body, st, [], (d) => {
+    this.setFaces(st, this.nameFaces(f.id, body, st, [], (d) => {
       // Offset faces are parallel to an original face: name after it.
       let best = 'x', bd = Infinity;
       for (const p of prev) {
@@ -1217,7 +1248,7 @@ export class ModelBuilder {
         if (dd < bd) { bd = dd; best = p.name; }
       }
       return `${f.id}:in:${best}`;
-    });
+    }));
     st.body = body;
     st.edges = null;
   }
@@ -1416,7 +1447,7 @@ export class ModelBuilder {
     }
     if (!body || isEmpty(body)) throw new FeatureError(tr("The pattern removed all material"));
     const allNamed = parts.flatMap((p) => p.faces);
-    st.faces = this.nameFaces(featId, body, st, allNamed);
+    this.setFaces(st, this.nameFaces(featId, body, st, allNamed));
     st.body = body;
     st.edges = null;
     const tool = parts.length === 1 ? parts[0].shape : compound(parts.map((p) => p.shape));
@@ -1655,6 +1686,15 @@ export class ModelBuilder {
     else min[index] = Math.max(min[index], off);
     if (!(max[index] > min[index])) throw new FeatureError(tr("The split plane does not pass through the body"));
     const tool = R.makeBox(min, max) as unknown as Sh;
+    if (f.keepBoth) {
+      // The other half stays as a second body instead of being discarded.
+      const discarded = common(st.body, tool);
+      if (!isEmpty(discarded)) {
+        this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `p${k}`), true);
+        this.addBody(st, discarded, this.nameTool(f.id, discarded, (_d, k) => `b${k}`));
+        return;
+      }
+    }
     this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `p${k}`), true);
   }
 
@@ -1666,11 +1706,15 @@ export class ModelBuilder {
     if (Math.abs(factor - 1) < 1e-12) return;
     const at: Vec3 = [0, 0, 0];
     st.body = scaled(st.body, at, factor);
-    st.faces = st.faces.map((nf) => {
+    st.bodies = st.bodies.map((b) => scaled(b, at, factor));
+    const scaleFace = (nf: typeof st.faces[number]) => {
       const desc = { ...nf.desc, p: scale(nf.desc.p, factor), center: scale(nf.desc.center, factor), area: nf.desc.area * factor * factor } as typeof nf.desc;
       if ('r' in nf.desc && typeof nf.desc.r === 'number') (desc as { r: number }).r = nf.desc.r * factor;
       return { ...nf, shape: scaled(nf.shape, at, factor), desc };
-    });
+    };
+    const primary = st.faces.slice(0, st.faces.length - st.extraFaces.length).map(scaleFace);
+    st.extraFaces = st.extraFaces.map(scaleFace);
+    st.faces = [...primary, ...st.extraFaces];
     st.edges = null;
   }
 
@@ -1694,7 +1738,9 @@ export class ModelBuilder {
     };
     if (len(v) > 1e-12) st.body = translated(st.body, v);
     if (rotX || rotY || rotZ) st.body = rotateShape(st.body);
-    st.faces = st.faces.map((nf) => {
+    if (len(v) > 1e-12) st.bodies = st.bodies.map((b) => translated(b, v));
+    if (rotX || rotY || rotZ) st.bodies = st.bodies.map(rotateShape);
+    const moveFace = (nf: typeof st.faces[number]) => {
       let shape = nf.shape;
       if (len(v) > 1e-12) shape = translated(shape, v);
       shape = rotateShape(shape);
@@ -1703,7 +1749,10 @@ export class ModelBuilder {
         shape,
         desc: { ...nf.desc, p: rotate(add(nf.desc.p, v)), center: rotate(add(nf.desc.center, v)), d: rotate(nf.desc.d) },
       };
-    });
+    };
+    const primary = st.faces.slice(0, st.faces.length - st.extraFaces.length).map(moveFace);
+    st.extraFaces = st.extraFaces.map(moveFace);
+    st.faces = [...primary, ...st.extraFaces];
     st.edges = null;
   }
 
@@ -1910,7 +1959,7 @@ export class ModelBuilder {
     // place in the body: drafting one more face must not rename the others
     // (which would move a later fillet on one of their edges to another edge).
     const mids = selected.map((s) => ({ m: s.desc.center, name: s.name }));
-    st.faces = this.nameFaces(f.id, body, st, [], (d) => `${f.id}:d:${nearestName(mids, d.center)}`);
+    this.setFaces(st, this.nameFaces(f.id, body, st, [], (d) => `${f.id}:d:${nearestName(mids, d.center)}`));
     st.body = body;
     st.edges = null;
   }
@@ -2046,9 +2095,10 @@ export class ModelBuilder {
   }
 
   private meshState(st: State, quality: number): { mesh: MeshData | null; faces: FaceInfo[]; edges: EdgeInfo[] } {
-    if (!st.body) return { mesh: null, faces: [], edges: [] };
-    const { tol, ang } = this.meshParams(st.body, quality);
-    const m = meshShape(st.body, tol, ang);
+    const display = displayShape(st);
+    if (!display) return { mesh: null, faces: [], edges: [] };
+    const { tol, ang } = this.meshParams(display, quality);
+    const m = meshShape(display, tol, ang);
     const faceIndex = new ShapeIndex(st.faces.map((f) => f.shape));
     const vertexFace = new Float32Array(m.positions.length / 3);
     const claimed = new Set<number>();
@@ -2061,7 +2111,7 @@ export class ModelBuilder {
     }
     const edges = this.edgesOf(st);
     const edgeIndex = new ShapeIndex(edges.map((e) => e.shape));
-    const em = meshEdgesOf(st.body, tol, ang);
+    const em = meshEdgesOf(display, tol, ang);
     // Seam edges (a periodic face meeting itself) are not drawn.
     const periodic = new Set(['cylinder', 'cone', 'sphere', 'torus', 'revolution']);
     const isSeam = (ei: number) => {
@@ -2084,7 +2134,7 @@ export class ModelBuilder {
     }
     const edgeLines = new Float32Array(keptLines);
     const edgeIds = new Float32Array(keptIds);
-    const verts = subShapes(st.body, 'vertex').map(vertexPoint);
+    const verts = subShapes(display, 'vertex').map(vertexPoint);
     const vertices = new Float32Array(verts.length * 3);
     verts.forEach((p, i) => vertices.set(p, i * 3));
     const faces: FaceInfo[] = st.faces.map((f) => {
@@ -2118,7 +2168,7 @@ export class ModelBuilder {
 
   /** Hidden-line removal projections of the current body. */
   project(views: ProjectionRequest[]): ProjectionResult[] {
-    const body = this.current.body;
+    const body = displayShape(this.current);
     const flat = (p: string[] | string[][]) => (p as (string | string[])[]).flat();
     return views.map((v) => {
       if (!body) return { id: v.id, visible: [], hidden: [], bounds: null };
@@ -2197,7 +2247,7 @@ export class ModelBuilder {
   // ---- evaluation ----
 
   massProperties(): MassProperties | null {
-    const body = this.current.body;
+    const body = displayShape(this.current);
     if (!body) return null;
     const oc = getOc();
     const props = new oc.GProp_GProps();
@@ -2293,7 +2343,7 @@ export class ModelBuilder {
   }
 
   exportStep(): Uint8Array {
-    const body = this.current.body;
+    const body = displayShape(this.current);
     if (!body) throw new FeatureError(tr("There is no geometry to export"));
     const oc = getOc();
     const writer = new oc.STEPControl_Writer();
@@ -2314,14 +2364,14 @@ export class ModelBuilder {
   }
 
   exportBrep(): string {
-    const body = this.current.body;
+    const body = displayShape(this.current);
     if (!body) throw new FeatureError(tr("There is no geometry to export"));
     return getOc().BRepToolsWrapper.Write(body.wrapped);
   }
 
   /** Binary STL of the current body. */
   exportStl(quality: number): Uint8Array {
-    const body = this.current.body;
+    const body = displayShape(this.current);
     if (!body) throw new FeatureError(tr("There is no geometry to export"));
     const { tol, ang } = this.meshParams(body, Math.max(1, quality));
     const m = meshShape(body, tol * 0.5, ang * 0.5);

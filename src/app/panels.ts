@@ -199,6 +199,8 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
     const draftAngle = numberField({ label: tr("Draft angle"), icon: 'draft', value: f.draft || 3, kind: 'angle', ctx, min: 0, onChange: (v) => { f.draft = v; this.changed(); } });
     draftAngle.hidden = !hasDraft;
     const outward = checkbox(tr("Draft outward"), f.draftOutward, (v) => { f.draftOutward = v; this.changed(); });
+    const newBody = checkbox(tr("New body"), !!f.newBody, (v) => { f.newBody = v; if (v) f.intersect = false; this.changed(); });
+    newBody.hidden = f.cut;
     outward.hidden = !hasDraft;
     const startOffset = numberField({ label: tr("Start offset"), icon: 'ruler', value: f.startOffset ?? 0, kind: 'length', ctx, onChange: (v) => { f.startOffset = v; this.changed(); } });
     const dir1 = section(tr("Direction 1"), [
@@ -217,7 +219,7 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
         outward.hidden = !v;
         this.changed();
       }),
-      draftAngle, outward,
+      draftAngle, outward, newBody,
       checkbox(tr("Intersect"), !!f.intersect, (v) => { f.intersect = v; if (v) f.cut = false; this.changed(); }),
     ]);
     const d2depth = numberField({ label: tr("Depth"), icon: 'ruler', value: f.dir2?.depth ?? f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { if (f.dir2) { f.dir2.depth = v; this.changed(); } } });
@@ -1695,10 +1697,11 @@ export class SplitBodyPanel extends FeaturePanel<SplitBodyFeature> {
     ], (v) => { f.axis = v; this.changed(); });
     const offset = numberField({ label: tr("Split offset"), icon: 'ruler', value: f.offset, kind: 'length', ctx: this.ctx(), onChange: (v) => { f.offset = v; this.changed(); } });
     const flip = checkbox(tr("Keep the other side"), f.flip, (v) => { f.flip = v; this.changed(); });
+    const keepBoth = checkbox(tr("Keep both sides"), !!f.keepBoth, (v) => { f.keepBoth = v; this.changed(); });
     return [
       section(tr("Split"), [
         h('p', { class: 'field-label' }, tr("Removes the material on the discarded side of the plane; the kept side becomes the body.")),
-        axis, offset, flip,
+        axis, offset, flip, keepBoth,
       ]),
     ];
   }
