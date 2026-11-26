@@ -994,6 +994,21 @@ export class ExplodePanel extends PropertyPanel {
       this.app.requestRebuild(true);
       this.app.refreshPanel();
     });
+    const play = h('button', { class: 'btn small', type: 'button' }, tr("Play explode"));
+    play.addEventListener('click', async () => {
+      const app = this.app;
+      const doc = app.store.doc;
+      const target = Number(doc.explode ?? 0) > 0 ? Number(doc.explode) : 30;
+      // Animate by rebuilding with growing distances, then record one undo step.
+      for (let i = 0; i <= 12; i++) {
+        doc.explode = (target * i) / 12;
+        app.requestRebuild(true);
+        await app.whenBuilt();
+        await new Promise((resolve) => setTimeout(resolve, 15));
+      }
+      app.store.change(tr("Exploded view"), (d) => { d.explode = target; });
+      app.refreshPanel();
+    });
     const reset = h('button', { class: 'btn small', type: 'button' }, tr("Reset explode"));
     reset.addEventListener('click', () => {
       this.app.store.change(tr("Exploded view"), (doc) => { delete doc.explode; });
@@ -1005,7 +1020,7 @@ export class ExplodePanel extends PropertyPanel {
         h('p', { class: 'field-label' }, tr("Every component moves this far away from the assembly centre in the viewport and the drawings.")),
         axis,
         distance,
-        reset,
+        h('div', { class: 'row' }, play, reset),
       ]),
     ];
   }

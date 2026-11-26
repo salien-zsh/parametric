@@ -96,6 +96,9 @@ export function lineTool(ed: SketchEditor, construction = false): SkTool {
     const r = sub2(end.p, g.c);
     tangent = g.ccw ? norm2([-r[1], r[0]]) : norm2([r[1], -r[0]]);
     lastCurve = arcId;
+    // Fusion returns to line mode after an arc; pick Arc again for another arc.
+    mode = 'line';
+    ed.app.refreshSketchPanel();
   };
   return {
     id: construction ? 'centerline' : 'line',

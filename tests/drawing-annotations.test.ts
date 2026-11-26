@@ -115,3 +115,12 @@ describe('bill of materials size', () => {
     expect(texts).not.toContain('Part20');
   });
 });
+
+describe('exploded assembly drawings', () => {
+  it('marks the isometric view as exploded', () => {
+    const explodedDoc = doc({ id: 'v1', kind: 'isometric' });
+    const sheet = buildSheet(explodedDoc, new Map([['v1', projection]]), info({ exploded: true }));
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts).toContain('ISOMETRIC (EXPLODED)');
+  });
+});

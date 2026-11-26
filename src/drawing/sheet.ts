@@ -138,6 +138,8 @@ export interface SheetInfo {
   bom?: { item: number; part: string; description?: string; quantity: number; material: string }[];
   /** Annotations per view id (centre marks, balloons). */
   annotations?: Map<string, ViewAnnotations>;
+  /** The assembly is shown exploded, so its isometric view says so. */
+  exploded?: boolean;
 }
 
 export interface ViewFrame {
@@ -226,9 +228,11 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
       ? `${tr("SECTION")} ${letter}-${letter}`
       : v.kind === 'detail' && letter ? `${tr("DETAIL")} ${letter}`
         : v.kind === 'auxiliary' && letter ? `${tr("AUXILIARY")} ${letter}` : VIEW_LABELS[v.kind].toUpperCase();
+    // An exploded assembly drawing marks the viewpoint that shows it.
+    const shown = info.exploded && v.kind === 'isometric' ? `${base} (${tr("EXPLODED")})` : base;
     const scaled = v.kind === 'detail' && v.detail
-      ? `${base} (${scaleLabel(v.detail.scale)})`
-      : v.scale != null && v.scale !== d.scale ? `${base} (${scaleLabel(v.scale)})` : base;
+      ? `${shown} (${scaleLabel(v.detail.scale)})`
+      : v.scale != null && v.scale !== d.scale ? `${shown} (${scaleLabel(v.scale)})` : shown;
     const label = viewLabel(scaled, f, hasDims(v), taken.filter((_, j) => j !== i), w, h);
     items.push(label.item);
     taken.push(label.box);

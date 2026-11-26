@@ -62,5 +62,12 @@ test('Exploded View moves the components apart and persists', async ({ page }) =
   expect(axis.axis).toBe('y');
   expect(axis.minX).toBe(0);
   expect(axis.minY).toBeGreaterThan(20);
+  // The Play button animates the explode distance, and the drawing marks the view as exploded.
+  await page.getByRole('button', { name: 'Play explode' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Handle).__parametric.store.doc.explode ?? 0)).toBe(30);
+  await page.evaluate(() => (window as unknown as Handle).__parametric.commands.run('openDrawing'));
+  await expect(page.locator('.paper svg')).toBeVisible({ timeout: 30_000 });
+  await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('.paper svg text')].map((t) => t.textContent ?? '').join(' ')))
+    .toContain('EXPLODED');
   expect(errors).toEqual([]);
 });

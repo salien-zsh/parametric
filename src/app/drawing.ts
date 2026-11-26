@@ -233,6 +233,7 @@ export class DrawingWorkspace {
       date: localDate(doc.modified || Date.now()),
       formatLength: (mm: number) => formatNumber(mm / u.scale, doc.decimals),
       bom: this.bomRows(),
+      exploded: !!doc.explode && doc.explode > 0,
     };
   }
 
