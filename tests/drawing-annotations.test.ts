@@ -124,3 +124,18 @@ describe('exploded assembly drawings', () => {
     expect(texts).toContain('ISOMETRIC (EXPLODED)');
   });
 });
+
+describe('manual dimensions', () => {
+  it('draws a linear dimension with its true model length', () => {
+    const withDim: DrawingDoc = {
+      ...doc(),
+      dimensions: [{ id: 'dim1', view: 'v1', a: [0, 0], b: [60, 0], offset: 10 }],
+    };
+    const sheet = buildSheet(withDim, new Map([['v1', projection]]), info());
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts).toContain('60');
+    // Two arrow heads and the dimension line.
+    expect(sheet.items.filter((it) => it.t === 'tri').length).toBeGreaterThanOrEqual(2);
+    expect(sheet.items.filter((it) => it.t === 'line').length).toBeGreaterThanOrEqual(3);
+  });
+});

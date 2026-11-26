@@ -1906,5 +1906,18 @@
   "{0} components move together now.": "{0} 个零部件现在一起移动。",
   "contact set rigid group move together": "接触集 刚性 分组 一起移动",
   "Put the selected components into a contact set: moving one moves them all.": "把所选零部件加入接触集：移动其中一个会带动全部。",
-  "Remove every contact set from this assembly.": "移除本装配中的所有接触集。"
+  "Remove every contact set from this assembly.": "移除本装配中的所有接触集。",
+  "Dimensions": "尺寸",
+  "Click two vertices of a view to place a linear dimension; Esc finishes.": "在视图上单击两个顶点放置线性尺寸；Esc 结束。",
+  "Dimension: click two vertices of a view (Esc to finish).": "尺寸：单击视图上的两个顶点（Esc 结束）。",
+  "Dimension added. Pick two more points, or press Esc to finish.": "已添加尺寸。继续点两个点，或按 Esc 结束。",
+  "Drag a view to move it, or select one and use the arrow keys.": "拖动视图可移动，选中后用方向键微调。",
+  "Pick a point inside a view.": "请在视图内单击一个点。",
+  "Pick a vertex of the projected geometry.": "请单击投影几何的顶点。",
+  "Pick the second point.": "请单击第二个点。",
+  "Pick the second point in the same view.": "请在同一视图内单击第二个点。",
+  "Pick two different points.": "请选择两个不同的点。",
+  "Use the Dimension button, then pick two vertices of a view.": "使用“尺寸”按钮，然后在视图中单击两个顶点。",
+  "manual linear dimension measure drawing": "手动 线性 尺寸 测量 工程图",
+  "This view has not been projected yet.": "该视图尚未完成投影。"
 }

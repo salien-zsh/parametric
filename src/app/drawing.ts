@@ -22,6 +22,17 @@ import { tr } from '../i18n';
  * Where a drawing view looks from, and for a section view the plane it cuts at.
  * `center` is the middle of the model, so the section offset reads from there.
  */
+/** Vertices of a projection's polylines, in projection coordinates. */
+function projectionVertices(proj: ProjectionResult): [number, number][] {
+  const out: [number, number][] = [];
+  for (const path of [...proj.visible, ...proj.hidden]) {
+    const numbers = path.match(/-?\d+(?:\.\d+)?/g);
+    if (!numbers) continue;
+    for (let i = 0; i + 1 < numbers.length; i += 2) out.push([Number(numbers[i]), Number(numbers[i + 1])]);
+  }
+  return out;
+}
+
 function viewRequest(
   v: DrawingView,
   center: Vec3,
@@ -68,6 +79,9 @@ export class DrawingWorkspace {
   private pan = { x: 0, y: 0 };
   private cache = new Map<string, { kind: DrawingViewKind; version: number; sig: string; result: ProjectionResult }>();
   private frames: ViewFrame[] = [];
+  /** Manual dimension tool: pick two projected vertices, then the value is placed. */
+  private dimTool = false;
+  private dimFirst: { view: string; p: [number, number] } | null = null;
   private pending = false;
   /** A refresh was asked for while views were being projected. */
   private refreshAgain = false;
@@ -357,6 +371,80 @@ export class DrawingWorkspace {
     Object.assign(this.selBox.style, { left: `${f.x0 - pad}px`, top: `${f.y0 - pad}px`, width: `${f.x1 - f.x0 + 2 * pad}px`, height: `${f.y1 - f.y0 + 2 * pad}px` });
   }
 
+  /** Starts or ends the manual Dimension tool. */
+  toggleDimensionTool() {
+    this.dimTool = !this.dimTool;
+    this.dimFirst = null;
+    this.el.style.cursor = this.dimTool ? 'crosshair' : '';
+    this.app.setStatus(this.dimTool
+      ? tr("Dimension: click two vertices of a view (Esc to finish).")
+      : this.app ? this.defaultDrawingStatus() : '');
+    this.el.focus({ preventScroll: true });
+  }
+
+  private get dimActive() {
+    return this.dimTool;
+  }
+
+  /** The view's paper scale, matching the sheet renderer's rule. */
+  private effectiveScale(v: DrawingView): number {
+    const d = this.doc!;
+    if (v.kind === 'detail' && v.detail) {
+      const source = d.views.find((q) => q.id === v.detail!.source);
+      return (source ? (source.scale ?? d.scale) : d.scale) * Math.max(0.1, v.detail.scale || 1);
+    }
+    return v.scale ?? d.scale;
+  }
+
+  /** Picks a projected vertex and adds a linear dimension after the second one. */
+  private pickDimensionPoint(x: number, y: number) {
+    const d = this.doc;
+    const id = d ? this.viewAt(x, y) : null;
+    if (!d || !id) { this.app.setStatus(tr("Pick a point inside a view.")); return; }
+    const view = d.views.find((q) => q.id === id)!;
+    const pr = this.cache.get(id)?.result;
+    if (!pr?.bounds) { this.app.setStatus(tr("This view has not been projected yet.")); return; }
+    const s = this.effectiveScale(view);
+    const [bx0, by0, bx1, by1] = pr.bounds;
+    const local: [number, number] = [(x - view.x) / s + (bx0 + bx1) / 2, (y - view.y) / s + (by0 + by1) / 2];
+    let best: [number, number] | null = null;
+    let bestD = Infinity;
+    for (const p of projectionVertices(pr)) {
+      const dd = Math.hypot((p[0] - local[0]) * s, (p[1] - local[1]) * s);
+      if (dd < bestD) { bestD = dd; best = p; }
+    }
+    if (!best || bestD > 5) { this.app.setStatus(tr("Pick a vertex of the projected geometry.")); return; }
+    if (!this.dimFirst) {
+      this.dimFirst = { view: id, p: best };
+      this.app.setStatus(tr("Pick the second point."));
+      return;
+    }
+    if (this.dimFirst.view !== id) {
+      this.dimFirst = { view: id, p: best };
+      this.app.setStatus(tr("Pick the second point in the same view."));
+      return;
+    }
+    const a = this.dimFirst.p;
+    this.dimFirst = null;
+    if (Math.hypot(best[0] - a[0], best[1] - a[1]) * s < 2) {
+      this.app.setStatus(tr("Pick two different points."));
+      return;
+    }
+    const existing = d.dimensions ?? [];
+    let n = existing.length + 1;
+    const used = new Set(existing.map((q) => q.id));
+    while (used.has(`dim${n}`)) n++;
+    const id2 = `dim${n}`;
+    this.update((doc) => {
+      doc.dimensions = [...(doc.dimensions ?? []), { id: id2, view: id, a: [...a] as [number, number], b: [...best] as [number, number], offset: 9 }];
+    }, tr("Add dimension"));
+    this.app.setStatus(tr("Dimension added. Pick two more points, or press Esc to finish."));
+  }
+
+  private defaultDrawingStatus(): string {
+    return tr("Drag a view to move it, or select one and use the arrow keys.");
+  }
+
   /** Fits the sheet into the visible area. */
   fit() {
     const r = this.el.getBoundingClientRect();
@@ -406,6 +494,12 @@ export class DrawingWorkspace {
       }
       this.el.focus({ preventScroll: true });
       const [x, y] = this.toSheet(e.clientX, e.clientY);
+      if (this.dimActive && e.button === 0) {
+        this.el.setPointerCapture(e.pointerId);
+        this.pickDimensionPoint(x, y);
+        this.el.focus({ preventScroll: true });
+        return;
+      }
       const id = e.button === 0 ? this.viewAt(x, y) : null;
       this.el.setPointerCapture(e.pointerId);
       if (id) {
@@ -479,6 +573,11 @@ export class DrawingWorkspace {
         if (join) store.squash(mark, 'Move view');
         nudge = { id, mark, last: store.undoMark };
       };
+      if (e.key === 'Escape' && this.dimActive) {
+        e.preventDefault();
+        this.toggleDimensionTool();
+        return;
+      }
       if (e.key === 'ArrowLeft') move(-step, 0);
       else if (e.key === 'ArrowRight') move(step, 0);
       else if (e.key === 'ArrowUp') move(0, -step);
@@ -694,6 +793,7 @@ export class DrawingPanel extends PropertyPanel {
         h('button', { class: 'btn small', type: 'button', onclick: () => ws.relayout() }, icon('reset', 14), tr("Arrange standard views")),
       ]),
       section(tr("Views"), [views, h('div', { class: 'row' }, h('div', { class: 'grow' }, addSel), add)]),
+      this.dimensionsSection(d),
       section(tr("Title Block"), [
         field(tr("Title"), d.title || this.app.store.doc.name, (v) => ws.updateFromPanel((x) => { x.title = v; }, tr("Title"))),
         field(tr("Drawn by"), d.drawnBy, (v) => ws.updateFromPanel((x) => { x.drawnBy = v; }, tr("Drawn by"))),
@@ -708,6 +808,31 @@ export class DrawingPanel extends PropertyPanel {
           h('button', { class: 'btn small', type: 'button', onclick: () => void ws.exportDxf() }, icon('download', 14), 'DXF')),
       ]),
     ];
+  }
+
+  /** Manual dimensions on the sheet, with delete buttons and the add command. */
+  private dimensionsSection(d: NonNullable<DrawingWorkspace['doc']>): HTMLElement {
+    const ws = this.ws;
+    const app = this.app;
+    const u = UNIT_SYSTEMS[app.store.doc.units];
+    const add = h('button', { class: 'btn small', type: 'button' }, icon('smartDimension', 14), tr("Dimension"));
+    add.addEventListener('click', () => ws.toggleDimensionTool());
+    const list = h('div', { class: 'relations-list' });
+    const dims = d.dimensions ?? [];
+    if (!dims.length) list.append(h('div', { class: 'field-label' }, tr("Use the Dimension button, then pick two vertices of a view.")));
+    for (const dim of dims) {
+      const view = d.views.find((q) => q.id === dim.view);
+      const length = Math.hypot(dim.b[0] - dim.a[0], dim.b[1] - dim.a[1]);
+      const del = h('button', { class: 'icon-btn', type: 'button', 'aria-label': tr("Delete dimension") }, icon('trash', 14));
+      del.addEventListener('click', () => ws.updateFromPanel((doc) => {
+        doc.dimensions = (doc.dimensions ?? []).filter((q) => q.id !== dim.id);
+      }, tr("Delete dimension")));
+      list.append(h('div', { class: 'rel-btn', style: { cursor: 'default' } },
+        icon('smartDimension', 14),
+        h('span', { class: 'grow' }, `${view ? VIEW_LABELS[view.kind] : tr("View")} · ${formatNumber(length / u.scale, app.store.doc.decimals)} ${u.length}`),
+        del));
+    }
+    return section(tr("Dimensions"), [h('div', { class: 'row' }, h('div', { class: 'grow' }, add)), list]);
   }
 
   private viewRow(v: DrawingView): HTMLElement {

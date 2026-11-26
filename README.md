@@ -1,3 +1,4 @@
+- **Manual dimensions** on drawings: the Dimension tool snaps to projected vertices and places an aligned linear dimension with its true model length; dimensions are listed and deletable in the drawing panel.
 - **Contact sets** group components so moving one (by drag, gizmo or its properties) moves the whole set together.
 - **Exploded views** can be played back with the Play explode button, and their drawings mark the isometric view as EXPLODED.
 - **Fusion interaction**: the Line tool can continue into tangent arcs from its options (Line / Tangent Arc), and command panels float as draggable dialogs over the graphics area instead of taking the left pane.

@@ -886,6 +886,18 @@ export interface DrawingViewSection {
   flip?: boolean;
 }
 
+/** A manual linear dimension between two points of a view, placed in the sheet. */
+export interface DrawingDimension {
+  id: Id;
+  /** The view whose projected geometry the points belong to. */
+  view: Id;
+  /** The two measured points, in the view's projection coordinates (model units). */
+  a: [number, number];
+  b: [number, number];
+  /** Offset of the dimension line from the measured line, in sheet millimetres. */
+  offset: number;
+}
+
 export interface DrawingView {
   id: Id;
   kind: DrawingViewKind;
@@ -919,6 +931,8 @@ export interface DrawingDoc {
   /** Model to paper scale, e.g. 0.5 for 1:2. */
   scale: number;
   views: DrawingView[];
+  /** Manual linear dimensions placed on this sheet. */
+  dimensions?: DrawingDimension[];
   title: string;
   drawnBy: string;
   notes: string;

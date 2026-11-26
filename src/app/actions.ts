@@ -591,6 +591,7 @@ export function registerCommands(app: App, files: FileOps) {
     ...(['front', 'top', 'right', 'left', 'back', 'bottom', 'isometric'] as const).map((k): Command => ({
       id: `drawing:add:${k}`, label: `${k[0].toUpperCase()}${k.slice(1)} View`, icon: k === 'isometric' ? 'viewIso' : `view${k[0].toUpperCase()}${k.slice(1)}`, enabled: () => app.inDrawing && hasBody(), run: () => app.drawing.addView(k),
     })),
+    { id: 'drawing:dimension', label: tr("Dimension"), icon: 'smartDimension', keywords: tr("manual linear dimension measure drawing"), description: tr("Click two vertices of a view to place a linear dimension; Esc finishes."), enabled: () => app.inDrawing, run: () => app.drawing.toggleDimensionTool() },
     { id: 'drawing:centers', label: tr("Center Marks"), icon: 'origin', enabled: () => app.inDrawing, run: () => app.drawing.toggleAllViewFlags('centers') },
     { id: 'drawing:balloons', label: tr("Balloons"), icon: 'point', enabled: () => app.inDrawing && app.store.doc.kind === 'assembly', run: () => app.drawing.toggleAllViewFlags('balloons') },
     { id: 'drawing:pdf', label: tr("Export PDF"), icon: 'download', keywords: tr("print drawing"), enabled: () => !!app.store.doc.drawing && app.inDrawing, run: () => app.drawing.exportPdf() },
@@ -701,7 +702,7 @@ export const RIBBON: RibbonTab[] = [
         { cmd: 'pointVertex', menu: ['pointVertex', 'pointMidpoint', 'pointCenter', 'pointFaceCenter', 'pointIntersection'] },
       ],
       // Insert
-      [{ cmd: 'importStep' }],
+      [{ cmd: 'importStep' }, { cmd: 'openDrawing' }],
     ],
     labels: [tr("Create"), tr("Modify"), tr("Construct"), tr("Insert")],
   },
@@ -764,7 +765,7 @@ export const RIBBON: RibbonTab[] = [
     id: 'drawing', label: tr("Drawing"),
     groups: [
       [{ cmd: 'drawing:arrange' }, { stack: [{ cmd: 'drawing:add:front' }, { cmd: 'drawing:add:top' }, { cmd: 'drawing:add:right' }] }, { stack: [{ cmd: 'drawing:add:isometric' }, { cmd: 'drawing:add:left' }, { cmd: 'drawing:add:back' }] }],
-      [{ cmd: 'drawing:centers' }, { cmd: 'drawing:balloons' }],
+      [{ cmd: 'drawing:dimension' }, { cmd: 'drawing:centers' }, { cmd: 'drawing:balloons' }],
       [{ cmd: 'drawing:pdf' }, { cmd: 'drawing:svg' }],
       [{ cmd: 'zoomFit' }, { cmd: 'backToModel' }],
     ],

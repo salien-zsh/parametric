@@ -14,6 +14,16 @@ export function validDrawing(value: unknown): value is DrawingDoc {
     || (value.number != null && typeof value.number !== 'string')
     || (value.revision != null && typeof value.revision !== 'string')
     || !Array.isArray(value.views)) return false;
+  if (value.dimensions != null) {
+    if (!Array.isArray(value.dimensions)) return false;
+    for (const d of value.dimensions) {
+      if (!d || typeof d !== 'object') return false;
+      const dim = d as Record<string, unknown>;
+      if (typeof dim.id !== 'string' || !dim.id || typeof dim.view !== 'string' || !dim.view) return false;
+      const pair = (v: unknown) => Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'number' && Number.isFinite(n));
+      if (!pair(dim.a) || !pair(dim.b) || typeof dim.offset !== 'number' || !Number.isFinite(dim.offset)) return false;
+    }
+  }
   const ids = new Set<string>();
   for (const v of value.views) {
     if (!object(v) || typeof v.id !== 'string' || !v.id || ids.has(v.id)

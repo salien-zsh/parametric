@@ -250,6 +250,14 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
       dimension(items, [fx0, fy1], [fx1, fy1], 'below', info.formatLength(bx1 - bx0));
       dimension(items, [fx0, fy0], [fx0, fy1], 'left', info.formatLength(by1 - by0));
     }
+    // Manual linear dimensions: true model lengths, placed at their offset.
+    for (const dim of d.dimensions ?? []) {
+      if (dim.view !== v.id) continue;
+      const p1: [number, number] = [tx + dim.a[0] * scale, ty + dim.a[1] * scale];
+      const p2: [number, number] = [tx + dim.b[0] * scale, ty + dim.b[1] * scale];
+      const length = Math.hypot(dim.b[0] - dim.a[0], dim.b[1] - dim.a[1]);
+      linearDimension(items, p1, p2, dim.offset, info.formatLength(length));
+    }
   }
   const notesLines = d.notes.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   // One note fits the title block cell; several become a notes list at the top left.
@@ -260,6 +268,42 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
 }
 
 type Box = [x0: number, y0: number, x1: number, y1: number];
+
+/** An aligned linear dimension with arrows, extension lines and its value. */
+function linearDimension(items: Item[], p1: [number, number], p2: [number, number], offset: number, text: string) {
+  const dx = p2[0] - p1[0];
+  const dy = p2[1] - p1[1];
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) return;
+  const ux = dx / len;
+  const uy = dy / len;
+  const nx = -uy;
+  const ny = ux;
+  const q1: [number, number] = [p1[0] + nx * offset, p1[1] + ny * offset];
+  const q2: [number, number] = [p2[0] + nx * offset, p2[1] + ny * offset];
+  const w = 0.18;
+  // Extension lines run just past the dimension line.
+  const over = 1.5 * Math.sign(offset || 1);
+  items.push({ t: 'line', x1: p1[0], y1: p1[1], x2: q1[0] + nx * over, y2: q1[1] + ny * over, w });
+  items.push({ t: 'line', x1: p2[0], y1: p2[1], x2: q2[0] + nx * over, y2: q2[1] + ny * over, w });
+  items.push({ t: 'line', x1: q1[0], y1: q1[1], x2: q2[0], y2: q2[1], w });
+  const arrow = (at: [number, number], sign: 1 | -1) => {
+    const tip: [number, number] = at;
+    const back = 2.2;
+    const base: [number, number] = [at[0] + ux * sign * back, at[1] + uy * sign * back];
+    items.push({
+      t: 'tri',
+      a: tip,
+      b: [base[0] + nx * 0.7, base[1] + ny * 0.7],
+      c: [base[0] - nx * 0.7, base[1] - ny * 0.7],
+    });
+  };
+  arrow(q1, 1);
+  arrow(q2, -1);
+  const mid: [number, number] = [(q1[0] + q2[0]) / 2, (q1[1] + q2[1]) / 2];
+  const lift = offset >= 0 ? -1.6 : 1.6;
+  items.push({ t: 'text', s: text, x: mid[0] + nx * lift, y: mid[1] + ny * lift + 0.9, size: 2.6, anchor: 'middle' });
+}
 
 const LABEL_SIZE = 2.6;
 /** How far a view's dimensions reach left of and below its outline. */
