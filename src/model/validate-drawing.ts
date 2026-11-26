@@ -7,8 +7,8 @@ const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v ===
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
 /** Check the sheet and every view before a file can replace the open document. */
-export function validDrawing(value: unknown): value is DrawingDoc {
-  if (!object(value) || typeof value.sheet !== 'string' || !sheets.has(value.sheet)
+export function validDrawing(value: unknown, nested = false): value is DrawingDoc {
+  if (!object(value) || (nested && value.sheets != null) || typeof value.sheet !== 'string' || !sheets.has(value.sheet)
     || typeof value.landscape !== 'boolean' || !finite(value.scale) || value.scale <= 0
     || typeof value.title !== 'string' || typeof value.drawnBy !== 'string' || typeof value.notes !== 'string'
     || (value.number != null && typeof value.number !== 'string')
@@ -31,6 +31,10 @@ export function validDrawing(value: unknown): value is DrawingDoc {
       const pair = (v: unknown) => Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'number' && Number.isFinite(n));
       if (!pair(dim.a) || !pair(dim.b) || typeof dim.offset !== 'number' || !Number.isFinite(dim.offset)) return false;
     }
+  }
+  if (value.sheets != null) {
+    if (!Array.isArray(value.sheets)) return false;
+    for (const sheet of value.sheets) if (!validDrawing(sheet, true)) return false;
   }
   const ids = new Set<string>();
   for (const v of value.views) {

@@ -1932,5 +1932,11 @@
   "Callout: click a point in a view to attach a tolerance frame (Esc to finish).": "公差标注：在视图中单击一点放置公差框（Esc 结束）。",
   "Click a point in a view to attach a tolerance frame; edit its text in the panel.": "在视图中单击一点放置公差框，并在面板中编辑文字。",
   "POS 0.2 A": "位置度 0.2 A",
-  "gdt tolerance feature control frame datum callout": "形位公差 公差框 基准 标注"
+  "gdt tolerance feature control frame datum callout": "形位公差 公差框 基准 标注",
+  "Sheets": "图纸页",
+  "Sheet {0}": "图纸 {0}",
+  "Show this sheet": "显示此图纸",
+  "Delete sheet {0}": "删除图纸 {0}",
+  "Add sheet": "添加图纸",
+  "Delete sheet": "删除图纸"
 }

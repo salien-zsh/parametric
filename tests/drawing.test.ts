@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PdfPage, arcToCubics, parseSvgPath, pdfString, textWidth } from '../src/drawing/pdf';
-import { SHEETS, STANDARD_SCALES, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdf, toSvg } from '../src/drawing/sheet';
+import { SHEETS, STANDARD_SCALES, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdf, toPdfPages, toSvg, type Item } from '../src/drawing/sheet';
 import type { Vec3 } from '../src/math/vec';
 import type { DrawingDoc, SheetSize } from '../src/model/types';
 
@@ -215,5 +215,16 @@ describe('sheet layout', () => {
         }
       }
     }
+  });
+});
+
+describe('multi-sheet PDF', () => {
+  it('writes one page per sheet', () => {
+    const page: Item[] = [{ t: 'line', x1: 10, y1: 10, x2: 100, y2: 10, w: 0.35 }];
+    const bytes = toPdfPages([{ items: page, w: 297, h: 210 }, { items: page, w: 210, h: 297 }], 'Multi');
+    const text = new TextDecoder().decode(bytes);
+    expect(text).toContain('/Count 2');
+    // Both content streams made it in.
+    expect(text.split('\n').filter((line) => line === 'stream').length).toBe(2);
   });
 });

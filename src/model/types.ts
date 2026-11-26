@@ -945,6 +945,8 @@ export interface DrawingDoc {
   dimensions?: DrawingDimension[];
   /** Tolerance callouts (feature-control frames) placed on this sheet. */
   callouts?: DrawingCallout[];
+  /** Further sheets of the same drawing (the fields above are sheet 1). */
+  sheets?: DrawingDoc[];
   title: string;
   drawnBy: string;
   notes: string;

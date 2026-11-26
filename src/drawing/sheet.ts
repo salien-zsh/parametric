@@ -5,7 +5,7 @@
 import type { ProjectionResult } from '../kernel/protocol';
 import { type Vec3, cross, normalize } from '../math/vec';
 import type { DrawingDoc, DrawingView, DrawingViewKind, SheetSize } from '../model/types';
-import { PdfPage, textWidth } from './pdf';
+import { PdfPage, buildPdf, textWidth } from './pdf';
 import { tr } from '../i18n';
 
 /** Portrait sizes in millimetres. */
@@ -705,8 +705,7 @@ export function toSvg(items: Item[], w: number, h: number, opts: { background?: 
   return parts.join('');
 }
 
-export function toPdf(items: Item[], w: number, h: number, title: string): Uint8Array {
-  const pdf = new PdfPage(w, h);
+function drawItems(pdf: PdfPage, items: Item[]) {
   for (const it of items) {
     switch (it.t) {
       case 'path': pdf.path(it.d, it.tx, it.ty, it.s, { width: it.w, dash: it.dash }); break;
@@ -717,5 +716,15 @@ export function toPdf(items: Item[], w: number, h: number, title: string): Uint8
       case 'text': pdf.text(it.s, it.x, it.y, it.size, { bold: it.bold, anchor: it.anchor, rotate: it.rotate ? -it.rotate : undefined }); break;
     }
   }
+}
+
+export function toPdf(items: Item[], w: number, h: number, title: string): Uint8Array {
+  const pdf = new PdfPage(w, h);
+  drawItems(pdf, items);
   return pdf.build(title);
+}
+
+/** One PDF with every sheet, in sheet order. */
+export function toPdfPages(sheets: { items: Item[]; w: number; h: number }[], title: string): Uint8Array {
+  return buildPdf(sheets.map((s) => ({ widthMm: s.w, heightMm: s.h, draw: (page: PdfPage) => drawItems(page, s.items) })), title);
 }

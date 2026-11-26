@@ -6,7 +6,7 @@ import type { ProjectionResult } from '../kernel/protocol';
 import type { DrawingDoc, DrawingView, DrawingViewKind, FaceRef, SectionAxis, SheetSize } from '../model/types';
 import type { Vec3 } from '../math/vec';
 import { UNIT_SYSTEMS, formatNumber } from '../model/units';
-import { SHEET_LABELS, STANDARD_SCALES, VIEW_DIRS, VIEW_LABELS, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdf, toSvg, type ViewAnnotations, type ViewFrame } from '../drawing/sheet';
+import { SHEET_LABELS, STANDARD_SCALES, VIEW_DIRS, VIEW_LABELS, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdfPages, toSvg, type Item, type ViewAnnotations, type ViewFrame } from '../drawing/sheet';
 import { cross, dot, normalize } from '../math/vec';
 import { componentInstanceCount } from '../model/assembly';
 import { toDxf } from '../drawing/dxf';
@@ -89,6 +89,8 @@ export class DrawingWorkspace {
   private refreshAgain = false;
   /** What the drawing PropertyManager shows, to rebuild it only when that changes. */
   private panelKey = '';
+  /** 0 is the first sheet (the drawing document itself); 1.. are the extra sheets. */
+  private activeSheet = 0;
   private panelChanging = false;
   private layoutPending = false;
   private sheetW = 297;
@@ -107,14 +109,32 @@ export class DrawingWorkspace {
     app.store.on((reason) => { if (reason === 'load') this.layoutPending = false; });
   }
 
-  get doc(): DrawingDoc | null {
+  /** The whole drawing document (all sheets). */
+  rootDoc(): DrawingDoc | null {
     return this.app.store.doc.drawing ?? null;
+  }
+
+  get sheetCount(): number {
+    return 1 + (this.rootDoc()?.sheets?.length ?? 0);
+  }
+
+  get activeSheetIndex(): number {
+    return this.activeSheet;
+  }
+
+  /** The sheet being shown and edited. */
+  get doc(): DrawingDoc | null {
+    const root = this.rootDoc();
+    if (!root) return null;
+    if (this.activeSheet <= 0) return root;
+    return root.sheets?.[this.activeSheet - 1] ?? root;
   }
 
   // ---------- lifecycle ----------
 
   open() {
     if (!this.doc) this.create();
+    this.activeSheet = 0;
     this.active = true;
     this.el.hidden = false;
     void this.refresh();
@@ -150,14 +170,73 @@ export class DrawingWorkspace {
     const d = this.doc;
     if (!b || !d) return;
     const layout = standardLayout(sheetDims(d), b.min, b.max, bomReserve(this.bomRows().length));
-    this.app.store.change(tr("Arrange views"), (doc) => {
-      doc.drawing!.scale = layout.scale;
-      doc.drawing!.views = layout.views.map((v, i) => ({ ...v, id: `v${i + 1}` }));
-    });
+    const ids = this.freshViewIds(layout.views.length);
+    this.update((doc) => {
+      doc.scale = layout.scale;
+      doc.views = layout.views.map((v, i) => ({ ...v, id: ids[i] }));
+    }, tr("Arrange views"));
   }
 
   update(fn: (d: DrawingDoc) => void, label = tr("Edit drawing")) {
-    this.app.store.change(label, (doc) => { if (doc.drawing) fn(doc.drawing); });
+    this.app.store.change(label, (doc) => {
+      const root = doc.drawing;
+      if (!root) return;
+      const target = this.activeSheet <= 0 ? root : root.sheets?.[this.activeSheet - 1];
+      if (target) fn(target);
+    });
+  }
+
+  /** Picks ids not used by any sheet of the drawing. */
+  private freshViewIds(count: number): string[] {
+    const used = new Set<string>();
+    const root = this.rootDoc();
+    for (const sheet of root ? [root, ...(root.sheets ?? [])] : []) for (const v of sheet.views) used.add(v.id);
+    const out: string[] = [];
+    let n = 1;
+    while (out.length < count) {
+      const id = `v${n++}`;
+      if (!used.has(id)) { used.add(id); out.push(id); }
+    }
+    return out;
+  }
+
+  private nextViewId(): string {
+    return this.freshViewIds(1)[0];
+  }
+
+  /** Switches to another sheet of the drawing. */
+  selectSheet(index: number) {
+    const count = this.sheetCount;
+    this.activeSheet = Math.max(0, Math.min(count - 1, Math.round(index)));
+    this.selected = null;
+    void this.refresh();
+    this.syncPanel();
+  }
+
+  /** Adds an empty sheet after the active one and shows it. */
+  addSheet() {
+    const size: SheetSize = this.app.store.doc.units === 'IPS' ? 'Letter' : 'A4';
+    this.app.store.change(tr("Add sheet"), (doc) => {
+      const root = doc.drawing;
+      if (!root) return;
+      root.sheets = [...(root.sheets ?? []), { sheet: size, landscape: true, scale: root.scale, views: [], title: '', drawnBy: '', notes: '' }];
+    });
+    this.activeSheet = this.sheetCount - 1;
+    void this.refresh();
+    this.syncPanel();
+  }
+
+  /** Removes an extra sheet; the first sheet cannot be removed. */
+  deleteSheet(index: number) {
+    if (index <= 0 || index >= this.sheetCount) return;
+    this.app.store.change(tr("Delete sheet"), (doc) => {
+      const root = doc.drawing;
+      if (root?.sheets) root.sheets = root.sheets.filter((_, i) => i !== index - 1);
+    });
+    this.activeSheet = Math.max(0, Math.min(this.activeSheet, this.sheetCount - 1));
+    this.selected = null;
+    void this.refresh();
+    this.syncPanel();
   }
 
   /**
@@ -176,7 +255,7 @@ export class DrawingWorkspace {
   /** Rebuilds the PropertyManager if what it shows changed (not when a view only moved). */
   private syncPanel() {
     const d = this.doc;
-    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.number, d.revision, d.dimensions, d.callouts, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section, v.detail, v.auxiliary, v.centers, v.balloons])]) : '';
+    const key = d ? JSON.stringify([this.selected, this.activeSheet, this.sheetCount, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.number, d.revision, d.dimensions, d.callouts, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section, v.detail, v.auxiliary, v.centers, v.balloons])]) : '';
     if (key === this.panelKey) return;
     this.panelKey = key;
     if (this.panelChanging) return;
@@ -678,9 +757,7 @@ export class DrawingWorkspace {
         return;
       }
       const sheet = sheetDims(d);
-      let n = d.views.length + 1;
-      while (d.views.some((v) => v.id === `v${n}`)) n++;
-      const id = `v${n}`;
+      const id = this.nextViewId();
       const ref: FaceRef = { name: face.name, sig: { type: face.type, c: face.center, n: face.normal, area: face.area } };
       this.selected = id;
       this.update((dd) => {
@@ -699,9 +776,7 @@ export class DrawingWorkspace {
       x += 30;
       if (x > sheet.w - 30) { x = 40; y += 30; }
     }
-    let n = d.views.length + 1;
-    while (d.views.some((v) => v.id === `v${n}`)) n++;
-    const id = `v${n}`;
+    const id = this.nextViewId();
     this.selected = id;
     this.update((dd) => {
       dd.views.push({ id, kind, x, y, hidden: kind !== 'isometric' && kind !== 'section', dims: kind !== 'isometric', centers: kind !== 'isometric', ...(section ? { section } : {}) });
@@ -754,9 +829,7 @@ export class DrawingWorkspace {
     const sheet = sheetDims(d);
     const x = frame ? Math.min(sheet.w - 25 - size / 2, frame.x1 + 14 + size / 2) : 40 + size / 2;
     const y = frame ? Math.max(25 + size / 2, frame.y0 + size / 2) : 40 + size / 2;
-    let n = d.views.length + 1;
-    while (d.views.some((v) => v.id === `v${n}`)) n++;
-    const id = `v${n}`;
+    const id = this.nextViewId();
     this.selected = id;
     this.update((dd) => {
       dd.views.push({
@@ -791,8 +864,21 @@ export class DrawingWorkspace {
 
   async exportPdf() {
     if (!(await this.projected())) return;
-    const s = this.sheet();
-    download(toPdf(s.items, s.w, s.h, this.app.store.doc.name) as BlobPart, `${safeName(this.app.store.doc.name)}.pdf`, 'application/pdf');
+    const saved = this.activeSheet;
+    const pages: { items: Item[]; w: number; h: number }[] = [];
+    try {
+      for (let i = 0; i < this.sheetCount; i++) {
+        // Only touched sheets have projections: bring them in as we go.
+        if (i !== saved) { this.activeSheet = i; await this.refresh(); while (this.pending) await new Promise((r) => setTimeout(r, 50)); }
+        const s = this.sheet();
+        pages.push({ items: s.items, w: s.w, h: s.h });
+      }
+    } finally {
+      this.activeSheet = saved;
+      this.render();
+      this.syncPanel();
+    }
+    download(toPdfPages(pages, this.app.store.doc.name) as BlobPart, `${safeName(this.app.store.doc.name)}.pdf`, 'application/pdf');
   }
 
   async exportSvg() {
@@ -846,6 +932,7 @@ export class DrawingPanel extends PropertyPanel {
       return h('div', {}, h('div', { class: 'field-label' }, label), input);
     };
     return [
+      this.pagesSection(),
       section(tr("Sheet"), [
         sheet,
         checkbox(tr("Landscape"), d.landscape, (v) => ws.updateFromPanel((x) => { x.landscape = v; }, tr("Sheet orientation"))),
@@ -871,6 +958,27 @@ export class DrawingPanel extends PropertyPanel {
     ];
   }
 
+  /** Sheet tabs: switch between sheets, add one or delete an extra one. */
+  private pagesSection(): HTMLElement {
+    const ws = this.ws;
+    const list = h('div', { class: 'page-list' });
+    for (let i = 0; i < ws.sheetCount; i++) {
+      const label = tr("Sheet {0}", [String(i + 1)]);
+      const current = i === ws.activeSheetIndex;
+      const b = h('button', {
+        class: `btn small${current ? ' primary' : ''}`, type: 'button', 'aria-pressed': String(current), title: tr("Show this sheet"),
+      }, label);
+      b.addEventListener('click', () => ws.selectSheet(i));
+      const del = i > 0
+        ? h('button', { class: 'icon-btn', type: 'button', 'aria-label': tr("Delete sheet {0}", [String(i + 1)]) }, icon('trash', 14))
+        : null;
+      if (del) del.addEventListener('click', () => ws.deleteSheet(i));
+      list.append(h('div', { class: 'rel-btn', style: { cursor: 'default' } }, b, del));
+    }
+    const add = h('button', { class: 'btn small', type: 'button', onclick: () => ws.addSheet() }, icon('plus', 14), tr("Add sheet"));
+    return section(tr("Sheets"), [list, add]);
+  }
+
   /** Manual dimensions on the sheet, with delete buttons and the add command. */
   private dimensionsSection(d: NonNullable<DrawingWorkspace['doc']>): HTMLElement {
     const ws = this.ws;
@@ -878,7 +986,7 @@ export class DrawingPanel extends PropertyPanel {
     const u = UNIT_SYSTEMS[app.store.doc.units];
     const add = h('button', { class: 'btn small', type: 'button' }, icon('smartDimension', 14), tr("Dimension"));
     add.addEventListener('click', () => ws.toggleDimensionTool());
-    const list = h('div', { class: 'relations-list' });
+    const list = h('div', { class: 'dimension-list' });
     const dims = d.dimensions ?? [];
     if (!dims.length) list.append(h('div', { class: 'field-label' }, tr("Use the Dimension button, then pick two vertices of a view.")));
     for (const dim of dims) {
@@ -901,7 +1009,7 @@ export class DrawingPanel extends PropertyPanel {
     const ws = this.ws;
     const add = h('button', { class: 'btn small', type: 'button' }, icon('smartDimension', 14), tr("Callout"));
     add.addEventListener('click', () => ws.toggleCalloutTool());
-    const list = h('div', { class: 'relations-list' });
+    const list = h('div', { class: 'callout-list' });
     const callouts = d.callouts ?? [];
     if (!callouts.length) list.append(h('div', { class: 'field-label' }, tr("Use the Callout button, then click a point in a view.")));
     for (const c of callouts) {

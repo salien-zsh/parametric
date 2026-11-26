@@ -230,6 +230,11 @@ export class PdfPage {
     } else this.ops.push('0 g', 'BT', `${font} ${size.toFixed(2)} Tf`, `${this.x(x + dx)} ${this.y(y)} Td`, `(${esc}) Tj`, 'ET');
   }
 
+  /** The page's content stream, for a multi-page document. */
+  content(): string {
+    return this.ops.join('\n');
+  }
+
   /** Serialises the document. */
   build(title = tr("Drawing")): Uint8Array {
     const content = this.ops.join('\n');
@@ -253,4 +258,42 @@ export class PdfPage {
     out += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R /Info ${objs.length} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
     return new TextEncoder().encode(out);
   }
+}
+
+/** Builds one PDF with several pages, one per drawing sheet. */
+export function buildPdf(pages: { widthMm: number; heightMm: number; draw: (page: PdfPage) => void }[], title: string): Uint8Array {
+  if (!pages.length) return new PdfPage(210, 297).build(title);
+  // Object layout: 1 catalog, 2 pages, 3/4 fonts, then two objects per page.
+  const kids: string[] = [];
+  const pageObjs: string[] = [];
+  pages.forEach((spec, i) => {
+    const pageObj = 5 + i * 2;
+    const contentObj = pageObj + 1;
+    kids.push(`${pageObj} 0 R`);
+    const page = new PdfPage(spec.widthMm, spec.heightMm);
+    spec.draw(page);
+    const content = page.content();
+    pageObjs.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${(spec.widthMm * PT).toFixed(2)} ${(spec.heightMm * PT).toFixed(2)}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentObj} 0 R >>`);
+    pageObjs.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+  });
+  const infoObj = 5 + pages.length * 2;
+  const objs: string[] = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pages.length} >>`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+    ...pageObjs,
+    `<< /Title ${pdfTextString(title)} /Producer (Parametric) >>`,
+  ];
+  let out = '%PDF-1.4\n';
+  const offsets: number[] = [];
+  objs.forEach((obj, i) => {
+    offsets.push(out.length);
+    out += `${i + 1} 0 obj\n${obj}\nendobj\n`;
+  });
+  const xref = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+  for (const off of offsets) out += `${String(off).padStart(10, '0')} 00000 n \n`;
+  out += `trailer\n<< /Size ${infoObj + 1} /Root 1 0 R /Info ${infoObj} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return new TextEncoder().encode(out);
 }

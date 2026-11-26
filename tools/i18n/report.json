@@ -1,7 +1,7 @@
 {
   "files": 82,
   "edits": 0,
-  "uniqueKeys": 2182,
+  "uniqueKeys": 2188,
   "perFile": [
     {
       "file": "src/app/actions.ts",
@@ -46,7 +46,7 @@
     {
       "file": "src/app/drawing.ts",
       "edits": 0,
-      "skipped": 124
+      "skipped": 132
     },
     {
       "file": "src/app/examples.ts",
