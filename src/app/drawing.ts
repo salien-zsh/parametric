@@ -82,6 +82,8 @@ export class DrawingWorkspace {
   /** Manual dimension tool: pick two projected vertices, then the value is placed. */
   private dimTool = false;
   private dimFirst: { view: string; p: [number, number] } | null = null;
+  /** Tolerance callout tool: one click adds a framed note with a leader. */
+  private calloutTool = false;
   private pending = false;
   /** A refresh was asked for while views were being projected. */
   private refreshAgain = false;
@@ -174,7 +176,7 @@ export class DrawingWorkspace {
   /** Rebuilds the PropertyManager if what it shows changed (not when a view only moved). */
   private syncPanel() {
     const d = this.doc;
-    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section, v.detail, v.auxiliary, v.centers, v.balloons])]) : '';
+    const key = d ? JSON.stringify([this.selected, this.app.store.doc.name, d.sheet, d.landscape, d.scale, d.title, d.drawnBy, d.notes, d.number, d.revision, d.dimensions, d.callouts, d.views.map((v) => [v.id, v.kind, v.hidden, v.dims, v.scale, v.section, v.detail, v.auxiliary, v.centers, v.balloons])]) : '';
     if (key === this.panelKey) return;
     this.panelKey = key;
     if (this.panelChanging) return;
@@ -374,6 +376,7 @@ export class DrawingWorkspace {
   /** Starts or ends the manual Dimension tool. */
   toggleDimensionTool() {
     this.dimTool = !this.dimTool;
+    this.calloutTool = false;
     this.dimFirst = null;
     this.el.style.cursor = this.dimTool ? 'crosshair' : '';
     this.app.setStatus(this.dimTool
@@ -441,6 +444,52 @@ export class DrawingWorkspace {
     this.app.setStatus(tr("Dimension added. Pick two more points, or press Esc to finish."));
   }
 
+  /** Starts or ends the tolerance callout tool. */
+  toggleCalloutTool() {
+    this.calloutTool = !this.calloutTool;
+    this.dimTool = false;
+    this.dimFirst = null;
+    this.el.style.cursor = this.calloutTool ? 'crosshair' : '';
+    this.app.setStatus(this.calloutTool
+      ? tr("Callout: click a point in a view to attach a tolerance frame (Esc to finish).")
+      : this.defaultDrawingStatus());
+    this.el.focus({ preventScroll: true });
+  }
+
+  private get calloutActive() {
+    return this.calloutTool;
+  }
+
+  /** Adds a tolerance frame whose leader points at the picked projected vertex. */
+  private pickCalloutPoint(x: number, y: number) {
+    const d = this.doc;
+    const id = d ? this.viewAt(x, y) : null;
+    if (!d || !id) { this.app.setStatus(tr("Pick a point inside a view.")); return; }
+    const view = d.views.find((q) => q.id === id)!;
+    const pr = this.cache.get(id)?.result;
+    if (!pr?.bounds) { this.app.setStatus(tr("This view has not been projected yet.")); return; }
+    const s = this.effectiveScale(view);
+    const [bx0, by0, bx1, by1] = pr.bounds;
+    const local: [number, number] = [(x - view.x) / s + (bx0 + bx1) / 2, (y - view.y) / s + (by0 + by1) / 2];
+    let best: [number, number] | null = null;
+    let bestD = Infinity;
+    for (const p of projectionVertices(pr)) {
+      const dd = Math.hypot((p[0] - local[0]) * s, (p[1] - local[1]) * s);
+      if (dd < bestD) { bestD = dd; best = p; }
+    }
+    if (!best || bestD > 5) { this.app.setStatus(tr("Pick a vertex of the projected geometry.")); return; }
+    const existing = d.callouts ?? [];
+    let n = existing.length + 1;
+    const used = new Set(existing.map((q) => q.id));
+    while (used.has(`note${n}`)) n++;
+    const calloutId = `note${n}`;
+    const text = tr("POS 0.2 A");
+    this.update((doc) => {
+      doc.callouts = [...(doc.callouts ?? []), { id: calloutId, view: id, p: [...best] as [number, number], text }];
+    }, tr("Add callout"));
+    this.app.setStatus(tr("Callout added. Edit its text in the panel."));
+  }
+
   private defaultDrawingStatus(): string {
     return tr("Drag a view to move it, or select one and use the arrow keys.");
   }
@@ -497,6 +546,12 @@ export class DrawingWorkspace {
       if (this.dimActive && e.button === 0) {
         this.el.setPointerCapture(e.pointerId);
         this.pickDimensionPoint(x, y);
+        this.el.focus({ preventScroll: true });
+        return;
+      }
+      if (this.calloutActive && e.button === 0) {
+        this.el.setPointerCapture(e.pointerId);
+        this.pickCalloutPoint(x, y);
         this.el.focus({ preventScroll: true });
         return;
       }
@@ -576,6 +631,11 @@ export class DrawingWorkspace {
       if (e.key === 'Escape' && this.dimActive) {
         e.preventDefault();
         this.toggleDimensionTool();
+        return;
+      }
+      if (e.key === 'Escape' && this.calloutActive) {
+        e.preventDefault();
+        this.toggleCalloutTool();
         return;
       }
       if (e.key === 'ArrowLeft') move(-step, 0);
@@ -794,6 +854,7 @@ export class DrawingPanel extends PropertyPanel {
       ]),
       section(tr("Views"), [views, h('div', { class: 'row' }, h('div', { class: 'grow' }, addSel), add)]),
       this.dimensionsSection(d),
+      this.calloutsSection(d),
       section(tr("Title Block"), [
         field(tr("Title"), d.title || this.app.store.doc.name, (v) => ws.updateFromPanel((x) => { x.title = v; }, tr("Title"))),
         field(tr("Drawn by"), d.drawnBy, (v) => ws.updateFromPanel((x) => { x.drawnBy = v; }, tr("Drawn by"))),
@@ -833,6 +894,29 @@ export class DrawingPanel extends PropertyPanel {
         del));
     }
     return section(tr("Dimensions"), [h('div', { class: 'row' }, h('div', { class: 'grow' }, add)), list]);
+  }
+
+  /** Tolerance callouts on the sheet, with an editable frame text. */
+  private calloutsSection(d: NonNullable<DrawingWorkspace['doc']>): HTMLElement {
+    const ws = this.ws;
+    const add = h('button', { class: 'btn small', type: 'button' }, icon('smartDimension', 14), tr("Callout"));
+    add.addEventListener('click', () => ws.toggleCalloutTool());
+    const list = h('div', { class: 'relations-list' });
+    const callouts = d.callouts ?? [];
+    if (!callouts.length) list.append(h('div', { class: 'field-label' }, tr("Use the Callout button, then click a point in a view.")));
+    for (const c of callouts) {
+      const input = h('input', { class: 'input', value: c.text, 'aria-label': tr("Callout text") }) as HTMLInputElement;
+      input.addEventListener('change', () => ws.updateFromPanel((doc) => {
+        const target = (doc.callouts ?? []).find((q) => q.id === c.id);
+        if (target) target.text = input.value;
+      }, tr("Edit callout")));
+      const del = h('button', { class: 'icon-btn', type: 'button', 'aria-label': tr("Delete callout") }, icon('trash', 14));
+      del.addEventListener('click', () => ws.updateFromPanel((doc) => {
+        doc.callouts = (doc.callouts ?? []).filter((q) => q.id !== c.id);
+      }, tr("Delete callout")));
+      list.append(h('div', { class: 'rel-btn', style: { cursor: 'default' } }, h('div', { class: 'grow' }, input), del));
+    }
+    return section(tr("Callouts"), [add, list]);
   }
 
   private viewRow(v: DrawingView): HTMLElement {

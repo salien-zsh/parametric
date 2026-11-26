@@ -139,3 +139,17 @@ describe('manual dimensions', () => {
     expect(sheet.items.filter((it) => it.t === 'line').length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('tolerance callouts', () => {
+  it('draws the framed text with a leader to its point', () => {
+    const withNote: DrawingDoc = {
+      ...doc(),
+      callouts: [{ id: 'note1', view: 'v1', p: [0, 0], text: 'POS 0.2 A' }],
+    };
+    const sheet = buildSheet(withNote, new Map([['v1', projection]]), info());
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts).toContain('POS 0.2 A');
+    expect(sheet.items.filter((it) => it.t === 'rect').length).toBeGreaterThanOrEqual(1);
+    expect(sheet.items.filter((it) => it.t === 'line').length).toBeGreaterThanOrEqual(1);
+  });
+});

@@ -1919,5 +1919,18 @@
   "Pick two different points.": "请选择两个不同的点。",
   "Use the Dimension button, then pick two vertices of a view.": "使用“尺寸”按钮，然后在视图中单击两个顶点。",
   "manual linear dimension measure drawing": "手动 线性 尺寸 测量 工程图",
-  "This view has not been projected yet.": "该视图尚未完成投影。"
+  "This view has not been projected yet.": "该视图尚未完成投影。",
+  "Tolerance Callout": "公差标注",
+  "Callout": "公差标注",
+  "Callouts": "公差标注",
+  "Callout text": "公差文字",
+  "Delete callout": "删除公差标注",
+  "Edit callout": "修改公差标注",
+  "Add callout": "添加公差标注",
+  "Use the Callout button, then click a point in a view.": "使用“公差标注”按钮，然后在视图中单击一点。",
+  "Callout added. Edit its text in the panel.": "已添加公差标注，可在面板中修改文字。",
+  "Callout: click a point in a view to attach a tolerance frame (Esc to finish).": "公差标注：在视图中单击一点放置公差框（Esc 结束）。",
+  "Click a point in a view to attach a tolerance frame; edit its text in the panel.": "在视图中单击一点放置公差框，并在面板中编辑文字。",
+  "POS 0.2 A": "位置度 0.2 A",
+  "gdt tolerance feature control frame datum callout": "形位公差 公差框 基准 标注"
 }

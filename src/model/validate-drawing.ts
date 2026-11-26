@@ -14,6 +14,14 @@ export function validDrawing(value: unknown): value is DrawingDoc {
     || (value.number != null && typeof value.number !== 'string')
     || (value.revision != null && typeof value.revision !== 'string')
     || !Array.isArray(value.views)) return false;
+  if (value.callouts != null) {
+    if (!Array.isArray(value.callouts)) return false;
+    for (const c of value.callouts) {
+      if (!object(c) || typeof c.id !== 'string' || !c.id || typeof c.view !== 'string' || !c.view) return false;
+      if (typeof c.text !== 'string') return false;
+      if (!Array.isArray(c.p) || c.p.length !== 2 || !c.p.every(finite)) return false;
+    }
+  }
   if (value.dimensions != null) {
     if (!Array.isArray(value.dimensions)) return false;
     for (const d of value.dimensions) {

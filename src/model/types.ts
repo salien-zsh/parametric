@@ -898,6 +898,16 @@ export interface DrawingDimension {
   offset: number;
 }
 
+/** A tolerance callout: a framed note with a leader to a point of a view. */
+export interface DrawingCallout {
+  id: Id;
+  view: Id;
+  /** The point the leader points at, in the view's projection coordinates. */
+  p: [number, number];
+  /** The frame text, e.g. "POS 0.2 A". */
+  text: string;
+}
+
 export interface DrawingView {
   id: Id;
   kind: DrawingViewKind;
@@ -933,6 +943,8 @@ export interface DrawingDoc {
   views: DrawingView[];
   /** Manual linear dimensions placed on this sheet. */
   dimensions?: DrawingDimension[];
+  /** Tolerance callouts (feature-control frames) placed on this sheet. */
+  callouts?: DrawingCallout[];
   title: string;
   drawnBy: string;
   notes: string;

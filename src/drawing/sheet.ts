@@ -250,6 +250,11 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
       dimension(items, [fx0, fy1], [fx1, fy1], 'below', info.formatLength(bx1 - bx0));
       dimension(items, [fx0, fy0], [fx0, fy1], 'left', info.formatLength(by1 - by0));
     }
+    // Tolerance callouts on this view.
+    for (const c of d.callouts ?? []) {
+      if (c.view !== v.id) continue;
+      calloutBox(items, [tx + c.p[0] * scale, ty + c.p[1] * scale], c.text);
+    }
     // Manual linear dimensions: true model lengths, placed at their offset.
     for (const dim of d.dimensions ?? []) {
       if (dim.view !== v.id) continue;
@@ -268,6 +273,19 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
 }
 
 type Box = [x0: number, y0: number, x1: number, y1: number];
+
+/** A framed tolerance note with a leader to the measured point. */
+function calloutBox(items: Item[], at: [number, number], text: string) {
+  const size = 2.4;
+  const wid = textWidth(text, size) + 4;
+  const x = at[0] + 12;
+  const y = at[1] - 15;
+  const h = 6;
+  items.push({ t: 'line', x1: at[0], y1: at[1], x2: x, y2: y + h, w: 0.18 });
+  items.push({ t: 'circle', x: at[0], y: at[1], r: 0.5, sw: 0.18 });
+  items.push({ t: 'rect', x, y, w: wid, h, sw: 0.25 });
+  items.push({ t: 'text', s: text, x: x + wid / 2, y: y + 4.2, size, anchor: 'middle' });
+}
 
 /** An aligned linear dimension with arrows, extension lines and its value. */
 function linearDimension(items: Item[], p1: [number, number], p2: [number, number], offset: number, text: string) {
