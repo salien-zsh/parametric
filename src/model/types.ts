@@ -844,6 +844,8 @@ export interface PartDocument {
   explode?: number;
   /** Exploded-view direction: radial from the centre (default) or along a world axis. */
   explodeAxis?: AssemblyAxis;
+  /** Contact sets: components that move together when one of them is moved. */
+  contactSets?: Id[][];
   nextId: number;
   created: number;
   modified: number;

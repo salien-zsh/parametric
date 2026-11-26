@@ -1899,5 +1899,12 @@
   "Profile {0}": "轮廓 {0}",
   "Click to start a line, click again to add segments. Switch to Arc in the options to chain tangent arcs. Double-click or press Esc to finish.": "单击开始画线，再次单击继续线段；在选项中切到“圆弧”可续接相切圆弧。双击或按 Esc 结束。",
   "EXPLODED": "爆炸图",
-  "Play explode": "播放爆炸"
+  "Play explode": "播放爆炸",
+  "Contact Set": "接触集",
+  "Clear contact sets": "清除接触集",
+  "Contact set": "接触集",
+  "{0} components move together now.": "{0} 个零部件现在一起移动。",
+  "contact set rigid group move together": "接触集 刚性 分组 一起移动",
+  "Put the selected components into a contact set: moving one moves them all.": "把所选零部件加入接触集：移动其中一个会带动全部。",
+  "Remove every contact set from this assembly.": "移除本装配中的所有接触集。"
 }

@@ -1,3 +1,4 @@
+- **Contact sets** group components so moving one (by drag, gizmo or its properties) moves the whole set together.
 - **Exploded views** can be played back with the Play explode button, and their drawings mark the isometric view as EXPLODED.
 - **Fusion interaction**: the Line tool can continue into tangent arcs from its options (Line / Tangent Arc), and command panels float as draggable dialogs over the graphics area instead of taking the left pane.
 - **Fusion workflow**: Extrude and Revolve list each closed sketch region as a Profile checkbox, finishing a sketch leaves it selected as the next profile, and double-clicking a component in an assembly activates its part for in-place editing (Finish Part returns to the assembly).

@@ -256,6 +256,19 @@ export function registerCommands(app: App, files: FileOps) {
       },
     },
     {
+      id: 'contactSet', label: tr("Contact Set"), icon: 'copy',
+      keywords: tr("contact set rigid group move together"),
+      description: tr("Put the selected components into a contact set: moving one moves them all."),
+      enabled: () => app.isAssembly && app.selection.ofKind('component').length >= 2,
+      run: () => app.createContactSet(app.selection.ofKind('component').map((c) => c.id)),
+    },
+    {
+      id: 'clearContactSets', label: tr("Clear Contact Sets"), icon: 'close',
+      description: tr("Remove every contact set from this assembly."),
+      enabled: () => app.isAssembly && !!app.store.doc.contactSets?.length,
+      run: () => app.clearContactSets(),
+    },
+    {
       id: 'addMate', label: tr("Assembly Mate..."), icon: 'relation',
       keywords: tr("constraint coincident distance angle align assembly face edge mate"),
       description: tr("Constrain two components at picked geometry: the same faces, edges and origins as a joint."),
@@ -724,7 +737,7 @@ export const RIBBON: RibbonTab[] = [
     groups: [
       [{ cmd: 'insertComponent' }, { cmd: 'newAssemblyPart' }, { cmd: 'newAssembly' }, { cmd: 'openDrawing' }],
       [{ cmd: 'fixComponent' }, { cmd: 'moveComponents' }, { cmd: 'duplicateComponent' }, { cmd: 'componentPattern' }, { cmd: 'isolateComponents' }, { cmd: 'hideComponents' }, { cmd: 'showAllComponents' }, { cmd: 'selectAllComponents' }, { cmd: 'explodeView' }, { cmd: 'motionStudy' }],
-      [{ cmd: 'addJoint' }, { cmd: 'autoMate' }, { cmd: 'mateSuggestions' }],
+      [{ cmd: 'addJoint' }, { cmd: 'autoMate' }, { cmd: 'mateSuggestions' }, { cmd: 'contactSet' }, { cmd: 'clearContactSets' }],
       [{ cmd: 'editComponent' }, { cmd: 'editComponentPart' }, { cmd: 'replaceComponent' }, { cmd: 'interference' }, { cmd: 'assemblyDiagnostics' }],
     ],
     labels: [tr("Insert"), tr("Position"), tr("Relations"), tr("Inspect")],

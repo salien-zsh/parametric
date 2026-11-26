@@ -292,6 +292,10 @@ export function parseDocument(text: string): PartDocument {
     }) : [];
     doc.explode = typeof d.explode === 'number' && Number.isFinite(d.explode) && d.explode > 0 ? d.explode : undefined;
     doc.explodeAxis = d.explodeAxis === 'x' || d.explodeAxis === 'y' || d.explodeAxis === 'z' ? d.explodeAxis : undefined;
+    doc.contactSets = Array.isArray(d.contactSets)
+      ? d.contactSets.map((set) => (Array.isArray(set) ? set.filter((id): id is string => typeof id === 'string') : []))
+        .filter((set) => set.length > 1)
+      : undefined;
   } else {
     doc.components = [];
     doc.mates = [];
@@ -300,6 +304,7 @@ export function parseDocument(text: string): PartDocument {
     delete doc.componentPatterns;
     delete doc.explode;
     delete doc.explodeAxis;
+    delete doc.contactSets;
   }
   for (const f of doc.features) if (typeof f.name !== 'string' || !f.name) f.name = f.id;
   // New feature ids must not collide with existing ones, even when the file's

@@ -1128,20 +1128,91 @@ export class App {
       const component = doc.components?.find((c) => c.id === id);
       if (!component) return;
       if (patch.name !== undefined) component.name = patch.name;
-      if (patch.transform) component.transform = patch.transform;
+      if (patch.transform) {
+        const delta: [number, number, number] = [
+          patch.transform.position[0] - component.transform.position[0],
+          patch.transform.position[1] - component.transform.position[1],
+          patch.transform.position[2] - component.transform.position[2],
+        ];
+        component.transform = patch.transform;
+        // Contact-set partners follow the same translation.
+        const partnerSet = (doc.contactSets ?? []).find((set) => set.includes(id));
+        for (const partnerId of partnerSet ?? []) {
+          if (partnerId === id) continue;
+          const partner = doc.components?.find((c) => c.id === partnerId);
+          if (!partner) continue;
+          partner.transform = {
+            position: [
+              partner.transform.position[0] + delta[0],
+              partner.transform.position[1] + delta[1],
+              partner.transform.position[2] + delta[2],
+            ],
+            rotation: [...partner.transform.rotation],
+          };
+        }
+      }
       if (patch.visible !== undefined) component.visible = patch.visible;
       if (patch.fixed !== undefined) component.fixed = patch.fixed;
     });
   }
 
+  /** The contact set a component belongs to, if any. */
+  contactSetOf(id: Id): Id[] {
+    return (this.store.doc.contactSets ?? []).find((set) => set.includes(id)) ?? [];
+  }
+
+  /** Puts the selected components into one contact set, so moving one moves them all. */
+  createContactSet(ids: Id[]) {
+    if (ids.length < 2) return;
+    const set = [...new Set(ids)];
+    this.store.change(tr("Contact set"), (doc) => {
+      const rest = (doc.contactSets ?? []).filter((other) => !other.some((id) => set.includes(id)));
+      doc.contactSets = [...rest, set];
+    });
+    toast({ kind: 'success', message: tr("{0} components move together now.", [String(set.length)]) });
+  }
+
+  clearContactSets() {
+    if (!this.store.doc.contactSets?.length) return;
+    this.store.change(tr("Clear contact sets"), (doc) => { delete doc.contactSets; });
+  }
+
   /**
    * Moves several components at once. Called every frame of a drag inside a
-   * batch, so the whole gesture stays one undo step.
+   * batch, so the whole gesture stays one undo step. Contact-set partners of a
+   * moving component follow with the same translation.
    */
   setComponentTransforms(transforms: Map<Id, ComponentTransform>, label = tr("Move components")) {
     if (!transforms.size) return;
     this.store.change(label, (doc) => {
-      for (const [id, transform] of transforms) {
+      const moving = new Map<Id, ComponentTransform>();
+      for (const [id, transform] of transforms) moving.set(id, transform);
+      // Drag one member of a contact set and its partners come along.
+      for (const [id, transform] of [...moving]) {
+        const partnerSet = (doc.contactSets ?? []).find((set) => set.includes(id));
+        if (!partnerSet) continue;
+        const component = doc.components?.find((c) => c.id === id);
+        if (!component) continue;
+        const delta: [number, number, number] = [
+          transform.position[0] - component.transform.position[0],
+          transform.position[1] - component.transform.position[1],
+          transform.position[2] - component.transform.position[2],
+        ];
+        for (const partnerId of partnerSet) {
+          if (moving.has(partnerId)) continue;
+          const partner = doc.components?.find((c) => c.id === partnerId);
+          if (!partner) continue;
+          moving.set(partnerId, {
+            position: [
+              partner.transform.position[0] + delta[0],
+              partner.transform.position[1] + delta[1],
+              partner.transform.position[2] + delta[2],
+            ],
+            rotation: [...partner.transform.rotation],
+          });
+        }
+      }
+      for (const [id, transform] of moving) {
         const component = doc.components?.find((c) => c.id === id);
         if (component) component.transform = { position: [...transform.position], rotation: [...transform.rotation] };
       }
