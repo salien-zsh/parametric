@@ -4,7 +4,7 @@ import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newAxis, newBaseFlange, newBevelGear, newCoil, newMirror, newMoveBody, newOffsetFace, newScaleBody, newSplitBody, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBaseFlange, newBevelGear, newCoil, newEdgeFlange, newMirror, newMoveBody, newOffsetFace, newScaleBody, newSplitBody, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -15,7 +15,7 @@ import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import { buildProfiles, inRegion } from '../sketch/profiles';
 import type {
-  AxisFeature, AxisKind, AxisRef, BaseFlangeFeature, ChamferFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  AxisFeature, AxisKind, AxisRef, BaseFlangeFeature, ChamferFeature, CoilFeature, EdgeFlangeFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
@@ -1687,6 +1687,33 @@ export class SweepPanel extends FeaturePanel<SweepFeature> {
 
 // ---------- factory ----------
 
+export class EdgeFlangePanel extends FeaturePanel<EdgeFlangeFeature> {
+  render(): HTMLElement[] {
+    const f = this.f;
+    const ctx = this.ctx();
+    const edgeBox = new SelectionBox(this, tr("Edge"), { edge: true }, toEdge(this.app), (items) => {
+      const ref = items[0]?.data as EdgeRef | undefined;
+      if (ref) { f.edge = ref; this.changed(); }
+    });
+    edgeBox.setItems(f.edge?.name ? [{ item: edgeItem(this.app, f.edge), data: f.edge, label: tr("Edge") }] : []);
+    const length = numberField({ label: tr("Flange length"), icon: 'ruler', value: f.length, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.length = v; this.changed(); } });
+    const angle = numberField({ label: tr("Bend angle"), icon: 'ruler', value: f.angle, kind: 'angle', ctx, min: 0, max: 180, onChange: (v) => { f.angle = v; this.changed(); } });
+    const flip = checkbox(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); });
+    return [
+      section(tr("Edge"), [edgeBox.el, h('p', { class: 'field-label' }, tr("Pick a straight edge of the sheet face."))]),
+      section(tr("Flange"), [length, angle, flip, h('p', { class: 'field-label' }, tr("Thickness and bend radius come from the base flange."))]),
+    ];
+  }
+
+  protected validate() {
+    return this.f.edge?.name ? null : tr("Select an edge for the flange");
+  }
+
+  preview() {
+    return this.f.edge?.name ? this.f : null;
+  }
+}
+
 export class BaseFlangePanel extends FeaturePanel<BaseFlangeFeature> {
   render(): HTMLElement[] {
     const f = this.f;
@@ -1943,6 +1970,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'scaleBody': return new ScaleBodyPanel(app, f, editing);
     case 'splitBody': return new SplitBodyPanel(app, f, editing);
     case 'baseFlange': return new BaseFlangePanel(app, f, editing);
+    case 'edgeFlange': return new EdgeFlangePanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
     case 'axis': return new AxisPanel(app, f, editing);
@@ -2030,6 +2058,13 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
+    case 'edgeFlange': {
+      const x = newEdgeFlange(id, name);
+      if (edges[0]) x.edge = edges[0];
+      x.length = Math.max(size / 4, app.store.unitScale * 2);
+      f = x;
+      break;
+    }
     case 'baseFlange': {
       const x = newBaseFlange(id, name);
       const sketchFeature = app.selection.items.find((it) => it.kind === 'feature');

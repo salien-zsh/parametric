@@ -533,6 +533,7 @@ export function registerCommands(app: App, files: FileOps) {
     feature('scaleBody', tr("Scale Body"), 'select', tr("Scale the whole body uniformly about the origin."), { needsBody: true, keywords: tr("scale body resize direct edit") }),
     feature('splitBody', tr("Split Body"), 'select', tr("Split the body with a plane and keep one side."), { needsBody: true, keywords: tr("split body trim plane") }),
     feature('baseFlange', tr("Base Flange"), 'sheetMetal', tr("Thicken a sketch profile into a sheet-metal body."), { keywords: tr("sheet metal flange plate") }),
+    feature('edgeFlange', tr("Edge Flange"), 'sheetMetal', tr("Bend a wall up along an edge of the sheet."), { needsBody: true, keywords: tr("sheet metal edge flange bend wall") }),
     feature('loft', tr("Lofted Boss"), 'loft', tr("Blend between two or more profiles."), { keywords: 'blend' }),
     feature('loft', tr("Lofted Cut"), 'loft', tr("Blend between profiles to remove material."), { cut: true, needsBody: true }),
     feature('fillet', tr("Fillet"), 'fillet', tr("Round selected edges."), { needsBody: true, keywords: tr("round radius blend") }),
@@ -738,7 +739,7 @@ export const RIBBON: RibbonTab[] = [
   {
     id: 'sheetmetal', label: tr("Sheet Metal"),
     groups: [
-      [{ cmd: 'baseFlange' }],
+      [{ cmd: 'baseFlange' }, { cmd: 'edgeFlange' }],
     ],
     labels: [tr("Create")],
   },

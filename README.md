@@ -1,3 +1,4 @@
+- **Edge Flange** bends a wall up along a straight edge of the sheet, with its length, angle and direction; the bend block and wall join the sheet-metal body.
 - **Sheet metal**: a Base Flange thickens a closed sketch profile to the sheet thickness (with a bend radius kept for later flanges); a second flange becomes its own body.
 - **Multiple bodies**: Extrude can keep its solid as a new body, and Split Body can keep both halves; the viewport, mass properties and drawing projections see every body.
 - **Multi-sheet drawings**: extra sheets with their own views, dimensions, callouts and title block; sheet tabs in the panel, and PDF export writes one page per sheet.

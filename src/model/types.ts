@@ -248,6 +248,19 @@ export interface BaseFlangeFeature extends FeatureBase {
   contours?: Vec2[];
 }
 
+/** A sheet-metal edge flange: a wall bent up along a straight edge of the sheet. */
+export interface EdgeFlangeFeature extends FeatureBase {
+  type: 'edgeFlange';
+  edge: EdgeRef;
+  length: Param;
+  /** Bend angle in degrees, measured from the base sheet. */
+  angle: Param;
+  /** Flange on the other side of the sheet. */
+  flip: boolean;
+  /** Sheet thickness when the part has no base flange to take it from. */
+  thickness?: Param;
+}
+
 export interface ChamferFeature extends FeatureBase {
   type: 'chamfer';
   edges: EdgeRef[];
@@ -684,6 +697,7 @@ export type Feature =
   | ScaleBodyFeature
   | SplitBodyFeature
   | BaseFlangeFeature
+  | EdgeFlangeFeature
   | AxisFeature
   | PointFeature
   | LoftFeature

@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature,
+  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeFlangeFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -85,6 +85,8 @@ interface State {
   /** Projected sketch entities whose model edge or vertex is gone, by sketch. */
   lostRefs: Map<Id, Id[]>;
   tools: Map<Id, Tool>;
+  /** Sheet-metal settings inherited by edge flanges and the flat pattern. */
+  sheet?: { thickness: number; bendRadius: number };
 }
 
 interface Step {
@@ -107,6 +109,7 @@ const cloneState = (s: State): State => ({
   sketches: new Map(s.sketches),
   lostRefs: new Map(s.lostRefs),
   tools: new Map(s.tools),
+  sheet: s.sheet,
 });
 
 /** The active body together with every extra body, for display, picking and mass properties. */
@@ -436,6 +439,7 @@ export class ModelBuilder {
       case 'scaleBody': this.applyScaleBody(f, st); return 'body';
       case 'splitBody': this.applySplitBody(f, st); return 'tool';
       case 'baseFlange': this.applyBaseFlange(f, st); return 'body';
+      case 'edgeFlange': this.applyEdgeFlange(f, st); return 'tool';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -1685,11 +1689,67 @@ export class ModelBuilder {
     if (isEmpty(tool)) throw new FeatureError(tr("The flange could not be created"));
     const named = this.nameTool(f.id, tool, (_d, k) => `s${k}`);
     st.tools.set(f.id, { shape: tool, cut: false, faces: named });
+    st.sheet = { thickness, bendRadius };
     // With an existing body the flange becomes its own body, like Fusion.
     if (st.body) { this.addBody(st, tool, named); return; }
     st.body = tool;
     this.setFaces(st, named);
     st.edges = null;
+  }
+
+  /**
+   * Bends a wall up along a straight edge of the sheet: a bend block filling
+   * the corner plus a wall of the sheet thickness at the bend angle.
+   */
+  private applyEdgeFlange(f: EdgeFlangeFeature, st: State) {
+    if (!st.body) throw new FeatureError(tr("There is no sheet-metal body to flange"));
+    const edge = this.edgesOf(st)[this.resolveEdge(f.edge, st)];
+    const d = edge.desc;
+    if (d.type !== 'line' || !d.dir) throw new FeatureError(tr("Edge flanges need a straight edge"));
+    const dir = normalize(d.dir);
+    const a = d.a;
+    const mid: Vec3 = [(a[0] + d.b[0]) / 2, (a[1] + d.b[1]) / 2, (a[2] + d.b[2]) / 2];
+    const lenEdge = dist(a, d.b);
+    if (!(lenEdge > 1e-6)) throw new FeatureError(tr("The selected edge is too short"));
+    // The sheet face is the largest planar face the edge separates from a side face.
+    const faceIdx = edge.faces.filter((i) => st.faces[i]?.desc.type === 'plane')
+      .sort((i, j) => st.faces[j].desc.area - st.faces[i].desc.area)[0];
+    if (faceIdx == null) throw new FeatureError(tr("Select an edge between the sheet face and a side face"));
+    const desc = st.faces[faceIdx].desc;
+    const n = normalize(desc.d);
+    const sDir = this.edgeOutward(mid, desc.center, n, dir);
+    const thickness = st.sheet?.thickness ?? num(f.thickness ?? 2);
+    if (!(thickness > 0)) throw new FeatureError(tr("The sheet thickness must be greater than zero"));
+    const length = num(f.length);
+    if (!(length > 0)) throw new FeatureError(tr("The flange length must be greater than zero"));
+    const angle = (Math.max(0, Math.min(180, num(f.angle ?? 90))) * Math.PI) / 180;
+    const up = f.flip ? scale(n, -1) : n;
+    const W = add(scale(sDir, Math.cos(angle)), scale(up, Math.sin(angle)));
+    const Nw = add(scale(sDir, Math.sin(angle)), scale(up, -Math.cos(angle)));
+    const faceAt = (s: number, z: number): Vec3 => add(a, add(scale(sDir, s), scale(up, z)));
+    const p0 = faceAt(0, 0);
+    const p1 = add(p0, scale(Nw, thickness));
+    const p2 = add(p1, scale(W, length));
+    const p3 = add(p0, scale(W, length));
+    const m = scale(n, -1);
+    const q0 = a;
+    const q1 = add(a, scale(sDir, thickness));
+    const q2 = add(q1, scale(m, thickness));
+    const q3 = add(a, scale(m, thickness));
+    const prism = (points: Vec3[]): Sh => R.basicFaceExtrusion(R.makePolygon(points) as unknown as R.Face, new R.Vector(scale(dir, lenEdge))) as unknown as Sh;
+    const tool = fuse(prism([p0, p1, p2, p3]), prism([q0, q1, q2, q3]));
+    if (isEmpty(tool)) throw new FeatureError(tr("The edge flange could not be created"));
+    this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `e${k}`), false);
+  }
+
+  /** Direction in the face plane pointing away from its material, square to the edge. */
+  private edgeOutward(mid: Vec3, center: Vec3, n: Vec3, dir: Vec3): Vec3 {
+    let out = sub(mid, center);
+    out = sub(out, scale(n, dot(out, n)));
+    if (len(out) < 1e-6) out = cross(dir, n);
+    out = sub(out, scale(dir, dot(out, dir)));
+    if (len(out) < 1e-6) out = cross(dir, n);
+    return normalize(out);
   }
 
   /** Splits the body with an axis-aligned plane and keeps the requested side. */

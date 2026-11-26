@@ -1952,5 +1952,19 @@
   "sheet metal flange plate": "钣金 法兰 底板",
   "The closed sketch profile becomes a flat sheet-metal face; its outside lines become bend lines.": "封闭草图轮廓成为钣金平面，其外边成为折弯线。",
   "When the part already has a body, the flange is kept as its own body.": "零件已有实体时，法兰作为独立实体保留。",
-  "Select a sketch for the flange": "请选择法兰的草图"
+  "Select a sketch for the flange": "请选择法兰的草图",
+  "Edge Flange": "边线法兰",
+  "Flange length": "法兰长度",
+  "Bend angle": "折弯角度",
+  "Pick a straight edge of the sheet face.": "选择钣金面上的直边。",
+  "Thickness and bend radius come from the base flange.": "板厚与折弯半径取自基体法兰。",
+  "Select an edge for the flange": "请选择法兰的边",
+  "There is no sheet-metal body to flange": "没有可折弯的钣金实体",
+  "Edge flanges need a straight edge": "边线法兰需要直边",
+  "The selected edge is too short": "所选边太短",
+  "Select an edge between the sheet face and a side face": "请选择钣金面与侧面之间的边",
+  "The flange length must be greater than zero": "法兰长度必须大于零",
+  "The edge flange could not be created": "无法创建边线法兰",
+  "Bend a wall up along an edge of the sheet.": "沿钣金边折起侧壁。",
+  "sheet metal edge flange bend wall": "钣金 边线法兰 折弯 侧壁"
 }

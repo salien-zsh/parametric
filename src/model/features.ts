@@ -1,7 +1,7 @@
 // Feature factories, display names and parameter metadata.
 
 import type {
-  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, CoilFeature, MoveBodyFeature, OffsetFaceFeature, ScaleBodyFeature, SplitBodyFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
+  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, CoilFeature, EdgeFlangeFeature, MoveBodyFeature, OffsetFaceFeature, ScaleBodyFeature, SplitBodyFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
   Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShaftFeature, ShellFeature,
   PointFeature, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature, SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from './types';
@@ -59,6 +59,10 @@ export const PARAM_FIELDS: Partial<Record<FeatureType, { path: string; kind: Par
   baseFlange: [
     { path: 'thickness', kind: 'length', label: tr("Sheet thickness") },
     { path: 'bendRadius', kind: 'length', label: tr("Bend radius") },
+  ],
+  edgeFlange: [
+    { path: 'length', kind: 'length', label: tr("Flange length") },
+    { path: 'angle', kind: 'angle', label: tr("Bend angle") },
   ],
   moveBody: [
     { path: 'dx', kind: 'length', label: tr("X offset") },
@@ -185,6 +189,7 @@ const BASE_NAMES: Record<FeatureType, string> = {
   scaleBody: tr('Scale Body'),
   splitBody: tr('Split Body'),
   baseFlange: tr('Base Flange'),
+  edgeFlange: tr('Edge Flange'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -220,6 +225,7 @@ export const FEATURE_LABELS: Record<FeatureType, string> = {
   scaleBody: tr('Scale Body'),
   splitBody: tr('Split Body'),
   baseFlange: tr('Base Flange'),
+  edgeFlange: tr('Edge Flange'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -249,7 +255,9 @@ export function featureIcon(f: Feature): string {
     case 'scaleBody': return 'select';
     case 'splitBody': return 'select';
     case 'baseFlange': return 'sheetMetal';
+    case 'edgeFlange': return 'edgeFlange';
     case 'baseFlange': return 'sheetMetal';
+    case 'edgeFlange': return 'sheetMetal';
     case 'import': return 'part';
     default: return f.type;
   }
@@ -353,6 +361,10 @@ export const newAxis = (id: Id, name: string): AxisFeature => ({
 
 export const newPoint = (id: Id, name: string): PointFeature => ({
   id, name, type: 'point', kind: 'vertex', point: null, edge: null, face: null, edge2: null, plane: null,
+});
+
+export const newEdgeFlange = (id: Id, name: string): EdgeFlangeFeature => ({
+  id, name, type: 'edgeFlange', edge: { name: '', sig: { type: 'line', m: [0, 0, 0], len: 0 } }, length: 20, angle: 90, flip: false,
 });
 
 export const newBaseFlange = (id: Id, name: string): BaseFlangeFeature => ({
@@ -476,6 +488,7 @@ export function dependencies(f: Feature): Id[] {
     if (f.face) visitName(f.face.name);
   }
   if (f.type === 'baseFlange') visitName(f.sketch);
+  if (f.type === 'edgeFlange') visitName(f.edge.name);
   if (f.type === 'thread') {
     if (f.face) visitName(f.face.name);
   }

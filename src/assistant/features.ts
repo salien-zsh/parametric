@@ -413,6 +413,7 @@ export class FeatureCodec {
         hub_diameter: L(f.hubDiameter), hub_length: L(f.hubLength), material: f.material,
         power: f.power, speed: f.speed, service_factor: f.serviceFactor,
       };
+      case 'edgeFlange': return { edge: f.edge.name, length: L(f.length), angle: f.angle, reverse: f.flip };
       case 'baseFlange': return { sketch: f.sketch, thickness: L(f.thickness), bend_radius: L(f.bendRadius), reverse: f.flip };
       case 'splitBody': return { axis: f.axis, offset: L(f.offset), flip: f.flip };
       case 'scaleBody': return { factor: C(f.factor) };
