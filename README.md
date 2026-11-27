@@ -1,3 +1,4 @@
+- **Fusion ViewCube**: a turning ViewCube in the graphics top-right shows FRONT/TOP/RIGHT and the other standard directions; click a face to snap there and the home button returns to isometric.
 - **Fusion-style feature dialogs**: compact floating cards with a title bar, flat collapsible sections, rounded inline fields and Cancel / OK pinned to the bottom right (instead of the SolidWorks-style top check/cross row).
 - **Inventor-style taper handle**: next to each extrude arrow a small curved grip changes the taper angle directly (its own degree box), besides Shift-dragging the arrow.
 - **Extrude handles**: arrow-shaped on-model handles draggable on both sides of the sketch plane (Two directions), and Shift-dragging a handle changes the taper (draft) angle while dragging.

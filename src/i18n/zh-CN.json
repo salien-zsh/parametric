@@ -1990,5 +1990,14 @@
   "No parts in this project yet.": "此项目中还没有零件。",
   "Delete project \"{0}\"? Its parts remain on this device.": "删除项目“{0}”？其中的零件仍保留在本机。",
   "Two directions": "双向拉伸",
-  "Taper angle": "锥度角"
+  "Taper angle": "锥度角",
+  "FRONT": "前",
+  "BACK": "后",
+  "RIGHT": "右",
+  "LEFT": "左",
+  "TOP": "顶",
+  "BOTTOM": "底",
+  "View cube": "视角立方体",
+  "Home view": "主视图",
+  "Home view (isometric)": "主视图（等轴测）"
 }

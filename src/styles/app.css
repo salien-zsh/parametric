@@ -229,7 +229,7 @@ a.icon-btn { text-decoration: none; }
 /* Feature dialogs follow Fusion: a compact card with the title bar on top,
    scrolling form, and Cancel / OK pinned to the bottom right. */
 .panel-layer .pm {
-  pointer-events: auto; position: absolute; top: 54px; right: 14px; width: 320px;
+  pointer-events: auto; position: absolute; top: 54px; right: 148px; width: 320px;
   max-width: calc(100% - 28px); max-height: calc(100% - 78px); overflow: hidden;
   display: flex; flex-direction: column; min-height: 0;
   background: var(--panel); border: 1px solid var(--border-strong); border-radius: 8px;
@@ -247,7 +247,22 @@ a.icon-btn { text-decoration: none; }
   order: 3; justify-content: flex-end; gap: 8px; padding: 8px 12px;
   background: var(--panel); border-top: 1px solid var(--border); border-bottom: 0;
 }
-.panel-layer .pm-actions .icon-btn { width: 34px; height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel-2); }
+.panel-layer .pm-actions .icon-btn { display: inline-flex; align-items: center; gap: 5px; width: auto; padding: 0 12px; height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel-2); font-size: var(--fs-sm); }
+.panel-layer .pm-close { margin-left: auto; width: 26px; height: 26px; }
+/* Fusion-style ViewCube, top right of the graphics area. */
+.view-cube { position: absolute; top: 10px; right: 12px; z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.view-cube[hidden] { display: none; }
+.vc-canvas { width: 112px; height: 112px; cursor: pointer; display: block; }
+.vc-face {
+  position: absolute; inset: 0; display: grid; place-items: center; padding: 0; cursor: pointer;
+  background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--border-strong);
+  color: var(--text-2); font-size: 9px; font-weight: 600; letter-spacing: 0.04em; backface-visibility: hidden;
+}
+.vc-face span { display: block; transform: scaleX(-1); }
+.vc-face:hover { background: var(--accent-weak); color: var(--text); }
+.vc-face.on { background: color-mix(in srgb, var(--accent) 28%, var(--panel)); color: var(--text); border-color: var(--accent); }
+.vc-home { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--border); background: color-mix(in srgb, var(--panel) 88%, transparent); color: var(--text-2); }
+.vc-home:hover { background: var(--hover); color: var(--text); }
 .panel-layer .pm-actions .ok { background: var(--accent); color: #fff; border-color: var(--accent); }
 .panel-layer .pm-actions .cancel { background: transparent; color: var(--text-2); }
 .panel-layer .pm-actions .icon-btn:hover { filter: brightness(1.05); }
@@ -437,7 +452,7 @@ a.icon-btn { text-decoration: none; }
 .hud .split { display: flex; align-items: center; }
 .hud .split .caret { width: 14px; min-width: 14px; height: 28px; }
 .hud .sep { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
-.confirm-corner { position: absolute; top: 8px; right: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 4; }
+.confirm-corner { position: absolute; top: 8px; right: 138px; display: flex; flex-direction: column; gap: 4px; z-index: 4; }
 .confirm-corner button { width: 40px; height: 40px; border-radius: var(--radius); border: 1px solid var(--border); background: color-mix(in srgb, var(--panel) 90%, transparent); display: grid; place-items: center; }
 .confirm-corner .ok { color: var(--success); }
 .confirm-corner .cancel { color: var(--danger); }

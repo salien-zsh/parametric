@@ -32,6 +32,7 @@ import { FeatureTree } from './tree';
 import { DrawingPanel, DrawingWorkspace } from './drawing';
 import { Viewport, type VPEvent } from './viewport';
 import { CanvasValueHandle } from './canvas-value';
+import { ViewCube } from './view-cube';
 import { type Location } from '../platform/files';
 import { DEFAULT_SETTINGS, normalizeSettings, type Settings } from './settings';
 import { tr } from '../i18n';
@@ -83,6 +84,7 @@ export class App {
   private panelFloating = false;
   /** Fusion-style value box beside the feature being edited. */
   private valueHandles: CanvasValueHandle[] = [];
+  private viewCube: ViewCube | null = null;
   /** An assembly component whose part is open for editing (Fusion's in-place part edit). */
   componentEdit: {
     assembly: import('../model/types').PartDocument;
@@ -162,6 +164,7 @@ export class App {
     this.buildLeftTabs();
     this.buildRibbonTabs();
     this.buildHud();
+    this.viewCube = new ViewCube(this);
     this.buildTaskPane();
     this.bindShell();
     this.store.on((reason) => this.onStoreChange(reason));
@@ -351,9 +354,11 @@ export class App {
     const head = h('div', { class: 'pm-head' }, icon(p.icon, 18), h('div', { class: 'title', role: 'heading', 'aria-level': '2', tabindex: '-1' }, p.title));
     const actions = h('div', { class: 'pm-actions' });
     if (p.confirm) {
+      const close = h('button', { class: 'icon-btn pm-close', type: 'button', 'aria-label': tr("Close"), title: tr("Cancel (Esc)"), onclick: () => void this.closePanel(false) }, icon('close', 18));
+      head.append(close);
       actions.append(
-        h('button', { class: 'icon-btn ok', type: 'button', 'aria-label': tr("OK"), title: tr("OK (Enter)"), onclick: () => void this.closePanel(true) }, icon('check', 20)),
-        h('button', { class: 'icon-btn cancel', type: 'button', 'aria-label': tr("Cancel"), title: tr("Cancel (Esc)"), onclick: () => void this.closePanel(false) }, icon('close', 20)),
+        h('button', { class: 'icon-btn cancel', type: 'button', 'aria-label': tr("Cancel"), title: tr("Cancel (Esc)"), onclick: () => void this.closePanel(false) }, icon('close', 16), h('span', {}, tr("Cancel"))),
+        h('button', { class: 'icon-btn ok', type: 'button', 'aria-label': tr("OK"), title: tr("OK (Enter)"), onclick: () => void this.closePanel(true) }, icon('check', 16), h('span', {}, tr("OK"))),
       );
     } else {
       actions.append(h('button', { class: 'btn small', type: 'button', onclick: () => (p.onCloseClick ? p.onCloseClick() : void this.closePanel(false)) }, p.closeLabel));
@@ -379,6 +384,7 @@ export class App {
     if (id === 'assembly' && !this.isAssembly) id = 'features';
     if (id === 'features' && this.isAssembly) id = 'assembly';
     this.ribbonTab = id;
+    this.viewCube?.sync();
     for (const b of this.shell.cmTabs.querySelectorAll<HTMLElement>('[role="tab"]')) {
       b.setAttribute('aria-selected', String(b.dataset.tab === id));
       // The drawing has its own tab; model tabs are hidden while it is open.
@@ -2029,6 +2035,7 @@ export class App {
     this.sketchEditor?.onCamera();
     this.viewport.onCamera();
     for (const h of this.valueHandles) h.position();
+    this.viewCube?.sync();
   }
 
   // ---------- panels ----------

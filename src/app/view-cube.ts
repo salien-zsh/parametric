@@ -1,0 +1,142 @@
+// Fusion-style ViewCube in the top-right corner of the graphics area.
+// It is drawn on a canvas so the face labels stay upright while the cube turns
+// with the camera; clicking a visible face snaps to that standard view and the
+// small house button returns to isometric.
+
+import { h } from '../ui/dom';
+import { icon } from '../ui/icons';
+import { tr } from '../i18n';
+import type { App } from './app';
+import type { ViewName } from '../render/camera';
+
+type Vec3 = [number, number, number];
+interface Face {
+  label: string;
+  normal: Vec3;
+  verts: Vec3[];
+  view: ViewName;
+}
+
+const FACES: Face[] = [
+  { label: tr("FRONT"), normal: [0, 0, 1], verts: [[-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]], view: 'front' },
+  { label: tr("BACK"), normal: [0, 0, -1], verts: [[1, -1, -1], [-1, -1, -1], [-1, 1, -1], [1, 1, -1]], view: 'back' },
+  { label: tr("RIGHT"), normal: [1, 0, 0], verts: [[1, -1, 1], [1, -1, -1], [1, 1, -1], [1, 1, 1]], view: 'right' },
+  { label: tr("LEFT"), normal: [-1, 0, 0], verts: [[-1, -1, -1], [-1, -1, 1], [-1, 1, 1], [-1, 1, -1]], view: 'left' },
+  { label: tr("TOP"), normal: [0, 1, 0], verts: [[-1, 1, 1], [1, 1, 1], [1, 1, -1], [-1, 1, -1]], view: 'top' },
+  { label: tr("BOTTOM"), normal: [0, -1, 0], verts: [[-1, -1, -1], [1, -1, -1], [1, -1, 1], [-1, -1, 1]], view: 'bottom' },
+];
+
+const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+export class ViewCube {
+  readonly el: HTMLElement;
+  private readonly canvas: HTMLCanvasElement;
+  private readonly ctx: CanvasRenderingContext2D | null;
+  private readonly size = 112;
+  private hover = -1;
+  private lastKey = '';
+
+  constructor(private app: App) {
+    this.canvas = h('canvas', { class: 'vc-canvas', width: String(this.size), height: String(this.size), 'aria-label': tr("View cube"), role: 'img' }) as HTMLCanvasElement;
+    this.ctx = this.canvas.getContext('2d');
+    this.canvas.addEventListener('pointermove', (e) => this.pick(e, true));
+    this.canvas.addEventListener('pointerleave', () => { if (this.hover !== -1) { this.hover = -1; this.sync(true); } });
+    this.canvas.addEventListener('click', (e) => this.pick(e, false));
+    const home = h('button', { class: 'vc-home', type: 'button', 'aria-label': tr("Home view"), title: tr("Home view (isometric)") }, icon('viewIso', 16));
+    home.addEventListener('click', () => app.viewport.setView('isometric'));
+    this.el = h('div', { class: 'view-cube', role: 'group', 'aria-label': tr("View cube") }, this.canvas, home);
+    app.shell.viewport.append(this.el);
+    this.sync();
+  }
+
+  /** Projects a world point to canvas pixels. */
+  private project(p: Vec3): { x: number; y: number; z: number } {
+    const cam = this.app.renderer.camera;
+    const r = cam.right, u = cam.up, b = cam.back;
+    const s = 26;
+    return {
+      x: this.size / 2 + dot(p, r as Vec3) * s,
+      y: this.size / 2 - dot(p, u as Vec3) * s,
+      z: dot(p, b as Vec3),
+    };
+  }
+
+  /** Visible faces, nearest last (painter order). */
+  private visibleFaces(): { face: Face; pts: { x: number; y: number }[]; depth: number }[] {
+    const cam = this.app.renderer.camera;
+    const back = cam.back as Vec3;
+    const out: { face: Face; pts: { x: number; y: number }[]; depth: number }[] = [];
+    for (const face of FACES) {
+      if (dot(face.normal, back) <= 0.02) continue;
+      const pts = face.verts.map((v) => this.project(v as Vec3));
+      out.push({ face, pts: pts.map(({ x, y }) => ({ x, y })), depth: pts.reduce((a, p) => a + p.z, 0) / pts.length });
+    }
+    return out.sort((a, b) => a.depth - b.depth);
+  }
+
+  sync(force = false) {
+    const app = this.app;
+    this.el.hidden = app.inDrawing;
+    if (this.el.hidden || !this.ctx) return;
+    const cam = app.renderer.camera;
+    const key = [...cam.right, ...cam.up, ...cam.back, cam.viewName() ?? '', String(this.hover)].join(',');
+    if (!force && key === this.lastKey) return;
+    this.lastKey = key;
+    const ctx = this.ctx;
+    const style = getComputedStyle(this.app.shell.root);
+    const text = style.getPropertyValue('--text-2').trim() || '#889';
+    const active = style.getPropertyValue('--accent').trim() || '#2a7fff';
+    ctx.clearRect(0, 0, this.size, this.size);
+    const current = cam.viewName();
+    const faces = this.visibleFaces();
+    faces.forEach(({ face, pts }, index) => {
+      const isActive = current === face.view;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (const p of pts.slice(1)) ctx.lineTo(p.x, p.y);
+      ctx.closePath();
+      ctx.fillStyle = isActive ? 'rgba(42,127,255,0.30)' : this.hover === index ? 'rgba(120,160,220,0.30)' : 'rgba(130,140,150,0.20)';
+      ctx.fill();
+      ctx.strokeStyle = isActive ? active : 'rgba(110,120,130,0.75)';
+      ctx.lineWidth = isActive ? 1.8 : 1;
+      ctx.stroke();
+      // Label upright at the face centre, when the face is big enough.
+      const cx = pts.reduce((a, p) => a + p.x, 0) / pts.length;
+      const cy = pts.reduce((a, p) => a + p.y, 0) / pts.length;
+      const area = Math.abs(pts.reduce((a, p, i) => {
+        const q = pts[(i + 1) % pts.length];
+        return a + p.x * q.y - q.x * p.y;
+      }, 0)) / 2;
+      if (area > 420) {
+        ctx.fillStyle = isActive ? text : text;
+        ctx.font = '600 9px ui-sans-serif, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(face.label, cx, cy);
+      }
+    });
+  }
+
+  private pick(e: PointerEvent, hover: boolean) {
+    if (!this.ctx) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * this.size;
+    const y = ((e.clientY - rect.top) / rect.height) * this.size;
+    const faces = this.visibleFaces();
+    let hit = -1;
+    faces.forEach(({ pts }, i) => {
+      let inside = false;
+      for (let a = 0, b = pts.length - 1; a < pts.length; b = a++) {
+        const pa = pts[a], pb = pts[b];
+        if ((pa.y > y) !== (pb.y > y) && x < ((pb.x - pa.x) * (y - pa.y)) / (pb.y - pa.y) + pa.x) inside = !inside;
+      }
+      if (inside) hit = i;
+    });
+    if (hover) {
+      this.canvas.style.cursor = hit >= 0 ? 'pointer' : 'default';
+      if (hit !== this.hover) { this.hover = hit; this.sync(true); }
+      return;
+    }
+    if (hit >= 0) this.app.viewport.setView(faces[hit].face.view);
+  }
+}
