@@ -203,7 +203,15 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
     newBody.hidden = f.cut;
     outward.hidden = !hasDraft;
     const startOffset = numberField({ label: tr("Start offset"), icon: 'ruler', value: f.startOffset ?? 0, kind: 'length', ctx, onChange: (v) => { f.startOffset = v; this.changed(); } });
+    let dir2sec: HTMLElement;
     const dir1 = section(tr("Direction 1"), [
+      // Two directions, like Inventor's Direction 2: the second handle appears
+      // at the other side of the sketch plane.
+      checkbox(tr("Two directions"), !!f.dir2, (v) => {
+        f.dir2 = v ? { end: 'blind', depth: f.depth } : null;
+        dir2sec.hidden = !v || f.end === 'midPlane';
+        this.changed();
+      }),
       h('div', { class: 'row' }, flipButton(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); }), h('div', { class: 'grow' },
         selectField(tr("End condition"), f.end, endOpts, (v) => {
           f.end = v;
@@ -223,13 +231,13 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
       checkbox(tr("Intersect"), !!f.intersect, (v) => { f.intersect = v; if (v) f.cut = false; this.changed(); }),
     ]);
     const d2depth = numberField({ label: tr("Depth"), icon: 'ruler', value: f.dir2?.depth ?? f.depth, kind: 'length', ctx, min: 1e-6, onChange: (v) => { if (f.dir2) { f.dir2.depth = v; this.changed(); } } });
-    const dir2sec = section(tr("Direction 2"), [
+    dir2sec = section(tr("Direction 2"), [
       selectField(tr("End condition"), f.dir2?.end ?? 'blind', [{ value: 'blind' as const, label: tr("Blind") }, { value: 'throughAll' as const, label: tr("Through All") }], (v) => {
         if (f.dir2) { f.dir2.end = v; d2depth.hidden = v === 'throughAll'; this.changed(); }
       }),
       d2depth,
-    ], { collapsed: !f.dir2, checkbox: { checked: !!f.dir2, onChange: (v) => { f.dir2 = v ? { end: 'blind', depth: f.depth } : null; this.changed(); } } });
-    dir2sec.hidden = f.end === 'midPlane';
+    ]);
+    dir2sec.hidden = !f.dir2 || f.end === 'midPlane';
     const profiles = profilesField(this.app, f, () => this.changed());
     return [section(tr("Profile"), profiles ? [sketch.el, profiles] : [sketch.el]), dir1, dir2sec];
   }
@@ -256,27 +264,39 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
    * Fusion-style handle at the end of the extrusion: drag along the direction
    * to change the depth, or type it. Through All has no distance to show.
    */
-  canvasValue(): CanvasValue | null {
+  canvasValue(): CanvasValue | CanvasValue[] {
     const f = this.f;
-    if (!f.sketch || f.end === 'throughAll' || f.end === 'toObject') return null;
+    if (!f.sketch || f.end === 'throughAll' || f.end === 'toObject') return [];
     const sk = this.app.store.feature(f.sketch);
-    if (sk?.type !== 'sketch') return null;
+    if (sk?.type !== 'sketch') return [];
     const fr = this.app.frameOfSketch(sk) ?? this.app.frames[f.sketch] ?? null;
-    if (!fr) return null;
+    if (!fr) return [];
     const dir = scale(fr.n, (f.cut ? -1 : 1) * (f.flip ? -1 : 1));
     const depth = this.depthNumber();
-    // Place the handle at the middle of the sketch, then at the end of the
-    // extrusion, like the arrow Fusion shows.
     const b = sketchBounds(new SketchIndex(sk.entities));
     const center: Vec3 = b ? toWorld(fr, [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2]) : fr.o;
-    const anchor = add(center, scale(dir, f.end === 'midPlane' ? depth / 2 : depth));
-    return {
-      anchor, axis: dir, value: depth, kind: 'length', label: tr("Depth"), min: 1e-6,
-      onChange: (v) => { f.depth = v; this.syncDepth(); this.changed(); },
+    const taper = {
+      value: Number(f.draft) || 0, min: 0, max: 60,
+      onChange: (v: number) => { f.draft = Math.round(v * 10) / 10; this.changed(); },
+    };
+    const first: CanvasValue = {
+      anchor: add(center, scale(dir, f.end === 'midPlane' ? depth / 2 : depth)),
+      arrowFrom: center,
+      axis: dir, value: depth, kind: 'length', label: tr("Depth"), min: 1e-6, taper,
+      onChange: (v) => { f.depth = Math.max(1e-6, v); this.syncDepth(); this.changed(); },
       menu: () => [
         { label: tr("Reverse direction"), icon: 'reset', run: () => { f.flip = !f.flip; this.changed(); } },
       ],
     };
+    if (!f.dir2) return [first];
+    const d2 = f.dir2.end === 'throughAll' ? depth : Number(this.app.store.evalParam(f.dir2.depth, 'length')) || 0;
+    const second: CanvasValue = {
+      anchor: add(center, scale(dir, -d2)),
+      arrowFrom: center,
+      axis: scale(dir, -1), value: d2, kind: 'length', label: tr("Depth (Direction 2)"), taper,
+      onChange: (v) => { if (f.dir2) { f.dir2.depth = Math.max(1e-6, v); this.changed(); } },
+    };
+    return [first, second];
   }
 }
 

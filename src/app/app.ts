@@ -82,7 +82,7 @@ export class App {
   /** The command panel is a floating dialog over the graphics area (Fusion), not a left-pane sheet. */
   private panelFloating = false;
   /** Fusion-style value box beside the feature being edited. */
-  private valueHandle: CanvasValueHandle | null = null;
+  private valueHandles: CanvasValueHandle[] = [];
   /** An assembly component whose part is open for editing (Fusion's in-place part edit). */
   componentEdit: {
     assembly: import('../model/types').PartDocument;
@@ -2028,7 +2028,7 @@ export class App {
   onCameraChange() {
     this.sketchEditor?.onCamera();
     this.viewport.onCamera();
-    this.valueHandle?.position();
+    for (const h of this.valueHandles) h.position();
   }
 
   // ---------- panels ----------
@@ -2109,16 +2109,20 @@ export class App {
    * not interrupted by a rebuild.
    */
   syncCanvasValue() {
-    const spec = this.panel?.canvasValue() ?? null;
-    if (!spec) { this.clearCanvasValue(); return; }
-    if (!this.valueHandle) this.valueHandle = new CanvasValueHandle(this, spec);
-    else this.valueHandle.set(spec);
-    this.valueHandle.position();
+    const raw = this.panel?.canvasValue() ?? null;
+    const specs = raw ? (Array.isArray(raw) ? raw : [raw]) : [];
+    if (!specs.length) { this.clearCanvasValue(); return; }
+    while (this.valueHandles.length > specs.length) this.valueHandles.pop()!.dispose();
+    specs.forEach((spec, i) => {
+      if (!this.valueHandles[i]) this.valueHandles[i] = new CanvasValueHandle(this, spec);
+      else this.valueHandles[i].set(spec);
+      this.valueHandles[i].position();
+    });
   }
 
   clearCanvasValue() {
-    this.valueHandle?.dispose();
-    this.valueHandle = null;
+    for (const h of this.valueHandles) h.dispose();
+    this.valueHandles = [];
   }
 
   private renderConfirmCorner() {

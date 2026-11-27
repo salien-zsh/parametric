@@ -16,6 +16,10 @@ import { tr } from '../i18n';
 export interface CanvasValueSpec {
   /** World point the value belongs to; the box is placed beside it. */
   anchor: Vec3;
+  /** Where the arrow starts (e.g. the sketch plane), for the arrow indicator. */
+  arrowFrom?: Vec3 | null;
+  /** Shift-dragging the handle changes this taper angle instead of the value. */
+  taper?: { value: number; min: number; max: number; onChange: (value: number) => void };
   /** Direction the value grows in (world). Null: drag vertically on screen. */
   axis?: Vec3 | null;
   /** Value in model units (mm or degrees). */
@@ -54,6 +58,7 @@ export class CanvasValueHandle {
   private readonly menuBtn: HTMLButtonElement;
   private readonly leader: SVGSVGElement;
   private readonly line: SVGLineElement;
+  private readonly arrow: SVGPolygonElement;
   private readonly dot: HTMLElement;
   private drag: { id: number; sx: number; sy: number; start: number; dx: number; dy: number; len2: number; screen: boolean } | null = null;
   private timer = 0;
@@ -70,7 +75,9 @@ export class CanvasValueHandle {
     this.leader.setAttribute('aria-hidden', 'true');
     this.line = document.createElementNS(SVG_NS, 'line');
     this.line.setAttribute('class', 'cv-line');
-    this.leader.append(this.line);
+    this.arrow = document.createElementNS(SVG_NS, 'polygon');
+    this.arrow.setAttribute('class', 'cv-arrow');
+    this.leader.append(this.line, this.arrow);
     this.dot = h('div', { class: 'cv-dot', 'aria-hidden': 'true' });
 
     const grip = h('span', {
@@ -122,6 +129,40 @@ export class CanvasValueHandle {
     this.el.hidden = false;
     this.dot.hidden = false;
     this.leader.style.display = '';
+    // The indicator is an arrow from the sketch plane to the handle when the
+    // feature gives a start point; otherwise a leader to the value box.
+    const from = this.spec.arrowFrom ? cam.project(this.spec.arrowFrom) : null;
+    if (from && Number.isFinite(from[0]) && Number.isFinite(from[1])) {
+      this.line.setAttribute('x1', String(from[0]));
+      this.line.setAttribute('y1', String(from[1]));
+      this.line.setAttribute('x2', String(x));
+      this.line.setAttribute('y2', String(y));
+      // A fixed-length arrow along the feature axis, so it reads as a handle
+      // even when the axis is foreshortened (Inventor/Fusion style).
+      let ux = 0, uy = -1;
+      if (this.spec.axis) {
+        const tip = cam.project(add(this.spec.anchor, normalize(this.spec.axis)));
+        const ax = tip[0] - x, ay = tip[1] - y;
+        const alen = Math.hypot(ax, ay);
+        if (alen > 0.5) { ux = ax / alen; uy = ay / alen; }
+      }
+      const size = 12;
+      const startX = x - ux * 46, startY = y - uy * 46;
+      this.line.setAttribute('x1', String(startX));
+      this.line.setAttribute('y1', String(startY));
+      // Stop before the handle dot so the arrow head stays visible.
+      const tipX = x - ux * 10, tipY = y - uy * 10;
+      this.line.setAttribute('x2', String(tipX));
+      this.line.setAttribute('y2', String(tipY));
+      this.arrow.setAttribute('points', [
+        `${tipX},${tipY}`,
+        `${tipX - ux * size - uy * size * 0.55},${tipY - uy * size + ux * size * 0.55}`,
+        `${tipX - ux * size + uy * size * 0.55},${tipY - uy * size - ux * size * 0.55}`,
+      ].join(' '));
+      this.arrow.style.display = '';
+    } else {
+      this.arrow.style.display = 'none';
+    }
     const bw = this.el.offsetWidth || 128, bh = this.el.offsetHeight || 26;
     let left = Math.max(4, Math.min(w - bw - 4, x + 20));
     let top = Math.max(4, Math.min(hgt - bh - 4, y - 30));
@@ -129,8 +170,28 @@ export class CanvasValueHandle {
     // view HUD at the top centre: the box must never swallow their clicks.
     if (left + bw > w - 64 && top < 104) left = Math.max(4, w - bw - 72);
     if (top < 50 && left + bw > w / 2 - 150 && left < w / 2 + 150) top = 52;
+    // Keep the box clear of an open floating feature panel so its controls stay clickable.
+    const panel = document.querySelector<HTMLElement>('.panel-layer .pm');
+    if (panel && !panel.hidden) {
+      const root = this.app.shell.viewport.getBoundingClientRect();
+      const pr = panel.getBoundingClientRect();
+      const px = pr.left - root.left, py = pr.top - root.top;
+      const overlaps = left < px + pr.width && left + bw > px && top < py + pr.height && top + bh > py;
+      if (overlaps) {
+        if (px + pr.width + 8 + bw <= w - 4) left = px + pr.width + 8;
+        else if (py + pr.height + 8 + bh <= hgt - 4) top = py + pr.height + 8;
+        else left = Math.max(4, px - bw - 8);
+      }
+    }
     this.el.style.left = `${left}px`;
     this.el.style.top = `${top}px`;
+    // No start point: the leader continues from the dot to the box.
+    if (this.arrow.style.display === 'none') {
+      this.line.setAttribute('x1', String(x));
+      this.line.setAttribute('y1', String(y));
+      this.line.setAttribute('x2', String(left));
+      this.line.setAttribute('y2', String(top + bh / 2));
+    }
     this.dot.style.left = `${x}px`;
     this.dot.style.top = `${y}px`;
     this.line.setAttribute('x1', String(x));
@@ -214,6 +275,14 @@ export class CanvasValueHandle {
       const d = this.drag;
       if (!d || d.id !== e.pointerId) return;
       const mx = e.clientX - d.sx, my = e.clientY - d.sy;
+      if (e.shiftKey && this.spec.taper) {
+        // Shift-drag is the taper handle, like Inventor's taper drag.
+        const t = this.spec.taper;
+        const nv = Math.max(t.min, Math.min(t.max, t.value - my * 0.2));
+        this.input.value = formatCanvasValue(nv, 'angle', this.ctx);
+        t.onChange(nv);
+        return;
+      }
       let delta: number;
       if (d.screen) {
         // Nothing world-aligned to project (e.g. a fillet radius): a vertical

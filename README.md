@@ -1,3 +1,4 @@
+- **Extrude handles**: arrow-shaped on-model handles draggable on both sides of the sketch plane (Two directions), and Shift-dragging a handle changes the taper (draft) angle while dragging.
 - **Local project home**: a Fusion-style start page lists local projects and their parts. Projects group browser-stored parts (or a desktop project folder), and the first save of a part asks which project (or project path) it belongs to; nothing is uploaded.
 - **Flat Pattern** unfolds the base flange and every edge flange using the bend allowance (angle × (r + K·t)); suppress it to see the folded part again.
 - **Rounded bends** on edge flanges: the bend follows the base flange bend radius (inner r, outer r + thickness, sampled arc) instead of a sharp corner.

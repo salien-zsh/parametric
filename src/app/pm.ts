@@ -42,6 +42,10 @@ export interface UnitContext {
 export interface CanvasValue {
   /** World point the value belongs to (the leader dot). */
   anchor: Vec3;
+  /** Where the arrow starts (sketch plane) for the arrow indicator. */
+  arrowFrom?: Vec3 | null;
+  /** Shift-dragging the handle changes this taper angle. */
+  taper?: { value: number; min: number; max: number; onChange: (value: number) => void };
   /** Direction the value grows in; null for a vertical screen drag. */
   axis?: Vec3 | null;
   /** Value in model units (mm or degrees). */
@@ -79,7 +83,7 @@ export abstract class PropertyPanel {
   }
 
   /** Value handle drawn on the model for this panel, or null for none. */
-  canvasValue(): CanvasValue | null {
+  canvasValue(): CanvasValue | CanvasValue[] | null {
     return null;
   }
 
