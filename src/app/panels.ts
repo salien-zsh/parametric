@@ -288,7 +288,16 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
         { label: tr("Reverse direction"), icon: 'reset', run: () => { f.flip = !f.flip; this.changed(); } },
       ],
     };
-    if (!f.dir2) return [first];
+    // Inventor-style taper handle: a small curved grip near the arrow end.
+    const lateral = cross(dir, fr.x);
+    const side = len(lateral) > 1e-9 ? scale(lateral, 1 / len(lateral)) : fr.y;
+    const tip = add(center, scale(dir, f.end === 'midPlane' ? depth / 2 : depth));
+    const taperHandle: CanvasValue = {
+      anchor: add(tip, scale(side, Math.max(depth * 0.35, 8))),
+      axis: null, value: Number(f.draft) || 0, kind: 'angle', label: tr("Taper angle"), min: 0, max: 60, style: 'taper',
+      onChange: (v) => { f.draft = Math.round(v * 10) / 10; this.changed(); },
+    };
+    if (!f.dir2) return [first, taperHandle];
     const d2 = f.dir2.end === 'throughAll' ? depth : Number(this.app.store.evalParam(f.dir2.depth, 'length')) || 0;
     const second: CanvasValue = {
       anchor: add(center, scale(dir, -d2)),
@@ -296,7 +305,7 @@ export class ExtrudePanel extends FeaturePanel<ExtrudeFeature> {
       axis: scale(dir, -1), value: d2, kind: 'length', label: tr("Depth (Direction 2)"), taper,
       onChange: (v) => { if (f.dir2) { f.dir2.depth = Math.max(1e-6, v); this.changed(); } },
     };
-    return [first, second];
+    return [first, second, taperHandle];
   }
 }
 

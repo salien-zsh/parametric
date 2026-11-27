@@ -4,7 +4,7 @@ import { openApp } from './helpers';
 type Handle = { __parametric: import('../../src/app/app').App };
 
 const app = (page: import('@playwright/test').Page) => page.waitForFunction(() => (window as unknown as { __parametric?: unknown }).__parametric);
-const valueBox = (page: import('@playwright/test').Page) => page.locator('.cv-value');
+const valueBox = (page: import('@playwright/test').Page) => page.locator('.cv-value').first();
 const valueInput = (page: import('@playwright/test').Page) => valueBox(page).locator('input');
 
 test('a plane offset is edited on the model and the panel follows it', async ({ page }) => {
@@ -114,7 +114,7 @@ test('an extrusion depth is dragged on the model and committed', async ({ page }
   // Dragging the anchor dot changes the depth as well.
   await page.evaluate(() => (window as unknown as Handle).__parametric.whenBuilt());
   await page.waitForTimeout(300);
-  const dot = page.locator('.cv-dot');
+  const dot = page.locator('.cv-dot:visible');
   const r = (await dot.boundingBox())!;
   await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2);
   await page.mouse.down();

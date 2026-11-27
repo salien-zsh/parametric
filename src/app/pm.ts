@@ -46,6 +46,8 @@ export interface CanvasValue {
   arrowFrom?: Vec3 | null;
   /** Shift-dragging the handle changes this taper angle. */
   taper?: { value: number; min: number; max: number; onChange: (value: number) => void };
+  /** 'taper' draws a small curved handle whose drag changes an angle. */
+  style?: 'taper';
   /** Direction the value grows in; null for a vertical screen drag. */
   axis?: Vec3 | null;
   /** Value in model units (mm or degrees). */

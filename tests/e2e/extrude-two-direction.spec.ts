@@ -27,12 +27,15 @@ test('Extrude offers two opposite arrows and a Shift-drag taper', async ({ page 
   await expect(page.getByRole('heading', { name: 'Extrude' })).toBeVisible();
 
   // One arrow for Direction 1.
-  await expect(page.locator('.cv-arrow')).toHaveCount(1);
+  await expect(page.locator('.cv-arrow:visible')).toHaveCount(1);
 
   // Two directions: a second arrow appears on the other side of the sketch.
   await page.getByRole('checkbox', { name: 'Two directions' }).check();
   await expect(page.locator('.cv-arrow')).toHaveCount(2);
-  await expect(page.locator('.cv-input')).toHaveCount(2);
+  await expect(page.locator('.cv-input')).toHaveCount(3);
+  // Inventor-style tapered arc handle with its own angle box.
+  await expect(page.locator('.cv-value[aria-label="Taper angle"]')).toBeVisible();
+  await expect(page.locator('.cv-arc:visible')).toHaveCount(1);
   // The second handle sets Direction 2 depth.
   const second = page.locator('.cv-input').nth(1);
   await second.click();
@@ -41,16 +44,14 @@ test('Extrude offers two opposite arrows and a Shift-drag taper', async ({ page 
   await page.evaluate(() => (window as unknown as W).__parametric.whenBuilt());
   await page.waitForTimeout(400);
 
-  // Shift-drag the first handle: the same drag now changes the taper angle.
+  // Drag the curved taper handle: it changes the taper angle directly.
   await page.evaluate(() => (window as unknown as W).__parametric.whenBuilt());
-  const dot = page.locator('.cv-dot').first();
-  const r = (await dot.boundingBox())!;
-  await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2);
-  await page.keyboard.down('Shift');
+  const grip = page.locator('.cv-value[aria-label="Taper angle"] .cv-grip');
+  const g = (await grip.boundingBox())!;
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
   await page.mouse.down();
-  await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2 - 50, { steps: 8 });
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2 - 40, { steps: 8 });
   await page.mouse.up();
-  await page.keyboard.up('Shift');
   await page.waitForTimeout(600);
 
   await page.locator('.confirm-corner .ok').click();

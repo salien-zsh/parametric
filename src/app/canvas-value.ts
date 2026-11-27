@@ -20,6 +20,8 @@ export interface CanvasValueSpec {
   arrowFrom?: Vec3 | null;
   /** Shift-dragging the handle changes this taper angle instead of the value. */
   taper?: { value: number; min: number; max: number; onChange: (value: number) => void };
+  /** 'taper' draws a small curved handle whose drag changes an angle. */
+  style?: 'taper';
   /** Direction the value grows in (world). Null: drag vertically on screen. */
   axis?: Vec3 | null;
   /** Value in model units (mm or degrees). */
@@ -59,6 +61,8 @@ export class CanvasValueHandle {
   private readonly leader: SVGSVGElement;
   private readonly line: SVGLineElement;
   private readonly arrow: SVGPolygonElement;
+  private readonly arc: SVGPathElement;
+  private readonly arcHead: SVGPolygonElement;
   private readonly dot: HTMLElement;
   private drag: { id: number; sx: number; sy: number; start: number; dx: number; dy: number; len2: number; screen: boolean } | null = null;
   private timer = 0;
@@ -77,7 +81,11 @@ export class CanvasValueHandle {
     this.line.setAttribute('class', 'cv-line');
     this.arrow = document.createElementNS(SVG_NS, 'polygon');
     this.arrow.setAttribute('class', 'cv-arrow');
-    this.leader.append(this.line, this.arrow);
+    this.arc = document.createElementNS(SVG_NS, 'path');
+    this.arc.setAttribute('class', 'cv-arc');
+    this.arcHead = document.createElementNS(SVG_NS, 'polygon');
+    this.arcHead.setAttribute('class', 'cv-arc-head');
+    this.leader.append(this.line, this.arrow, this.arc, this.arcHead);
     this.dot = h('div', { class: 'cv-dot', 'aria-hidden': 'true' });
 
     const grip = h('span', {
@@ -129,6 +137,50 @@ export class CanvasValueHandle {
     this.el.hidden = false;
     this.dot.hidden = false;
     this.leader.style.display = '';
+    if (this.spec.style === 'taper') {
+      this.line.style.display = 'none';
+      this.arrow.style.display = 'none';
+      this.arc.style.display = '';
+      this.arcHead.style.display = '';
+      const r = 17;
+      const a0 = -Math.PI * 0.78, a1 = -Math.PI * 0.08;
+      const sx = x + r * Math.cos(a0), sy = y + r * Math.sin(a0);
+      const ex = x + r * Math.cos(a1), ey = y + r * Math.sin(a1);
+      this.arc.setAttribute('d', `M ${sx} ${sy} A ${r} ${r} 0 0 1 ${ex} ${ey}`);
+      const ux = -Math.sin(a1), uy = Math.cos(a1);
+      this.arcHead.setAttribute('points', [
+        `${ex},${ey}`,
+        `${ex - ux * 9 - uy * 5},${ey - uy * 9 + ux * 5}`,
+        `${ex - ux * 9 + uy * 5},${ey - uy * 9 - ux * 5}`,
+      ].join(' '));
+      const tipX = ex, tipY = ey;
+      this.line.setAttribute('x1', String(tipX));
+      this.line.setAttribute('y1', String(tipY));
+      this.line.setAttribute('x2', String(tipX));
+      this.line.setAttribute('y2', String(tipY));
+      const bw0 = this.el.offsetWidth || 128, bh0 = this.el.offsetHeight || 26;
+      // Place the angle box below-left of the arrow, clear of the floating panel.
+      let left0 = Math.max(4, Math.min(w - bw0 - 4, x - 110));
+      let top0 = Math.max(4, Math.min(hgt - bh0 - 4, y + 22));
+      const taperPanel = document.querySelector<HTMLElement>('.panel-layer .pm');
+      if (taperPanel && !taperPanel.hidden) {
+        const root = this.app.shell.viewport.getBoundingClientRect();
+        const pr = taperPanel.getBoundingClientRect();
+        const px = pr.left - root.left, py = pr.top - root.top;
+        if (left0 < px + pr.width && left0 + bw0 > px && top0 < py + pr.height && top0 + bh0 > py) {
+          left0 = px - bw0 - 8 >= 4 ? px - bw0 - 8 : Math.max(4, w - bw0 - 4);
+          if (left0 < px + pr.width && left0 + bw0 > px) top0 = Math.min(hgt - bh0 - 4, py + pr.height + 8);
+        }
+      }
+      this.el.style.left = `${left0}px`;
+      this.el.style.top = `${top0}px`;
+      this.dot.style.left = `${x}px`;
+      this.dot.style.top = `${y}px`;
+      this.dot.hidden = true;
+      return;
+    }
+    this.arc.style.display = 'none';
+    this.arcHead.style.display = 'none';
     // The indicator is an arrow from the sketch plane to the handle when the
     // feature gives a start point; otherwise a leader to the value box.
     const from = this.spec.arrowFrom ? cam.project(this.spec.arrowFrom) : null;
