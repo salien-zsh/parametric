@@ -11,6 +11,8 @@ export interface Settings {
   invertZoom: boolean;
   quality: number;
   autoNormalTo: boolean;
+  /** Show the Fusion-style ViewCube in the graphics area. */
+  showViewCube: boolean;
   defaultUnits: 'MMGS' | 'CGS' | 'MKS' | 'IPS';
 }
 
@@ -25,6 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   invertZoom: false,
   quality: 1,
   autoNormalTo: true,
+  showViewCube: true,
   defaultUnits: 'MMGS',
 };
 
@@ -33,7 +36,7 @@ export function normalizeSettings(value: unknown, fallback: Settings = DEFAULT_S
   const result = { ...fallback };
   if (!value || typeof value !== 'object' || Array.isArray(value)) return result;
   const raw = value as Record<string, unknown>;
-  for (const key of ['showPlanes', 'showOrigin', 'showSketches', 'showRelations', 'showDimensions', 'showGrid', 'snapToGrid', 'invertZoom', 'autoNormalTo'] as const) {
+  for (const key of ['showPlanes', 'showOrigin', 'showSketches', 'showRelations', 'showDimensions', 'showGrid', 'snapToGrid', 'invertZoom', 'autoNormalTo', 'showViewCube'] as const) {
     if (Object.hasOwn(raw, key) && typeof raw[key] === 'boolean') result[key] = raw[key];
   }
   if (Object.hasOwn(raw, 'quality') && (raw.quality === 0 || raw.quality === 1 || raw.quality === 2)) result.quality = raw.quality;

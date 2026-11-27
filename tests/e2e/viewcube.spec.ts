@@ -83,5 +83,10 @@ test('the ViewCube turns with the camera and snaps to a clicked face', async ({ 
   await page.waitForTimeout(400);
   const after = await page.evaluate(() => [...(window as unknown as W).__parametric.renderer.camera.rot]);
   expect(Math.hypot(after[0] - before[0], after[1] - before[1], after[2] - before[2], after[3] - before[3])).toBeGreaterThan(0.05);
+  // The View Cube can be hidden from the View menu like the other display aids.
+  await page.evaluate(() => (window as unknown as W).__parametric.commands.run('showViewCube'));
+  await expect(page.locator('.view-cube')).toBeHidden();
+  await page.evaluate(() => (window as unknown as W).__parametric.commands.run('showViewCube'));
+  await expect(page.locator('.view-cube')).toBeVisible();
   expect(errors).toEqual([]);
 });

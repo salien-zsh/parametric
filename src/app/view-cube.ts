@@ -125,7 +125,7 @@ export class ViewCube {
 
   sync(force = false) {
     const app = this.app;
-    this.el.hidden = app.inDrawing;
+    this.el.hidden = app.inDrawing || app.settings.showViewCube === false;
     if (this.el.hidden || !this.ctx) return;
     const cam = app.renderer.camera;
     const key = [...cam.right, ...cam.up, ...cam.back, cam.viewName() ?? '', String(this.hover), String(this.hoverCorner), String(this.hoverEdge), String(!!this.drag)].join(',');

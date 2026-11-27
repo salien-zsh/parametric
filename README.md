@@ -1,3 +1,4 @@
+- **ViewCube visibility**: View > Hide/Show > View Cube toggles the cube on and off; the choice is saved with the other display settings.
 - **Hole placement mode**: an explicit Fusion-style Placement switch between points on a Selected face and an existing Sketch; picks of the other kind are ignored.
 - **Hole type icons**: the four main hole types (Simple, Counterbore, Countersink, Tapped) are drawn as small section-profile icons on the segmented buttons.
 - **Thread standard table**: the hole Threads section picks ISO Metric or ANSI Unified first, then lists that standard's sizes (M2–M24, #4–1/2 UNC) and fills diameter, pitch and tap drill.

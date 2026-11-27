@@ -598,6 +598,7 @@ export class App {
       this.sketchEditor.render();
     }
     v.refreshStates();
+    this.viewCube?.sync();
     this.commands.changed();
   }
 
