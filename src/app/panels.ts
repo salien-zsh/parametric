@@ -711,7 +711,6 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
   private positionsHint: HTMLElement | null = null;
   private confirmPositions: HTMLButtonElement | null = null;
   private parameterSections: HTMLElement[] = [];
-  private positionsBox: SelectionBox | null = null;
   private positionList: HTMLElement | null = null;
   private addCenterButton: HTMLButtonElement | null = null;
   private addExactButton: HTMLButtonElement | null = null;
@@ -721,8 +720,10 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
 
   constructor(app: App, f: HoleFeature, editing: boolean) {
     super(app, f, editing);
-    this.positionsReady = editing;
-    this.helpText = editing ? '' : tr("Choose the hole positions first, then define the hole type and size.");
+    // Fusion keeps the shape settings visible: positions and type are edited
+    // together and OK creates the hole once at least one position exists.
+    this.positionsReady = true;
+    this.helpText = '';
   }
 
   render(): HTMLElement[] {
@@ -873,7 +874,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       this.syncPlacement();
     });
     this.placementMode = placementMode;
-    const positions = new SelectionBox(this, tr("Positions"), { face: true, planarOnly: true, feature: true, edge: true, vertex: true }, (it) => {
+    const positions = new SelectionBox(this, tr("Positions"), { face: true, feature: true, edge: true, vertex: true }, (it) => {
       // A sketch point sketch and face picking are separate modes, as in Fusion.
       if (placementMode === 'sketch' && it.kind !== 'feature') return null;
       if (placementMode === 'face' && it.kind === 'feature') return null;
@@ -886,7 +887,6 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       this.syncPlacement();
       this.changed();
     }, { placeholder: tr("Click a face, edge, vertex, or choose a sketch with points"), icon: 'point', single: true });
-    this.positionsBox = positions;
     const sk = f.sketch ? this.app.store.feature<SketchFeature>(f.sketch) : null;
     if (sk) positions.setItems([{ item: null, data: sk.id, label: `${sk.name} (${sk.entities.filter((e) => e.t === 'point').length} points)` }]);
     this.positionsHint = h('p', { class: 'field-label', role: 'status' });
@@ -910,20 +910,15 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     this.addExactButton.addEventListener('click', () => this.addHolePointLocal(exactX, exactY));
     this.exactPlacement = [exactXField, exactYField, this.addExactButton];
     const precisionHelp = h('p', { class: 'field-label' }, tr("Exact coordinates use the placement face sketch frame. Edges and vertices can be picked to snap a position."));
-    this.confirmPositions = h('button', { type: 'button', class: 'btn primary small' }, tr("Confirm Positions")) as HTMLButtonElement;
-    this.confirmPositions.addEventListener('click', () => {
-      if (this.positionCount() === 0) return;
-      this.positionsReady = true;
-      this.syncPlacement();
-      this.changed();
-    });
+    // No confirm step: OK creates the hole, as in Fusion.
+    this.confirmPositions = h('button', { type: 'button', class: 'btn primary small', hidden: true }, tr("Confirm Positions")) as HTMLButtonElement;
     // Fusion keeps the position list short: the exact-coordinate tools hide
     // behind one collapsed subsection.
     const precise = section(tr("Exact placement"), [
       precisionHelp, exactXField, exactYField, this.addExactButton, this.addCenterButton,
     ], { collapsed: true });
     const positionsSection = section(tr("Positions"), [
-      placementPick, positions.el, this.positionList, this.positionsHint, this.confirmPositions, precise,
+      placementPick, positions.el, this.positionList, this.positionsHint, precise,
     ]);
 
     const mainKinds: HoleKind[] = ['simple', 'counterbore', 'countersink', 'tapped'];
@@ -964,6 +959,8 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     ]);
     this.parameterSections = [typeSection, threadSection, endSection];
     this.syncPlacement();
+    // Fusion starts on the placement pick when there is no position yet.
+    if (this.positionCount() === 0) this.activate(positions);
     return [positionsSection, typeSection, threadSection, endSection];
   }
 
@@ -984,7 +981,16 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     const app = this.app;
     if (it.kind === 'face') {
       const face = app.faces[it.index];
-      if (!face?.frame) return null;
+      if (!face) return null;
+      // A cylindrical face: use the circular edge it meets a flat face at, so
+      // the hole is centred on the circle (Fusion's cylinder pick).
+      if (!face.frame && face.type === 'cylinder') {
+        const edge = app.edges.findIndex((e) => e.type === 'circle' && e.center && e.faces.includes(it.index)
+          && e.faces.some((fi) => app.faces[fi]?.frame));
+        if (edge >= 0) return this.placeHoleOnEdge(edge, app.edges[edge].center!) ? { item: null, data: f.sketch, label: tr("Cylinder face") } : null;
+        return null;
+      }
+      if (!face.frame) return null;
       const clicked = app.lastPickPoint ?? face.center;
       const world = this.snapToGeometry(face.frame, clicked, face.center);
       if (!f.sketch) this.ensurePositionSketch(face.frame, face);
@@ -995,8 +1001,9 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     } else if (it.kind === 'edge') {
       const edge = app.edges[it.index];
       if (!edge) return null;
-      const world = edge.type === 'circle' && edge.center ? edge.center : (app.lastPickPoint ?? edge.mid);
-      if (!this.addHolePointWorld(world)) return null;
+      // A circular edge centres the hole; any other edge uses its midpoint.
+      const world = edge.type === 'circle' && edge.center ? edge.center : edge.mid;
+      if (!this.placeHoleOnEdge(it.index, world)) return null;
     } else if (it.kind === 'vertex') {
       if (!this.addHolePointWorld(it.p)) return null;
     } else {
@@ -1040,6 +1047,27 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     if (!frame || !this.onFramePlane(frame, p)) return false;
     const local = toLocal(frame, p);
     return this.addHolePointLocal(local[0], local[1]);
+  }
+
+  /** Places a hole on the planar face that meets an edge, at the given world point. */
+  private placeHoleOnEdge(edgeIndex: number, worldPoint: Vec3): boolean {
+    const app = this.app;
+    const edge = app.edges[edgeIndex];
+    if (!edge) return false;
+    const faceIdx = edge.faces.find((fi) => app.faces[fi]?.frame);
+    if (faceIdx == null) return false;
+    const face = app.faces[faceIdx];
+    if (!face.frame) return false;
+    if (!this.f.sketch) this.ensurePositionSketch(face.frame, face);
+    const frame = this.currentSketchFrame();
+    if (!frame || !this.onFramePlane(frame, worldPoint)) return false;
+    const local = toLocal(frame, worldPoint);
+    const ok = this.addHolePointLocal(local[0], local[1]);
+    if (ok) {
+      this.renderPositionRows();
+      this.syncPlacement();
+    }
+    return ok;
   }
 
   private addHolePointLocal(x: number, y: number): boolean {
@@ -1157,14 +1185,11 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
 
   private syncPlacement() {
     const count = this.positionCount();
-    if (count === 0) this.positionsReady = false;
     this.renderPositionRows();
     if (this.positionsHint) {
-      this.positionsHint.textContent = this.positionsReady
-        ? tr("Positions confirmed. Click more points to add holes, or set the hole type and end condition.")
-        : count
-          ? tr("{0} hole position(s). Add more points, then confirm.", [count])
-          : tr("Place at least one hole position on a planar face or in a sketch.");
+      this.positionsHint.textContent = count
+        ? tr("{0} hole position(s). Click more points or press OK.", [count])
+        : tr("Click a face, circular edge or cylinder to place hole positions.");
     }
     if (this.confirmPositions) {
       this.confirmPositions.disabled = count === 0;
@@ -1173,9 +1198,9 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     if (this.addCenterButton) this.addCenterButton.disabled = !this.f.sketch;
     if (this.addExactButton) this.addExactButton.disabled = !this.f.sketch;
     for (const el of this.exactPlacement) el.hidden = !this.f.sketch;
-    for (const s of this.parameterSections) s.hidden = !this.positionsReady;
-    if (this.threadSection) this.threadSection.hidden = !this.positionsReady || this.f.kind !== 'tapped';
-    if (!this.positionsReady && this.positionsBox) this.activate(this.positionsBox);
+    // The type and termination sections stay visible while positions are picked.
+    for (const s of this.parameterSections) s.hidden = false;
+    if (this.threadSection) this.threadSection.hidden = this.f.kind !== 'tapped';
   }
 
   cancel() {
@@ -1188,7 +1213,6 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
   protected validate() {
     if (!this.f.sketch) return tr("Place at least one hole position on a planar face or in a sketch");
     if (this.positionCount() === 0) return tr("Add at least one hole position");
-    if (!this.positionsReady) return tr("Confirm the hole positions before creating the hole");
     if (this.f.end === 'toObject' && !this.f.toFace) return tr("Select the face to stop at");
     return null;
   }

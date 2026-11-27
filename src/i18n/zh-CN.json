@@ -2014,5 +2014,7 @@
   "View Cube": "视角立方体",
   "A hole position already exists there.": "该位置已有孔位。",
   "Hole callouts": "孔标注",
-  "Holes": "孔"
+  "Holes": "孔",
+  "Click a face, circular edge or cylinder to place hole positions.": "在面、圆边或圆柱面上单击放置孔位。",
+  "{0} hole position(s). Click more points or press OK.": "已放置 {0} 个孔位。可继续单击或按“确定”。"
 }

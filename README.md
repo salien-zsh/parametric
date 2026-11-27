@@ -1,3 +1,4 @@
+- **Fusion hole flow**: pick positions on a planar face, a circular edge or a cylindrical face (centred on the circle) — or a sketch for exact points — set the type/threads/termination and press OK; there is no separate Confirm Positions step.
 - **Hole callouts on drawings**: each drawing view has an opt-in Holes switch; circular edges get a diameter callout (Ø…) with a leader, and the callouts export with the sheet.
 - **Hole position guard**: clicking or adding a position on top of an existing hole point is ignored with a status message, like Fusion.
 - **ViewCube visibility**: View > Hide/Show > View Cube toggles the cube on and off; the choice is saved with the other display settings.

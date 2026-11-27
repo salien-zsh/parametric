@@ -44,6 +44,11 @@ test('a hole can stop at a planar face and the panel switches end conditions', a
   await placement.getByRole('button', { name: 'Selected face' }).click();
   await expect(placement.getByRole('button', { name: 'Selected face' })).toHaveAttribute('aria-pressed', 'true');
 
+  // Fusion flow: no confirm step; shape settings are visible and OK creates the hole.
+  await expect(page.getByRole('button', { name: 'Confirm Positions' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Termination' })).toBeVisible();
+  await expect(page.locator('.panel-layer .pm-actions .ok')).toBeEnabled();
+
   // Adding a second position at the same point is refused, like Fusion.
   await page.locator('.panel-layer .pm-section > .sec-head', { hasText: 'Exact placement' }).click();
   await page.getByRole('button', { name: 'Add Exact Position' }).click();
