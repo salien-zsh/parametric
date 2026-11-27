@@ -1,9 +1,6 @@
 // Start screen and account menu (or puter.js's <puter-user-menu>, see user-menu.ts).
 
-import { UNIT_SYSTEMS } from '../model/units';
-import type { UnitSystem } from '../model/types';
-import { locationLabel, recentParts, sameLocation } from '../platform/files';
-import { accountChanged, canSignOut, cloudAvailable, env, getProfilePicture, getUser, isSignedIn, puter, signIn, signOut } from '../platform/puter';
+import { accountChanged, canSignOut, env, getProfilePicture, getUser, isSignedIn, puter, signIn, signOut } from '../platform/puter';
 import { getThemeChoice, setThemeChoice } from '../platform/theme';
 import { h } from '../ui/dom';
 import { icon } from '../ui/icons';
@@ -12,10 +9,9 @@ import { toast } from '../ui/overlay';
 import type { App } from './app';
 import { closeAppsPanel, syncAppsLauncher } from './apps-panel';
 import { syncUserMenu, syncUserMenuTheme } from './user-menu';
-import { EXAMPLES } from './examples';
 import type { FileOps } from './fileops';
 import { REPO_URL } from './shell';
-import { projectManagerDialog, resourceCenterDialog } from './workspace-dialogs';
+import { buildStartHome } from './start-home';
 import { tr } from '../i18n';
 
 export class StartScreen {
@@ -26,74 +22,13 @@ export class StartScreen {
 
   show() {
     this.hide();
-    const app = this.app;
-    const units = app.settings.defaultUnits;
-    const unitSel = h('select', { class: 'input', 'aria-label': tr("Units for the new part"), style: { width: 'auto' } }) as HTMLSelectElement;
-    for (const u of Object.values(UNIT_SYSTEMS)) {
-      const o = h('option', { value: u.id }, u.label) as HTMLOptionElement;
-      if (u.id === units) o.selected = true;
-      unitSel.append(o);
-    }
-    unitSel.addEventListener('change', () => { app.changeSettings({ defaultUnits: unitSel.value as UnitSystem }); app.saveSettings(); });
-    const action = (ic: string, t: string, d: string, run: () => void) => {
-      const b = h('button', { class: 'start-action', type: 'button' }, h('span', { style: { color: 'var(--accent)' } }, icon(ic, 24)), h('span', { class: 't' }, t), h('span', { class: 'd' }, d));
-      b.addEventListener('click', run);
-      return b;
-    };
-    const recents = recentParts().slice(0, 6);
-    // The part can have changed behind the start screen (assistant, ribbon): ask before replacing it.
-    const examples = h('div', { class: 'start-actions' }, EXAMPLES.map((ex) => action('part', ex.name, ex.description, async () => {
-      if (!(await this.files.confirmDiscard(tr("open an example")))) return;
-      this.hide();
-      app.loadDocument(ex.make(), null);
-    })));
-    const card = h('div', { class: 'start-card', role: 'dialog', 'aria-modal': 'false', 'aria-labelledby': 'start-title' },
-      h('h1', { id: 'start-title' }, h('img', { src: './icon-128.png', alt: '' }), tr("Parametric")),
-      h('div', { class: 'sub' }, tr("Feature-based 3D part modeling in your browser.")),
-      h('div', { class: 'start-actions' },
-        action('new', tr("New part"), tr("Start from a blank part"), async () => {
-          if (await this.files.newPart()) this.hide();
-        }),
-        action('part', tr("New Assembly"), tr("Place multiple parts, position them, then create an assembly drawing"), async () => {
-          if (!(await this.files.confirmDiscard(tr("start a new assembly")))) return;
-          this.hide();
-          app.newAssembly();
-        }),
-        action('open', tr("Open"), cloudAvailable() ? tr("Open a part from your Puter cloud or this browser") : tr("Open a part saved in this browser"), () => { this.hide(); void this.files.open(); }),
-        action('upload', tr("Open from device"), tr("Open a part file, or a STEP or SolidWorks file"), () => { this.hide(); void this.files.openFromDevice(); }),
-        action('files', tr("Local Project Manager"), tr("Organise locally saved parts into projects"), () => { void projectManagerDialog(app, this.files, () => this.hide()); }),
-        action('part', tr("Part Resource Center"), tr("Browse and insert reusable parameterized parts"), () => { void resourceCenterDialog(app, this.files, () => this.hide()); }),
-      ),
-      h('div', { class: 'row' }, h('label', { class: 'field-label' }, tr("Units for new parts")), unitSel),
-      recents.length ? h('div', { class: 'start-section' }, h('h2', {}, tr("Recent")), h('div', { class: 'file-list' }, recents.map((r) => {
-        const b = h('button', { class: 'file-item', type: 'button' }, icon(r.location.type === 'cloud' ? 'cloud' : 'device', 16),
-          h('span', { class: 'txt' }, h('span', { class: 'n' }, r.name), h('span', { class: 'meta' }, locationLabel(r.location))));
-        // The start screen goes once the part opens; one that cannot be opened leaves it here.
-        b.addEventListener('click', async () => {
-          await this.files.openLocation(r.location, r.name);
-          if (!b.isConnected || recentParts().some((x) => sameLocation(x.location, r.location))) return;
-          // Gone: it has left the recent parts.
-          const section = b.closest('.start-section');
-          b.remove();
-          if (section && !section.querySelector('.file-item')) section.remove();
-          card.querySelector<HTMLElement>('.start-action')?.focus();
-        });
-        return b;
-      }))) : null,
-      h('div', { class: 'start-section' }, h('h2', {}, tr("Examples")), examples),
-      h('div', { class: 'start-foot' },
-        !isSignedIn() && env() !== 'app' && puter() ? h('button', { class: 'btn small', type: 'button', onclick: () => void doSignIn(app) }, icon('signIn', 14), tr("Sign in to save to the cloud")) : null,
-        h('span', {}, tr("You can use Parametric without an account; parts are then saved in this browser.")),
-        h('a', { href: REPO_URL, target: '_blank', rel: 'noopener noreferrer' }, tr("Open source on GitHub"))),
-    );
-    this.el = h('div', { class: 'start' }, card);
-    // Work started elsewhere (the assistant, the ribbon) needs the graphics area.
-    const offStore = app.store.on((reason) => { if (reason !== 'load') this.hide(); });
-    const offSettings = app.commands.onChange(() => { unitSel.value = app.settings.defaultUnits; });
-    this.unsubscribe = () => { offStore(); offSettings(); };
-    app.shell.viewport.append(this.el);
-    requestAnimationFrame(() => card.querySelector<HTMLElement>('.start-action')?.focus());
-    this.el.addEventListener('keydown', (e) => { if (e.key === 'Escape') { this.hide(); } });
+    const home = buildStartHome(this.app, this.files, () => this.hide());
+    this.el = home.el;
+    const offStore = this.app.store.on((reason) => { if (reason !== 'load') this.hide(); });
+    this.unsubscribe = () => { offStore(); home.dispose(); };
+    this.app.shell.viewport.append(this.el);
+    requestAnimationFrame(() => this.el?.querySelector<HTMLElement>('.home-card, .home-side-item')?.focus());
+    this.el.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.hide(); });
   }
 
   hide() {

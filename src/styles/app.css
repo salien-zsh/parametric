@@ -649,6 +649,43 @@ a.icon-btn { text-decoration: none; }
 .start-foot { display: flex; align-items: center; gap: 10px; font-size: var(--fs-sm); color: var(--text-3); flex-wrap: wrap; }
 .start-foot a { color: var(--text-2); }
 
+/* ---------- Project home (local project management) ---------- */
+.start.home { position: fixed; inset: 0; z-index: 900; display: flex; align-items: stretch; justify-content: stretch; padding: 0; background: var(--bg); overflow: hidden; }
+.start.home .home { flex: 1; width: 100%; height: 100%; display: grid; grid-template-columns: 250px minmax(0, 1fr); background: var(--bg); min-width: 0; }
+.home-side { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; padding: 12px; overflow: auto; }
+.home-brand { display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 2px 4px 10px; }
+.home-brand img { width: 24px; height: 24px; border-radius: 6px; }
+.home-side-label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); padding: 4px 6px; }
+.home-side-list { display: flex; flex-direction: column; gap: 2px; }
+.home-side-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid transparent; border-radius: var(--radius); background: none; text-align: left; color: var(--text); width: 100%; }
+.home-side-item:hover { background: var(--hover); }
+.home-side-item.on { background: var(--accent-weak); border-color: var(--accent-border); }
+.home-side-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-side-count { font-size: var(--fs-xs); color: var(--text-3); }
+.home-new-project { margin: 6px 2px; justify-content: center; }
+.home-side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
+.home-side-note { font-size: var(--fs-xs); color: var(--text-3); padding: 0 6px; line-height: 1.4; }
+.home-main { padding: 22px 28px; overflow: auto; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.home-head { display: flex; flex-direction: column; gap: 10px; }
+.home-head h1 { margin: 0; font-size: 22px; font-weight: 600; }
+.home-head .sub { margin: 0; color: var(--text-2); }
+.home-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.home-units { display: flex; gap: 8px; align-items: center; color: var(--text-2); font-size: var(--fs-sm); }
+.home-unit-select .input { width: auto; }
+.home-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.home-card { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); text-align: left; color: var(--text); min-height: 124px; }
+.home-card:hover { border-color: var(--accent-border); background: var(--accent-weak); }
+.home-card .home-thumb { height: 54px; display: flex; align-items: center; justify-content: center; background: var(--panel-2); border-radius: 6px; color: var(--text-2); }
+.home-card.project.new { border-style: dashed; align-items: center; justify-content: center; color: var(--text-2); }
+.home-card-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-card-meta { font-size: var(--fs-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-section h2 { margin: 0 0 8px; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); font-weight: 600; }
+.home-crumbs { display: flex; align-items: center; gap: 8px; color: var(--text-3); font-size: var(--fs-sm); }
+.home-back { display: inline-flex; align-items: center; gap: 4px; background: none; border: 0; padding: 0; color: var(--text-2); cursor: pointer; }
+.home-crumb-current { color: var(--text); }
+.home-empty { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; padding: 22px; border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text-2); }
+.home-foot { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; color: var(--text-3); font-size: var(--fs-sm); margin-top: auto; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1180px) {
   :root { --left-w: 250px; }

@@ -5,13 +5,14 @@ import { defaultName } from '../model/features';
 import { allocateId, newDocument, parseDocument, serializeDocument, withUsedBlobs } from '../model/document';
 import type { Id, ImportFeature, PartDocument } from '../model/types';
 import {
-  type Location, EXT, IMPORT_EXTS, clearRecovery, download, isSolidWorksFile, isStepFile, listParts, loadText, locationLabel, newLocation,
+  type Location, EXT, IMPORT_EXTS, clearRecovery, download, isSolidWorksFile, isStepFile, listParts, loadText, locationLabel, newLocalLocation,
   pickCloudFile, pickCloudSave, pickDeviceFile, orphanRecoveries, removeRecovery, saveText, safeName, writeRecovery, type FileEntry, deletePart, renameCloud, forgetRecent, rememberRecent,
   onRenamedElsewhere, onSavedElsewhere, sameLocation,
 } from '../platform/files';
 import { type PuterFSItem, cloudAvailable, env, isMissing, puter, signIn, storageError } from '../platform/puter';
 import { desktopAPI } from '../platform/desktop-api';
-import { activeProject } from '../platform/workspace-library';
+import { activeProject, assignPartToProject, localProjects } from '../platform/workspace-library';
+import { chooseSaveProjectDialog } from './workspace-dialogs';
 import { h } from '../ui/dom';
 import { icon } from '../ui/icons';
 import { confirmDialog, dialogOpen, promptDialog, showDialog, toast } from '../ui/overlay';
@@ -278,8 +279,8 @@ export class FileOps {
     return true;
   }
 
-  private async projectLocation(name: string): Promise<Location | null> {
-    const project = activeProject();
+  private async projectLocation(name: string, chosen = activeProject()): Promise<Location | null> {
+    const project = chosen;
     const bridge = desktopAPI()?.projects;
     if (!project?.path || !bridge) return null;
     try {
@@ -319,7 +320,20 @@ export class FileOps {
       if (this.queuedSave?.result === result) this.queuedSave = null;
       if (documentVersion !== this.documentVersion) return false;
       let loc = app.location;
-      if (!loc) loc = await this.projectLocation(app.store.doc.name) ?? await newLocation(app.store.doc.name);
+      if (!loc) {
+        if (!localProjects().length) {
+          // Without any local project there is nothing to choose yet.
+          loc = await newLocalLocation();
+        } else {
+          // Local projects: pick the project (or browser storage) the part belongs to.
+          const choice = await chooseSaveProjectDialog(app);
+          if (!choice) return false;
+          const project = choice.projectId ? localProjects().find((p) => p.id === choice.projectId) ?? null : null;
+          if (project?.path) loc = await this.projectLocation(app.store.doc.name, project) ?? await newLocalLocation();
+          else loc = await newLocalLocation();
+          if (loc.type === 'local' && choice.projectId) assignPartToProject(`local:${loc.id}`, choice.projectId);
+        }
+      }
       if (documentVersion !== this.documentVersion) return false;
       if (sameLocation(loc, this.savedElsewhere)) {
         const replace = await confirmDialog(tr("Replace the saved part?"), `"${app.store.doc.name}" was saved in another tab after you opened it here. Saving replaces that version with this one.`, tr("Replace"), true, app.documentSignal);
@@ -386,7 +400,17 @@ export class FileOps {
         }
       }
       try {
-        const loc = await newLocation(clean);
+        let loc: Location;
+        if (!localProjects().length) {
+          loc = await newLocalLocation();
+        } else {
+          const choice = await chooseSaveProjectDialog(app);
+          if (!choice) return;
+          const project = choice.projectId ? localProjects().find((p) => p.id === choice.projectId) ?? null : null;
+          if (project?.path) loc = await this.projectLocation(clean, project) ?? await newLocalLocation();
+          else loc = await newLocalLocation();
+          if (loc.type === 'local' && choice.projectId) assignPartToProject(`local:${loc.id}`, choice.projectId);
+        }
         if (documentVersion !== this.documentVersion) return;
         const revision = this.revision;
         const saved = await saveText(loc, clean, serializeDocument({ ...app.store.doc, name: clean }));

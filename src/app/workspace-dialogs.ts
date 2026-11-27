@@ -137,6 +137,53 @@ export async function configurationsDialog(app: App) {
   });
 }
 
+export interface SaveProjectChoice {
+  projectId: string | null;
+}
+
+/** Local project chooser shown when a part without a location is saved. */
+export async function chooseSaveProjectDialog(app: App): Promise<SaveProjectChoice | undefined> {
+  let projects = localProjects();
+  let selected: string | null = activeProjectId();
+  const list = h('div', { class: 'file-list', role: 'radiogroup', 'aria-label': tr("Project") });
+  const draw = () => {
+    projects = localProjects();
+    list.textContent = '';
+    const row = (id: string | null, label: string, meta: string) => {
+      const b = h('button', {
+        class: 'file-item', type: 'button', role: 'radio', 'aria-checked': String(selected === id), 'aria-label': label,
+      }, icon(id ? 'files' : 'device', 16), h('span', { class: 'txt' }, h('span', { class: 'n' }, label), h('span', { class: 'meta' }, meta)));
+      if (selected === id) b.style.borderColor = 'var(--accent)';
+      b.addEventListener('click', () => { selected = id; draw(); });
+      return b;
+    };
+    list.append(row(null, tr("Browser storage (no project)"), tr("Saved in this browser only")));
+    for (const p of projects) list.append(row(p.id, p.name, p.path ?? tr("Browser project")));
+  };
+  const name = h('input', { class: 'input', placeholder: tr("New project name"), 'aria-label': tr("New project name") }) as HTMLInputElement;
+  const add = h('button', { class: 'btn small', type: 'button' }, icon('plus', 14), tr("Create Project"));
+  add.addEventListener('click', () => {
+    const project = createLocalProject(name.value.trim() || tr("Untitled Project"));
+    name.value = '';
+    selected = project.id;
+    draw();
+  });
+  draw();
+  const res = await showDialog({
+    title: tr("Save to project"),
+    wide: true,
+    signal: app.documentSignal,
+    body: [
+      h('p', { class: 'field-label' }, tr("Parts are stored locally. Choose a project so this part appears in it.")),
+      list,
+      h('div', { class: 'pm-new' }, name, add),
+    ],
+    buttons: [{ label: tr("Cancel"), value: 'cancel' }, { label: tr("Save"), primary: true, value: 'ok' }],
+  });
+  if (res !== 'ok') return undefined;
+  return { projectId: selected };
+}
+
 export async function projectManagerDialog(app: App, files: FileOps, onPartOpened?: () => void) {
   let selectedProject = '__all';
   let closeDialog: ((value: string | null) => void) | null = null;
