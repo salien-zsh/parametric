@@ -2008,5 +2008,7 @@
   "Threads": "螺纹",
   "Thread standard": "螺纹标准",
   "ISO Metric": "公制螺纹",
-  "ANSI Unified": "英制统一螺纹"
+  "ANSI Unified": "英制统一螺纹",
+  "Placement": "放置方式",
+  "Selected face": "选定面"
 }

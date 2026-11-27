@@ -36,6 +36,14 @@ test('a hole can stop at a planar face and the panel switches end conditions', a
   });
   await page.getByRole('treeitem', { name: 'Hole1', exact: true }).dblclick();
   await expect(page.getByRole('heading', { name: 'Hole1' })).toBeVisible();
+  // Fusion placement mode: selected face or a sketch's points.
+  const placement = page.getByRole('group', { name: 'Placement' });
+  await expect(placement).toBeVisible();
+  await placement.getByRole('button', { name: 'Sketch' }).click();
+  await expect(placement.getByRole('button', { name: 'Sketch' })).toHaveAttribute('aria-pressed', 'true');
+  await placement.getByRole('button', { name: 'Selected face' }).click();
+  await expect(placement.getByRole('button', { name: 'Selected face' })).toHaveAttribute('aria-pressed', 'true');
+
   const end = page.getByRole('combobox', { name: 'End condition' });
   await expect(end).toHaveValue('toObject');
   await expect(page.getByRole('group', { name: 'Stop at face' })).toBeVisible();

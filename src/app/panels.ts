@@ -717,6 +717,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
   private addExactButton: HTMLButtonElement | null = null;
   private exactPlacement: HTMLElement[] = [];
   private threadSection: HTMLElement | null = null;
+  private placementMode: 'face' | 'sketch' = 'face';
 
   constructor(app: App, f: HoleFeature, editing: boolean) {
     super(app, f, editing);
@@ -862,7 +863,22 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     };
     sync();
 
-    const positions = new SelectionBox(this, tr("Positions"), { face: true, planarOnly: true, feature: true, edge: true, vertex: true }, (it) => this.pickPosition(it), (items) => {
+    let placementMode: 'face' | 'sketch' = 'face';
+    const placementPick = segmented<'face' | 'sketch'>(tr("Placement"), placementMode, [
+      { value: 'face' as const, label: tr("Selected face"), icon: 'plane' },
+      { value: 'sketch' as const, label: tr("Sketch"), icon: 'sketchFeature' },
+    ], (v) => {
+      placementMode = v;
+      this.placementMode = v;
+      this.syncPlacement();
+    });
+    this.placementMode = placementMode;
+    const positions = new SelectionBox(this, tr("Positions"), { face: true, planarOnly: true, feature: true, edge: true, vertex: true }, (it) => {
+      // A sketch point sketch and face picking are separate modes, as in Fusion.
+      if (placementMode === 'sketch' && it.kind !== 'feature') return null;
+      if (placementMode === 'face' && it.kind === 'feature') return null;
+      return this.pickPosition(it);
+    }, (items) => {
       if (!items.length) {
         this.f.sketch = '';
         this.positionsReady = false;
@@ -907,7 +923,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       precisionHelp, exactXField, exactYField, this.addExactButton, this.addCenterButton,
     ], { collapsed: true });
     const positionsSection = section(tr("Positions"), [
-      positions.el, this.positionList, this.positionsHint, this.confirmPositions, precise,
+      placementPick, positions.el, this.positionList, this.positionsHint, this.confirmPositions, precise,
     ]);
 
     const mainKinds: HoleKind[] = ['simple', 'counterbore', 'countersink', 'tapped'];
@@ -954,6 +970,8 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
   /** A face click adds a free point; edges and vertices snap to exact model geometry. */
   private pickPosition(it: SelItem): SelBoxItem | null {
     const f = this.f;
+    if (this.placementMode === 'sketch' && it.kind !== 'feature') return null;
+    if (this.placementMode === 'face' && it.kind === 'feature') return null;
     if (it.kind === 'feature') {
       const sk = this.app.store.feature(it.id);
       if (sk?.type !== 'sketch') return null;
