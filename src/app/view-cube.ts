@@ -34,13 +34,14 @@ export class ViewCube {
   private readonly ctx: CanvasRenderingContext2D | null;
   private readonly size = 112;
   private hover = -1;
+  private hoverCorner = -1;
   private lastKey = '';
 
   constructor(private app: App) {
     this.canvas = h('canvas', { class: 'vc-canvas', width: String(this.size), height: String(this.size), 'aria-label': tr("View cube"), role: 'img' }) as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d');
     this.canvas.addEventListener('pointermove', (e) => this.pick(e, true));
-    this.canvas.addEventListener('pointerleave', () => { if (this.hover !== -1) { this.hover = -1; this.sync(true); } });
+    this.canvas.addEventListener('pointerleave', () => { if (this.hover !== -1 || this.hoverCorner !== -1) { this.hover = -1; this.hoverCorner = -1; this.sync(true); } });
     this.canvas.addEventListener('click', (e) => this.pick(e, false));
     const home = h('button', { class: 'vc-home', type: 'button', 'aria-label': tr("Home view"), title: tr("Home view (isometric)") }, icon('viewIso', 16));
     home.addEventListener('click', () => app.viewport.setView('isometric'));
@@ -61,6 +62,12 @@ export class ViewCube {
     };
   }
 
+  /** The eight cube corners, in world space. */
+  private static readonly CORNERS: Vec3[] = [];
+  static {
+    for (const x of [-1, 1]) for (const y of [-1, 1]) for (const z of [-1, 1]) ViewCube.CORNERS.push([x, y, z]);
+  }
+
   /** Visible faces, nearest last (painter order). */
   private visibleFaces(): { face: Face; pts: { x: number; y: number }[]; depth: number }[] {
     const cam = this.app.renderer.camera;
@@ -79,16 +86,29 @@ export class ViewCube {
     this.el.hidden = app.inDrawing;
     if (this.el.hidden || !this.ctx) return;
     const cam = app.renderer.camera;
-    const key = [...cam.right, ...cam.up, ...cam.back, cam.viewName() ?? '', String(this.hover)].join(',');
+    const key = [...cam.right, ...cam.up, ...cam.back, cam.viewName() ?? '', String(this.hover), String(this.hoverCorner)].join(',');
     if (!force && key === this.lastKey) return;
     this.lastKey = key;
     const ctx = this.ctx;
     const style = getComputedStyle(this.app.shell.root);
     const text = style.getPropertyValue('--text-2').trim() || '#889';
-    const active = style.getPropertyValue('--accent').trim() || '#2a7fff';
+    const accentColor = () => style.getPropertyValue('--accent').trim() || '#2a7fff';
+    const active = accentColor();
     ctx.clearRect(0, 0, this.size, this.size);
     const current = cam.viewName();
     const faces = this.visibleFaces();
+    // The corner zones sit above the faces: small circles at each visible corner.
+    const corners = ViewCube.CORNERS.map((p) => ({ p, ...this.project(p) })).filter((c) => c.z > -0.05);
+    corners.forEach((c, i) => {
+      const hot = this.hoverCorner === i;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, hot ? 7 : 5, 0, Math.PI * 2);
+      ctx.fillStyle = hot ? 'rgba(42,127,255,0.35)' : 'rgba(120,130,140,0.10)';
+      ctx.fill();
+      ctx.strokeStyle = hot ? active : 'rgba(110,120,130,0.55)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
     faces.forEach(({ face, pts }, index) => {
       const isActive = current === face.view;
       ctx.beginPath();
@@ -122,6 +142,21 @@ export class ViewCube {
     const rect = this.canvas.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * this.size;
     const y = ((e.clientY - rect.top) / rect.height) * this.size;
+    // Corners have priority: clicking one looks along that diagonal.
+    const corners = ViewCube.CORNERS.map((p) => ({ p, ...this.project(p) })).filter((c) => c.z > -0.05);
+    let cornerHit = -1;
+    corners.forEach((c, i) => {
+      if (Math.hypot(c.x - x, c.y - y) <= 9) cornerHit = i;
+    });
+    if (cornerHit >= 0) {
+      if (hover) {
+        this.canvas.style.cursor = 'pointer';
+        if (cornerHit !== this.hoverCorner) { this.hoverCorner = cornerHit; this.hover = -1; this.sync(true); }
+        return;
+      }
+      this.app.viewport.setOrientation(corners[cornerHit].p);
+      return;
+    }
     const faces = this.visibleFaces();
     let hit = -1;
     faces.forEach(({ pts }, i) => {
@@ -134,7 +169,7 @@ export class ViewCube {
     });
     if (hover) {
       this.canvas.style.cursor = hit >= 0 ? 'pointer' : 'default';
-      if (hit !== this.hover) { this.hover = hit; this.sync(true); }
+      if (hit !== this.hover || this.hoverCorner !== -1) { this.hover = hit; this.hoverCorner = -1; this.sync(true); }
       return;
     }
     if (hit >= 0) this.app.viewport.setView(faces[hit].face.view);

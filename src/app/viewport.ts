@@ -8,7 +8,7 @@ import type { BasePlane, Id, SketchFeature } from '../model/types';
 import { BASE_FRAMES } from '../model/planes';
 import { consumedSketches } from '../model/features';
 import { cssColor } from '../platform/theme';
-import { Camera, VIEWS, VIEW_LABELS, type ViewName } from '../render/camera';
+import { Camera, VIEWS, VIEW_LABELS, orientation, type ViewName } from '../render/camera';
 import { gridSpacing, planeGrid } from '../render/grid';
 import { STATE_HOVER, STATE_SELECTED, type PickHit } from '../render/renderer';
 import { SketchIndex, tessellate } from '../sketch/geom';
@@ -916,6 +916,14 @@ export class Viewport {
   previousView() {
     const s = this.history.pop();
     if (s) this.camera.animateTo(s);
+  }
+
+  /** Looks along the given direction, e.g. a ViewCube corner like [1, 1, 1]. */
+  setOrientation(back: Vec3, animate = true) {
+    this.pushHistory();
+    const st = this.camera.fitState(this.modelCenter(), this.modelRadius(), orientation(back));
+    if (animate) this.camera.animateTo(st);
+    else this.camera.setState(st);
   }
 
   setView(name: ViewName, animate = true) {
