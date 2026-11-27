@@ -372,13 +372,17 @@ export class DrawingWorkspace {
       const bounds = pr.bounds;
       const near = (p: [number, number]) => p[0] >= bounds[0] - 8 && p[0] <= bounds[2] + 8 && p[1] >= bounds[1] - 8 && p[1] <= bounds[3] + 8;
       const circles: ViewAnnotations['circles'] = [];
+      const holes: NonNullable<ViewAnnotations['holes']> = [];
       // Existing drawings without the flag still get centre marks (the checkbox shows them on).
       if (v.centers !== false) {
         for (const e of this.app.edges) {
           if (e.type !== 'circle' || !e.center || !e.axis || !e.radius) continue;
           if (Math.abs(dot(e.axis, dir)) < 0.999) continue;
           const p: [number, number] = [dot(e.center, u), -dot(e.center, up)];
-          if (near(p)) circles.push({ x: p[0], y: p[1], r: e.radius });
+          if (near(p)) {
+            circles.push({ x: p[0], y: p[1], r: e.radius });
+            if (v.holes) holes.push({ x: p[0], y: p[1], r: e.radius });
+          }
         }
       }
       const balloons: ViewAnnotations['balloons'] = [];
@@ -401,7 +405,7 @@ export class DrawingWorkspace {
           balloons.push({ x: p[0], y: p[1], item: index + 1 });
         });
       }
-      if (circles.length || balloons.length) out.set(v.id, { circles, balloons });
+      if (circles.length || balloons.length || holes.length) out.set(v.id, { circles, balloons, holes });
     }
     return out;
   }
@@ -1037,6 +1041,9 @@ export class DrawingPanel extends PropertyPanel {
     const dims = h('input', { type: 'checkbox', 'aria-label': `Dimensions in ${VIEW_LABELS[v.kind]} view` }) as HTMLInputElement;
     dims.checked = v.dims;
     dims.addEventListener('change', () => ws.updateFromPanel((d) => { const x = d.views.find((q) => q.id === v.id); if (x) x.dims = dims.checked; }, 'Dimensions'));
+    const holes = h('input', { type: 'checkbox', 'aria-label': `Hole callouts in ${VIEW_LABELS[v.kind]} view` }) as HTMLInputElement;
+    holes.checked = v.holes === true;
+    holes.addEventListener('change', () => ws.updateFromPanel((d) => { const x = d.views.find((q) => q.id === v.id); if (x) x.holes = holes.checked; }, 'Hole callouts'));
     const name = h('button', {
       class: 'grow', type: 'button', 'aria-pressed': String(ws.selected === v.id), title: tr("Select the view; arrow keys then move it"),
       style: { background: 'none', border: '0', padding: '0', textAlign: 'left' },
@@ -1046,6 +1053,7 @@ export class DrawingPanel extends PropertyPanel {
       name,
       h('label', { class: 'check', title: tr("Hidden lines") }, hidden, h('span', { class: 'field-label' }, tr("Hidden"))),
       h('label', { class: 'check', title: tr("Overall dimensions") }, dims, h('span', { class: 'field-label' }, tr("Dims"))),
+      h('label', { class: 'check', title: tr("Hole callouts") }, holes, h('span', { class: 'field-label' }, tr("Holes"))),
       del);
     // Only the selected view opens its own controls, so the list stays short.
     const extra = ws.selected === v.id ? h('div', { class: 'rel-extra' }) : null;

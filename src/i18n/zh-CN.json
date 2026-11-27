@@ -2012,5 +2012,7 @@
   "Placement": "放置方式",
   "Selected face": "选定面",
   "View Cube": "视角立方体",
-  "A hole position already exists there.": "该位置已有孔位。"
+  "A hole position already exists there.": "该位置已有孔位。",
+  "Hole callouts": "孔标注",
+  "Holes": "孔"
 }

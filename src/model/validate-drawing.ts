@@ -43,6 +43,7 @@ export function validDrawing(value: unknown, nested = false): value is DrawingDo
       || typeof v.hidden !== 'boolean' || typeof v.dims !== 'boolean') return false;
     if (v.scale != null && (!finite(v.scale) || v.scale <= 0)) return false;
     if (v.centers != null && typeof v.centers !== 'boolean') return false;
+    if (v.holes != null && typeof v.holes !== 'boolean') return false;
     if (v.balloons != null && typeof v.balloons !== 'boolean') return false;
     if (v.section != null && (!object(v.section) || typeof v.section.axis !== 'string' || !axes.has(v.section.axis)
       || !finite(v.section.offset) || (v.section.flip != null && typeof v.section.flip !== 'boolean'))) return false;

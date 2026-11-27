@@ -1,3 +1,4 @@
+- **Hole callouts on drawings**: each drawing view has an opt-in Holes switch; circular edges get a diameter callout (Ø…) with a leader, and the callouts export with the sheet.
 - **Hole position guard**: clicking or adding a position on top of an existing hole point is ignored with a status message, like Fusion.
 - **ViewCube visibility**: View > Hide/Show > View Cube toggles the cube on and off; the choice is saved with the other display settings.
 - **Hole placement mode**: an explicit Fusion-style Placement switch between points on a Selected face and an existing Sketch; picks of the other kind are ignored.

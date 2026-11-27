@@ -153,3 +153,14 @@ describe('tolerance callouts', () => {
     expect(sheet.items.filter((it) => it.t === 'line').length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('hole callouts', () => {
+  it('draws a diameter callout from a hole when the view asks for them', () => {
+    const sheet = buildSheet(doc({ holes: true }), new Map([['v1', projection]]), info({
+      annotations: new Map([['v1', { circles: [], balloons: [], holes: [{ x: 20, y: -20, r: 5 }] }]]),
+    }));
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts).toContain('Ø10');
+    expect(sheet.items.filter((it) => it.t === 'line' && it.w === 0.18).length).toBeGreaterThanOrEqual(2);
+  });
+});

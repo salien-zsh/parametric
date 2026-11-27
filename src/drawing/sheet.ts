@@ -127,6 +127,8 @@ export interface ViewAnnotations {
   circles: { x: number; y: number; r: number }[];
   /** Assembly balloons: the point to lead to, and the bill-of-materials item. */
   balloons: { x: number; y: number; item: number }[];
+  /** Hole callouts (opt-in per view): circle centres and radii in model space. */
+  holes?: { x: number; y: number; r: number }[];
 }
 
 export interface SheetInfo {
@@ -245,6 +247,10 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
         centerMark(items, cx, cy, c.r * scale);
       }
     }
+    // Fusion-style hole callouts, when the view asks for them.
+    for (const h of annotations?.holes ?? []) {
+      holeCallout(items, tx + h.x * scale, ty + h.y * scale, h.r * scale, `Ø${info.formatLength(2 * h.r)}`);
+    }
     if (annotations?.balloons.length) balloon(items, annotations.balloons, tx, ty, scale, f, w, h);
     if (hasDims(v)) {
       dimension(items, [fx0, fy1], [fx1, fy1], 'below', info.formatLength(bx1 - bx0));
@@ -273,6 +279,16 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
 }
 
 type Box = [x0: number, y0: number, x1: number, y1: number];
+
+/** A diameter callout led off a hole: leader, short shoulder and the text. */
+function holeCallout(items: Item[], cx: number, cy: number, r: number, text: string) {
+  const ux = Math.SQRT1_2, uy = -Math.SQRT1_2;
+  const x1 = cx + r * ux, y1 = cy + r * uy;
+  const x2 = x1 + 8, y2 = y1 - 4;
+  items.push({ t: 'line', x1, y1, x2, y2, w: 0.18 });
+  items.push({ t: 'line', x1: x2, y1: y2, x2: x2 + 9, y2, w: 0.18 });
+  items.push({ t: 'text', s: text, x: x2 + 1, y: y2 - 1, size: 2.2, anchor: 'start' });
+}
 
 /** A framed tolerance note with a leader to the measured point. */
 function calloutBox(items: Item[], at: [number, number], text: string) {

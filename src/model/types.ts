@@ -961,6 +961,8 @@ export interface DrawingView {
   scale?: number;
   /** Draw centre marks on the circular edges that face this view. */
   centers?: boolean;
+  /** Dimension circular edges with Fusion-style hole callouts (opt-in). */
+  holes?: boolean;
   /** Assembly drawings: number the parts with balloons, matching the bill of materials. */
   balloons?: boolean;
   /** Section views: the cut plane. */
