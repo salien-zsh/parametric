@@ -226,15 +226,55 @@ a.icon-btn { text-decoration: none; }
 /* Floating command dialogs over the graphics area, as in Fusion. */
 .panel-layer { position: absolute; inset: 0; z-index: 60; pointer-events: none; }
 .panel-layer[hidden] { display: none; }
+/* Feature dialogs follow Fusion: a compact card with the title bar on top,
+   scrolling form, and Cancel / OK pinned to the bottom right. */
 .panel-layer .pm {
-  pointer-events: auto; position: absolute; top: 54px; right: 14px; width: 340px;
-  max-width: calc(100% - 28px); max-height: calc(100% - 84px); overflow: auto;
-  background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px;
-  box-shadow: 0 14px 36px var(--shadow, rgba(0, 0, 0, 0.38)); padding-bottom: 4px;
+  pointer-events: auto; position: absolute; top: 54px; right: 14px; width: 320px;
+  max-width: calc(100% - 28px); max-height: calc(100% - 78px); overflow: hidden;
+  display: flex; flex-direction: column; min-height: 0;
+  background: var(--panel); border: 1px solid var(--border-strong); border-radius: 8px;
+  box-shadow: 0 18px 44px var(--shadow, rgba(0, 0, 0, 0.42));
 }
-.panel-layer .pm-head { cursor: move; position: sticky; top: 0; background: var(--panel); z-index: 1; border-radius: 10px 10px 0 0; }
-.panel-layer .pm-head .title { pointer-events: none; }
-.panel-layer .pm-content { padding: 2px 2px 6px; }
+.panel-layer .pm-head {
+  cursor: move; position: sticky; top: 0; z-index: 2; order: 0;
+  background: var(--panel); border-radius: 8px 8px 0 0;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.panel-layer .pm-head > svg { padding: 4px; box-sizing: content-box; border-radius: 6px; background: var(--panel-2); color: var(--text-2); }
+.panel-layer .pm-head .title { pointer-events: none; font-size: var(--fs-lg, 14px); font-weight: 600; outline: none; border: 0; }
+.panel-layer .pm-content { order: 2; flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0; }
+.panel-layer .pm-actions {
+  order: 3; justify-content: flex-end; gap: 8px; padding: 8px 12px;
+  background: var(--panel); border-top: 1px solid var(--border); border-bottom: 0;
+}
+.panel-layer .pm-actions .icon-btn { width: 34px; height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel-2); }
+.panel-layer .pm-actions .ok { background: var(--accent); color: #fff; border-color: var(--accent); }
+.panel-layer .pm-actions .cancel { background: transparent; color: var(--text-2); }
+.panel-layer .pm-actions .icon-btn:hover { filter: brightness(1.05); }
+.panel-layer .pm > .pm-msg { order: 1; margin: 8px 12px 0; }
+.panel-layer .pm-section { border-bottom: 1px solid var(--border); }
+.panel-layer .pm-section > .sec-head,
+.panel-layer .pm-section > .sec-head-check > .sec-head {
+  background: var(--panel-2); font-size: var(--fs-sm); color: var(--text-2); padding: 7px 12px;
+}
+.panel-layer .pm-section .sec-head .chev { color: var(--text-3); }
+.panel-layer .pm-section > .sec-body,
+.panel-layer .pm-section > .sec-head-check + .sec-body {
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px;
+}
+.panel-layer .pm-section[data-collapsed='true'] > .sec-body { display: none; }
+.panel-layer .pm .row { gap: 8px; }
+.panel-layer .pm .field-label { font-size: var(--fs-xs); color: var(--text-3); }
+.panel-layer .pm .input {
+  height: 28px; border-radius: 4px; border-color: transparent; background: var(--panel-2); color: var(--text);
+}
+.panel-layer .pm .input:hover { border-color: var(--border-strong); }
+.panel-layer .pm .input:focus { border-color: var(--accent); background: var(--panel); }
+.panel-layer .pm .selbox { min-height: 46px; border-radius: 4px; background: var(--panel-2); border-color: var(--border); }
+.panel-layer .pm .selbox.active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
+.panel-layer .pm .check { font-size: var(--fs-sm); color: var(--text-2); }
+.panel-layer .pm .check input { width: 14px; height: 14px; }
+.panel-layer .pm .pm-msg { border-radius: 4px; }
 @media (max-width: 760px) {
   .panel-layer { display: none !important; }
 }
