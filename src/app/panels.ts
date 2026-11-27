@@ -912,8 +912,9 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
 
     const mainKinds: HoleKind[] = ['simple', 'counterbore', 'countersink', 'tapped'];
     const moreKinds: HoleKind[] = ['doubleCounterbore', 'counterdrill', 'spotface'];
+    const holeIcon: Record<string, string> = { simple: 'holeSimple', counterbore: 'holeCounterbore', countersink: 'holeCountersink', tapped: 'holeTapped' };
     const typePick = segmented<HoleKind>(tr("Hole type"), (mainKinds.includes(f.kind) ? f.kind : '') as HoleKind,
-      kinds.filter((k) => mainKinds.includes(k.value)), (v) => {
+      kinds.filter((k) => mainKinds.includes(k.value)).map((k) => ({ ...k, icon: holeIcon[k.value] })), (v) => {
         f.kind = v;
         sync();
         this.changed();

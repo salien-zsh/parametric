@@ -270,7 +270,9 @@ a.icon-btn { text-decoration: none; }
 .panel-layer .pm-section { border-bottom: 1px solid var(--border); }
 .panel-layer .pm-section[hidden] { display: none !important; }
 .panel-layer .pm .seg { display: flex; flex-wrap: wrap; }
-.panel-layer .pm .seg button { padding: 0 7px; }
+.panel-layer .pm .seg button { padding: 0 7px; gap: 4px; }
+.panel-layer .pm .seg button svg { flex: none; }
+.panel-layer .pm .seg button[aria-pressed='true'] svg { color: var(--accent); }
 .panel-layer .pm-section > .sec-head,
 .panel-layer .pm-section > .sec-head-check > .sec-head {
   background: var(--panel-2); font-size: var(--fs-sm); color: var(--text-2); padding: 7px 12px;

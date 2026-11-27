@@ -25,6 +25,10 @@ const CUBE_RIGHT = 'M20 7l-8 4v10l8-4z';
 
 const CAD: Record<string, IconNode> = {
   sheetMetal: [P('M3 13.5l8-2.5 5 2-8 2.5z', 'a'), P('M3 13.5v4l4 1.5v-4'), P('M11 13l5 2v4l-5-2'), P('M3 17.5l4 1.5 8 2.5')],
+  holeSimple: [P('M3 6h18v3H3z', 'a'), P('M10 9v11h4V9')],
+  holeCounterbore: [P('M3 5h18v3H3z', 'a'), P('M8 8v5h8V8'), P('M10 13v7h4v-7')],
+  holeCountersink: [P('M3 5h18v3H3z', 'a'), P('M8 8l4 5 4-5'), P('M10 13v7h4v-7')],
+  holeTapped: [P('M3 5h18v3H3z', 'a'), P('M10 8v12h4V8'), DASH('M8 10h8M8 12.5h8M8 15h8M8 17.5h8', '2 1.5')],
   edgeFlange: [P('M4 15l6-2 6 2-6 2z', 'a'), P('M10 13V5l4 2v6l-4-2'), P('M4 15v5l6 2v-5'), P('M4 20l6 2 6-2')],
   sketch: [P('M2.5 18.5l5-4h14l-5 4z', 'a'), P('M14.5 3.5l2.5 2.5-7 7H7.5V10.5z'), P('M12.5 5.5l2.5 2.5')],
   smartDimension: [P('M4 6v12M20 6v12'), P('M4 12h16'), P('M7 9.5L4 12l3 2.5M17 9.5l3 2.5-3 2.5'), P('M9.5 5.5h5', 'thin')],

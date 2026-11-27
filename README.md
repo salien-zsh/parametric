@@ -1,3 +1,4 @@
+- **Hole type icons**: the four main hole types (Simple, Counterbore, Countersink, Tapped) are drawn as small section-profile icons on the segmented buttons.
 - **Thread standard table**: the hole Threads section picks ISO Metric or ANSI Unified first, then lists that standard's sizes (M2–M24, #4–1/2 UNC) and fills diameter, pitch and tap drill.
 - **Fusion hole panel**: hole types are segmented buttons (Simple / Counterbore / Countersink / Tapped) with the rarer types in a More list, thread options live in their own Threads section, the position tools collapse into Exact placement, and the end options are grouped as Termination.
 - **Fusion field row**: value, stepper and the fx parameter link share one compact rounded row; the fx dropdown is a small borderless control at the field end.
