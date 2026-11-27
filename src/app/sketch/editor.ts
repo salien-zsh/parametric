@@ -1034,12 +1034,12 @@ export class SketchEditor implements ViewportTool {
       ppos.push(...toWorld(fr, [e.x, e.y]));
       pcol.push(c[0] * 255, c[1] * 255, c[2] * 255, 255);
       const standalone = !used.has(e.id);
-      psz.push(standalone ? 8 : centers.has(e.id) ? 6 : isSel || isHov ? 7 : 5, standalone ? 1 : centers.has(e.id) ? 2 : 0);
+      psz.push(standalone ? 11 : centers.has(e.id) ? 8 : isSel || isHov ? 9 : 6, standalone ? 1 : centers.has(e.id) ? 2 : 0);
     }
     const oSel = this.app.selection.has({ kind: 'sk', id: ORIGIN_ID }) || hoverId === ORIGIN_ID;
     ppos.push(...toWorld(fr, [0, 0]));
     pcol.push(...(oSel ? [240, 130, 30, 255] : [200, 50, 40, 255]));
-    psz.push(9, 2);
+    psz.push(11, 2);
     r.setPoints('sk-points', { positions: new Float32Array(ppos), colors: new Uint8Array(pcol), sizeStyle: new Float32Array(psz), depth: 'always', order: 12 });
 
     // Tool preview and inference guides.

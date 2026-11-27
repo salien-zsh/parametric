@@ -729,6 +729,7 @@ a.icon-btn { text-decoration: none; }
 .home-brand img { width: 24px; height: 24px; border-radius: 6px; }
 .home-side-label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); padding: 4px 6px; }
 .home-side-list { display: flex; flex-direction: column; gap: 2px; }
+.home-project-select { width: 100%; }
 .home-side-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid transparent; border-radius: var(--radius); background: none; text-align: left; color: var(--text); width: 100%; }
 .home-side-item:hover { background: var(--hover); }
 .home-side-item.on { background: var(--accent-weak); border-color: var(--accent-border); }

@@ -33,10 +33,12 @@ export function snapPoint(sk: SketchFeature, raw: Vec2, o: SnapOptions): Snap {
   if (o.disabled) return { p: raw, raw, kind: 'none' };
   const ix = new SketchIndex(sk.entities);
   const tol = o.tol;
+  // Points get a stronger magnet than curves and guides.
+  const pointTol = tol * 1.8;
   const ex = o.exclude ?? new Set<Id>();
   // 1. Existing points (end points, centres, sketch points) and the origin.
   let best: Snap | null = null;
-  let bestD = tol;
+  let bestD = pointTol;
   if (!ex.has(ORIGIN_ID)) {
     const d = dist2(raw, [0, 0]);
     if (d < bestD) { bestD = d; best = { p: [0, 0], raw, kind: 'origin', pointId: ORIGIN_ID }; }
@@ -49,6 +51,7 @@ export function snapPoint(sk: SketchFeature, raw: Vec2, o: SnapOptions): Snap {
     if (d < bestD) { bestD = d; best = { p: [e.x, e.y], raw, kind: centerIds.has(e.id) ? 'center' : 'point', pointId: e.id }; }
   }
   if (best) return best;
+  bestD = tol;
   // 2. Midpoints of lines.
   for (const e of sk.entities) {
     if (e.t !== 'line' || ex.has(e.id) || ex.has(e.a) || ex.has(e.b)) continue;

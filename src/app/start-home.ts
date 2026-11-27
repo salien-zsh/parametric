@@ -109,16 +109,21 @@ export function buildStartHome(app: App, files: FileOps, onOpen: () => void): { 
   const drawSidebar = () => {
     sidebar.textContent = '';
     const counts = projectPartCounts();
-    const item = (id: string | null, label: string, count: number) => {
-      const active = projectId === id;
-      const b = h('button', {
-        class: `home-side-item${active ? ' on' : ''}`, type: 'button', 'aria-pressed': String(active), title: label,
-      }, icon('files', 15), h('span', { class: 'home-side-name' }, label), h('span', { class: 'home-side-count' }, String(count)));
-      b.addEventListener('click', () => void selectProject(id));
-      return b;
-    };
-    const list = h('div', { class: 'home-side-list' }, ...localProjects().map((p) => item(p.id, p.name, counts[p.id] ?? 0)));
-    const all = item(null, tr("All Local Projects"), local.length);
+    // One dropdown lists every local project; choosing one makes it current.
+    const projectSelect = h('select', { class: 'input home-project-select', 'aria-label': tr("Current project") }) as HTMLSelectElement;
+    const allOption = h('option', { value: '' }, `${tr("All Local Projects")} (${local.length})`) as HTMLOptionElement;
+    allOption.selected = projectId === null;
+    projectSelect.append(allOption);
+    for (const p of localProjects()) {
+      const option = h('option', { value: p.id }, `${p.name} (${counts[p.id] ?? 0})`) as HTMLOptionElement;
+      option.selected = projectId === p.id;
+      projectSelect.append(option);
+    }
+    projectSelect.addEventListener('change', () => {
+      const id = projectSelect.value;
+      if (id) setActiveProject(id);
+      void selectProject(id || null);
+    });
     const create = h('button', { class: 'btn small home-new-project', type: 'button' }, icon('plus', 14), tr("New Project"));
     create.addEventListener('click', () => void createProject());
     const resources = h('button', { class: 'home-side-item', type: 'button' }, icon('files', 15), h('span', { class: 'home-side-name' }, tr("Part Resource Center")));
@@ -126,8 +131,7 @@ export function buildStartHome(app: App, files: FileOps, onOpen: () => void): { 
     sidebar.append(
       h('div', { class: 'home-brand' }, h('img', { src: './icon-128.png', alt: '' }), h('span', {}, tr("Parametric"))),
       h('div', { class: 'home-side-label' }, tr("My Projects")),
-      all,
-      list,
+      projectSelect,
       create,
       h('div', { class: 'home-side-foot' }, resources, h('div', { class: 'home-side-note' }, tr("All projects are stored on this device. Nothing is uploaded."))),
     );

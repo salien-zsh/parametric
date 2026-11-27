@@ -82,3 +82,13 @@ describe('on-model value box', () => {
     expect(parseCanvasValue('nonsense', 'length', ctx)).toBeNull();
   });
 });
+
+describe('sketch point magnet', () => {
+  it('snaps to a point from further away than the curve tolerance', () => {
+    const sk = emptySketch();
+    sk.entities.push({ id: 'p1', t: 'point', x: 10, y: 0 });
+    // 1.5 units away is past the 1-unit curve tolerance but inside the point magnet.
+    expect(snapPoint(sk, [11.5, 0], { tol: 1 })).toMatchObject({ kind: 'point', p: [10, 0] });
+    expect(snapPoint(sk, [12, 0], { tol: 1 }).kind).not.toBe('point');
+  });
+});
