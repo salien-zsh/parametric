@@ -1999,5 +1999,11 @@
   "BOTTOM": "底",
   "View cube": "视角立方体",
   "Home view": "主视图",
-  "Home view (isometric)": "主视图（等轴测）"
+  "Home view (isometric)": "主视图（等轴测）",
+  "More types": "更多类型",
+  "More hole types": "更多孔类型",
+  "Exact placement": "精确位置",
+  "Termination": "终止条件",
+  "Hole type": "孔类型",
+  "Threads": "螺纹"
 }

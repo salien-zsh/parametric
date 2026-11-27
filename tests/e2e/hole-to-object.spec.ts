@@ -46,5 +46,15 @@ test('a hole can stop at a planar face and the panel switches end conditions', a
   await end.selectOption('blind');
   await expect(page.getByRole('textbox', { name: 'Depth', exact: true })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Stop at face' })).toBeHidden();
+
+  // Fusion-style hole type buttons switch the size fields and the Threads section.
+  const types = page.getByRole('group', { name: 'Hole type' });
+  await expect(types.getByRole('button', { name: 'Simple', exact: true })).toBeVisible();
+  await types.getByRole('button', { name: 'Counterbore', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Counterbore diameter', exact: true })).toBeVisible();
+  await types.getByRole('button', { name: 'Tapped', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Thread size' })).toBeVisible();
+  await types.getByRole('button', { name: 'Simple', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Thread size' })).toBeHidden();
   expect(errors).toEqual([]);
 });

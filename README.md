@@ -1,3 +1,4 @@
+- **Fusion hole panel**: hole types are segmented buttons (Simple / Counterbore / Countersink / Tapped) with the rarer types in a More list, thread options live in their own Threads section, the position tools collapse into Exact placement, and the end options are grouped as Termination.
 - **Fusion field row**: value, stepper and the fx parameter link share one compact rounded row; the fx dropdown is a small borderless control at the field end.
 - **ViewCube edge zones**: the small edge dots look along the middle of two adjacent faces (e.g. top-front), between the face and corner zones.
 - **ViewCube orbit**: dragging the ViewCube itself orbits the camera (facets and corners still snap on click).

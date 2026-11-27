@@ -16,13 +16,13 @@ import { SketchIndex, sketchBounds } from '../sketch/geom';
 import { buildProfiles, inRegion } from '../sketch/profiles';
 import type {
   AxisFeature, AxisKind, AxisRef, BaseFlangeFeature, ChamferFeature, CoilFeature, EdgeFlangeFeature, FlatPatternFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
-  HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
+  HoleFeature, HoleKind, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
 import { h } from '../ui/dom';
 import type { App } from './app';
 import {
-  PropertyPanel, SelectionBox, type CanvasValue, type SelBoxItem, checkbox, flipButton, numberField, paramText, section, selectField, setNumberFieldValue,
+  PropertyPanel, SelectionBox, type CanvasValue, type SelBoxItem, checkbox, flipButton, numberField, paramText, section, segmented, selectField, setNumberFieldValue,
 } from './pm';
 import { type SelItem, edgeRef, faceRef } from './selection';
 import { tr } from '../i18n';
@@ -716,6 +716,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
   private addCenterButton: HTMLButtonElement | null = null;
   private addExactButton: HTMLButtonElement | null = null;
   private exactPlacement: HTMLElement[] = [];
+  private threadSection: HTMLElement | null = null;
 
   constructor(app: App, f: HoleFeature, editing: boolean) {
     super(app, f, editing);
@@ -800,6 +801,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       const index = this.app.faces.findIndex((x) => x.name === f.toFace!.name);
       stopFace.setItems([{ item: faceItem(this.app, f.toFace), data: f.toFace, label: index >= 0 ? faceLabel(this.app, index) : tr("Face") }]);
     }
+    let threadSection: HTMLElement;
     const tip = selectField(tr("Drill point"), f.tip ?? 'flat', [
       { value: 'flat' as const, label: tr("Flat") },
       { value: 'drill' as const, label: tr("Drill Point") },
@@ -823,6 +825,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       stopFace.el.hidden = f.end !== 'toObject';
       tip.hidden = !blind;
       tipAngle.hidden = !blind || (f.tip ?? 'flat') !== 'drill';
+      if (threadSection) threadSection.hidden = !tapped;
     };
     sync();
 
@@ -865,18 +868,40 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       this.syncPlacement();
       this.changed();
     });
+    // Fusion keeps the position list short: the exact-coordinate tools hide
+    // behind one collapsed subsection.
+    const precise = section(tr("Exact placement"), [
+      precisionHelp, exactXField, exactYField, this.addExactButton, this.addCenterButton,
+    ], { collapsed: true });
     const positionsSection = section(tr("Positions"), [
-      positions.el, precisionHelp, this.positionList, this.addCenterButton,
-      exactXField, exactYField, this.addExactButton, this.positionsHint, this.confirmPositions,
+      positions.el, this.positionList, this.positionsHint, this.confirmPositions, precise,
     ]);
 
+    const mainKinds: HoleKind[] = ['simple', 'counterbore', 'countersink', 'tapped'];
+    const moreKinds: HoleKind[] = ['doubleCounterbore', 'counterdrill', 'spotface'];
+    const typePick = segmented<HoleKind>(tr("Hole type"), (mainKinds.includes(f.kind) ? f.kind : '') as HoleKind,
+      kinds.filter((k) => mainKinds.includes(k.value)), (v) => {
+        f.kind = v;
+        sync();
+        this.changed();
+      });
+    const more = selectField(tr("More hole types"), (moreKinds.includes(f.kind) ? f.kind : '') as HoleKind, [
+      { value: '' as const, label: tr("More types") },
+      ...kinds.filter((k) => moreKinds.includes(k.value)),
+    ], (v) => {
+      if (!v) return;
+      f.kind = v;
+      sync();
+      this.changed();
+    }, 'hole');
     const typeSection = section(tr("Hole Type"), [
-      selectField(tr("Type"), f.kind, kinds, (v) => { f.kind = v; sync(); this.changed(); }, 'hole'),
-      diameter,
-      threadSize, threadClass, threadPitch, tapDrill,
+      typePick, more, diameter,
       ...cb, ...cb2, ...cs, ...cd, ...sf,
     ]);
-    const endSection = section(tr("End Condition"), [
+    threadSection = section(tr("Threads"), [threadSize, threadClass, threadPitch, tapDrill]);
+    threadSection.hidden = f.kind !== 'tapped';
+    this.threadSection = threadSection;
+    const endSection = section(tr("Termination"), [
       h('div', { class: 'row' }, flipButton(tr("Reverse direction"), f.flip, (v) => { f.flip = v; this.changed(); }), h('div', { class: 'grow' },
         selectField(tr("End condition"), f.end, [
           { value: 'throughAll' as const, label: tr("Through All") },
@@ -887,9 +912,9 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       stopFace.el,
       tip, tipAngle,
     ]);
-    this.parameterSections = [typeSection, endSection];
+    this.parameterSections = [typeSection, threadSection, endSection];
     this.syncPlacement();
-    return [positionsSection, typeSection, endSection];
+    return [positionsSection, typeSection, threadSection, endSection];
   }
 
   /** A face click adds a free point; edges and vertices snap to exact model geometry. */
@@ -1090,6 +1115,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     if (this.addExactButton) this.addExactButton.disabled = !this.f.sketch;
     for (const el of this.exactPlacement) el.hidden = !this.f.sketch;
     for (const s of this.parameterSections) s.hidden = !this.positionsReady;
+    if (this.threadSection) this.threadSection.hidden = !this.positionsReady || this.f.kind !== 'tapped';
     if (!this.positionsReady && this.positionsBox) this.activate(this.positionsBox);
   }
 
