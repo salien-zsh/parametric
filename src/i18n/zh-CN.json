@@ -2016,5 +2016,6 @@
   "Hole callouts": "孔标注",
   "Holes": "孔",
   "Click a face, circular edge or cylinder to place hole positions.": "在面、圆边或圆柱面上单击放置孔位。",
-  "{0} hole position(s). Click more points or press OK.": "已放置 {0} 个孔位。可继续单击或按“确定”。"
+  "{0} hole position(s). Click more points or press OK.": "已放置 {0} 个孔位。可继续单击或按“确定”。",
+  "Edit position sketch": "编辑定位草图"
 }

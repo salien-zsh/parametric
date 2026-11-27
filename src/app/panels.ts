@@ -917,8 +917,15 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
     const precise = section(tr("Exact placement"), [
       precisionHelp, exactXField, exactYField, this.addExactButton, this.addCenterButton,
     ], { collapsed: true });
+    const editSketch = h('button', { type: 'button', class: 'btn small' }, tr("Edit position sketch")) as HTMLButtonElement;
+    editSketch.addEventListener('click', async () => {
+      const id = this.f.sketch;
+      if (!id || this.positionCount() === 0) return;
+      await this.app.closePanel(true);
+      if (this.app.store.feature(id)) this.app.editSketch(id);
+    });
     const positionsSection = section(tr("Positions"), [
-      placementPick, positions.el, this.positionList, this.positionsHint, precise,
+      placementPick, positions.el, this.positionList, this.positionsHint, editSketch, precise,
     ]);
 
     const mainKinds: HoleKind[] = ['simple', 'counterbore', 'countersink', 'tapped'];

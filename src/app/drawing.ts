@@ -7,7 +7,8 @@ import type { DrawingDoc, DrawingView, DrawingViewKind, FaceRef, SectionAxis, Sh
 import type { Vec3 } from '../math/vec';
 import { UNIT_SYSTEMS, formatNumber } from '../model/units';
 import { SHEET_LABELS, STANDARD_SCALES, VIEW_DIRS, VIEW_LABELS, buildSheet, projectedSize, scaleLabel, sheetDims, standardLayout, toPdfPages, toSvg, type Item, type ViewAnnotations, type ViewFrame } from '../drawing/sheet';
-import { cross, dot, normalize } from '../math/vec';
+import { cross, dot, normalize, toWorld } from '../math/vec';
+import { THREAD_PRESETS } from '../model/features';
 import { componentInstanceCount } from '../model/assembly';
 import { toDxf } from '../drawing/dxf';
 import { download, safeName } from '../platform/files';
@@ -373,16 +374,45 @@ export class DrawingWorkspace {
       const near = (p: [number, number]) => p[0] >= bounds[0] - 8 && p[0] <= bounds[2] + 8 && p[1] >= bounds[1] - 8 && p[1] <= bounds[3] + 8;
       const circles: ViewAnnotations['circles'] = [];
       const holes: NonNullable<ViewAnnotations['holes']> = [];
+      // Tapped hole sketches give their circles a thread label (M6 × 1.0).
+      const threadLabels = new Map<string, string>();
+      const tappedRadii: { r: number; label: string }[] = [];
+      if (v.holes) {
+        for (const feature of this.app.store.doc.features) {
+          if (feature.type !== 'hole' || feature.kind !== 'tapped' || !feature.sketch) continue;
+          const label = THREAD_PRESETS.find((x) => x.id === feature.threadSize)?.label ?? feature.threadSize;
+          if (!label) continue;
+          const drill = typeof feature.tapDrillDiameter === 'number' ? feature.tapDrillDiameter : feature.diameter;
+          if (typeof drill === 'number') tappedRadii.push({ r: drill / 2, label });
+          const sk = this.app.store.feature(feature.sketch);
+          if (sk?.type !== 'sketch') continue;
+          const skFrame = this.app.frames[sk.id] ?? sk.frame;
+          if (!skFrame) continue;
+          for (const e of sk.entities) {
+            if (e.t !== 'point') continue;
+            const w = toWorld(skFrame, [e.x, e.y]);
+            const x = dot(w, u), y = -dot(w, up);
+            threadLabels.set(`${x.toFixed(3)},${y.toFixed(3)}`, label);
+          }
+        }
+      }
       // Existing drawings without the flag still get centre marks (the checkbox shows them on).
       if (v.centers !== false) {
         for (const e of this.app.edges) {
           if (e.type !== 'circle' || !e.center || !e.axis || !e.radius) continue;
           if (Math.abs(dot(e.axis, dir)) < 0.999) continue;
           const p: [number, number] = [dot(e.center, u), -dot(e.center, up)];
-          if (near(p)) {
-            circles.push({ x: p[0], y: p[1], r: e.radius });
-            if (v.holes) holes.push({ x: p[0], y: p[1], r: e.radius });
-          }
+          if (near(p)) circles.push({ x: p[0], y: p[1], r: e.radius });
+        }
+      }
+      // Hole callouts do not depend on centre marks being on.
+      if (v.holes) {
+        for (const e of this.app.edges) {
+          if (e.type !== 'circle' || !e.center || !e.axis || !e.radius) continue;
+          if (Math.abs(dot(e.axis, dir)) < 0.999) continue;
+          const p: [number, number] = [dot(e.center, u), -dot(e.center, up)];
+          const radius: number = e.radius;
+          if (near(p)) holes.push({ x: p[0], y: p[1], r: radius, label: threadLabels.get(`${p[0].toFixed(3)},${p[1].toFixed(3)}`) ?? tappedRadii.find((t) => Math.abs(t.r - radius) < 0.2)?.label });
         }
       }
       const balloons: ViewAnnotations['balloons'] = [];

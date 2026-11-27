@@ -164,3 +164,13 @@ describe('hole callouts', () => {
     expect(sheet.items.filter((it) => it.t === 'line' && it.w === 0.18).length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('thread callouts', () => {
+  it('uses the supplied thread label instead of the diameter', () => {
+    const sheet = buildSheet(doc({ holes: true }), new Map([['v1', projection]]), info({
+      annotations: new Map([['v1', { circles: [], balloons: [], holes: [{ x: 20, y: -20, r: 2.5, label: 'M6 × 1.0' }] }]]),
+    }));
+    const texts = sheet.items.filter((it) => it.t === 'text').map((it) => it.s);
+    expect(texts).toContain('M6 × 1.0');
+  });
+});

@@ -1,3 +1,4 @@
+- **Edit position sketch**: the hole panel has a button that commits the hole and opens its position sketch, so the driving X/Y dimensions can be edited on the sketch; drawing hole callouts use the tapped thread label (M6 × 1.0) when the circle matches a tapped hole.
 - **Hole highlights**: circular edges and cylinders centre the hole, other edges snap to their midpoint, hole positions carry driving X/Y dimensions in their sketch, and drawings can show Ø hole callouts.
 - **Hole position dimensions**: each placed hole point gets driving X/Y dimensions to the sketch origin (visible when the position sketch is opened); editing X/Y in the hole panel keeps those dimensions in step, and removing a point removes them.
 - **Fusion hole flow**: pick positions on a planar face, a circular edge or a cylindrical face (centred on the circle) — or a sketch for exact points — set the type/threads/termination and press OK; there is no separate Confirm Positions step.

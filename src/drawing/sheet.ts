@@ -127,8 +127,8 @@ export interface ViewAnnotations {
   circles: { x: number; y: number; r: number }[];
   /** Assembly balloons: the point to lead to, and the bill-of-materials item. */
   balloons: { x: number; y: number; item: number }[];
-  /** Hole callouts (opt-in per view): circle centres and radii in model space. */
-  holes?: { x: number; y: number; r: number }[];
+  /** Hole callouts (opt-in per view): centre and radius, with an optional label. */
+  holes?: { x: number; y: number; r: number; label?: string }[];
 }
 
 export interface SheetInfo {
@@ -249,7 +249,7 @@ export function buildSheet(d: DrawingDoc, projections: Map<string, ProjectionRes
     }
     // Fusion-style hole callouts, when the view asks for them.
     for (const h of annotations?.holes ?? []) {
-      holeCallout(items, tx + h.x * scale, ty + h.y * scale, h.r * scale, `Ø${info.formatLength(2 * h.r)}`);
+      holeCallout(items, tx + h.x * scale, ty + h.y * scale, h.r * scale, h.label ?? `Ø${info.formatLength(2 * h.r)}`);
     }
     if (annotations?.balloons.length) balloon(items, annotations.balloons, tx, ty, scale, f, w, h);
     if (hasDims(v)) {
