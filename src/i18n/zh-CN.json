@@ -2011,5 +2011,6 @@
   "ANSI Unified": "英制统一螺纹",
   "Placement": "放置方式",
   "Selected face": "选定面",
-  "View Cube": "视角立方体"
+  "View Cube": "视角立方体",
+  "A hole position already exists there.": "该位置已有孔位。"
 }

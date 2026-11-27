@@ -1045,6 +1045,13 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
   private addHolePointLocal(x: number, y: number): boolean {
     const sk = this.currentSketch();
     if (!sk || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    // Fusion ignores a click on an existing hole position; say why instead.
+    const tolerance = this.app.store.unitScale * 1e-3;
+    const duplicate = sk.entities.some((e) => e.t === 'point' && Math.hypot(e.x - x, e.y - y) < tolerance);
+    if (duplicate) {
+      if (this.positionsHint) this.positionsHint.textContent = tr("A hole position already exists there.");
+      return false;
+    }
     this.app.store.change(tr("Add hole position"), (doc) => {
       const target = doc.features.find((f) => f.id === sk.id);
       if (target?.type !== 'sketch') return;

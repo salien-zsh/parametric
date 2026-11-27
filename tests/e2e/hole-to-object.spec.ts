@@ -44,6 +44,11 @@ test('a hole can stop at a planar face and the panel switches end conditions', a
   await placement.getByRole('button', { name: 'Selected face' }).click();
   await expect(placement.getByRole('button', { name: 'Selected face' })).toHaveAttribute('aria-pressed', 'true');
 
+  // Adding a second position at the same point is refused, like Fusion.
+  await page.locator('.panel-layer .pm-section > .sec-head', { hasText: 'Exact placement' }).click();
+  await page.getByRole('button', { name: 'Add Exact Position' }).click();
+  await expect(page.getByText('A hole position already exists there.')).toBeVisible();
+
   const end = page.getByRole('combobox', { name: 'End condition' });
   await expect(end).toHaveValue('toObject');
   await expect(page.getByRole('group', { name: 'Stop at face' })).toBeVisible();

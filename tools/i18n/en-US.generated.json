@@ -41,6 +41,7 @@
   "A constraint references a component that no longer exists: {0}.": "A constraint references a component that no longer exists: {0}.",
   "A flanged bushing: 40 mm flange, 20 mm shaft, 10 mm bore": "A flanged bushing: 40 mm flange, 20 mm shaft, 10 mm bore",
   "A hole can stop at a planar face only": "A hole can stop at a planar face only",
+  "A hole position already exists there.": "A hole position already exists there.",
   "A parameter has an invalid value": "A parameter has an invalid value",
   "A projected sketch entity lost its model edge and stays where it was. Delete it or project the edge again.": "A projected sketch entity lost its model edge and stays where it was. Delete it or project the edge again.",
   "A rectangular pattern needs at least two instances.": "A rectangular pattern needs at least two instances.",
