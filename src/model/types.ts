@@ -261,6 +261,13 @@ export interface EdgeFlangeFeature extends FeatureBase {
   thickness?: Param;
 }
 
+/** Unfolds the sheet metal: the base flange plus every edge flange laid flat. */
+export interface FlatPatternFeature extends FeatureBase {
+  type: 'flatPattern';
+  /** Neutral-axis factor used for the bend allowance (0.5 is a common default). */
+  kFactor: Param;
+}
+
 export interface ChamferFeature extends FeatureBase {
   type: 'chamfer';
   edges: EdgeRef[];
@@ -698,6 +705,7 @@ export type Feature =
   | SplitBodyFeature
   | BaseFlangeFeature
   | EdgeFlangeFeature
+  | FlatPatternFeature
   | AxisFeature
   | PointFeature
   | LoftFeature

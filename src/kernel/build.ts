@@ -15,7 +15,7 @@ import * as R from 'replicad';
 import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dist, dot, frameFrom, len, normalize, perpendicular, qAxisAngle, qRotate, scale, sub, toLocal, toWorld } from '../math/vec';
 import type {
-  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeFlangeFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature,
+  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, ChamferFeature, CircularPatternFeature, CoilFeature, DraftFeature, EdgeFlangeFeature, EdgeRef, ExtrudeFeature, FlatPatternFeature, FaceRef, Feature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature,
   FilletFeature, HoleFeature, Id, ImportFeature, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature,
   PlaneRef, PointFeature, RevolveFeature, ShaftFeature, ShellFeature, SkDimension, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature,
   SyncBeltFeature, VBeltFeature, WormGearFeature,
@@ -188,6 +188,7 @@ export class ModelBuilder {
     if (req.components) return this.buildAssembly(req);
     const t0 = performance.now();
     this.order = new Map(req.features.map((f, index) => [f.id, { index, type: f.type }]));
+    this.currentFeatures = req.features;
     let state = emptyState();
     let chain = 'root';
     const status: FeatureStatus[] = [];
@@ -214,6 +215,7 @@ export class ModelBuilder {
       if (!suppressed) {
         try {
           this.warning = null;
+          this.currentIndex = i;
           await this.apply(f, next, req);
           if (this.warning) st = { id: f.id, ok: true, warning: this.warning };
         } catch (e) {
@@ -440,6 +442,7 @@ export class ModelBuilder {
       case 'splitBody': this.applySplitBody(f, st); return 'tool';
       case 'baseFlange': this.applyBaseFlange(f, st); return 'body';
       case 'edgeFlange': this.applyEdgeFlange(f, st); return 'tool';
+      case 'flatPattern': this.applyFlatPattern(f, st); return 'body';
       case 'draft': this.applyDraft(f, st); return 'body';
       case 'shaft': this.applyShaft(f, st); return 'tool';
       case 'spurGear': this.applyTransmission(f, st); return 'tool';
@@ -695,6 +698,9 @@ export class ModelBuilder {
 
   /** Non-fatal message for the feature being built. */
   private warning: string | null = null;
+  /** The features being rebuilt and the index of the one being applied. */
+  private currentFeatures: Feature[] = [];
+  private currentIndex = 0;
 
   private sketchRegions(sketchId: Id, st: State, picks?: Vec2[]): { regions: Region[]; frame: Frame; sketch: SketchFeature } {
     const sketch = st.sketches.get(sketchId);
@@ -1784,6 +1790,64 @@ export class ModelBuilder {
     out = sub(out, scale(dir, dot(out, dir)));
     if (len(out) < 1e-6) out = cross(dir, n);
     return normalize(out);
+  }
+
+  /**
+   * Unfolds the sheet: the base flange profile plus a flat strip for every edge
+   * flange, each strip extended by its bend allowance (angle × (r + K·t)).
+   */
+  private applyFlatPattern(f: FlatPatternFeature, st: State) {
+    const before = this.currentFeatures.slice(0, this.currentIndex);
+    let base: BaseFlangeFeature | null = null;
+    for (const x of before) if (x.type === 'baseFlange') base = x;
+    if (!base) throw new FeatureError(tr("Add a base flange before the flat pattern"));
+    const { regions, frame } = this.sketchRegions(base.sketch, st, base.contours);
+    const thickness = num(base.thickness);
+    if (!(thickness > 0)) throw new FeatureError(tr("The sheet thickness must be greater than zero"));
+    const k = Math.max(0, Math.min(1, num(f.kFactor ?? 0.5)));
+    const dir = scale(frame.n, base.flip ? -1 : 1);
+    const toWorld = (u: number, v: number): Vec3 => add(frame.o, add(scale(frame.x, u), scale(frame.y, v)));
+    const to2d = (p: Vec3): [number, number] => [dot(sub(p, frame.o), frame.x), dot(sub(p, frame.o), frame.y)];
+    const pieces: Sh[] = [];
+    const extrude = (points: Vec3[]): Sh => R.basicFaceExtrusion(R.makePolygon(points) as unknown as R.Face, new R.Vector(scale(dir, thickness))) as unknown as Sh;
+    for (const r of regions) pieces.push(R.basicFaceExtrusion(this.regionFace(r, frame), new R.Vector(scale(dir, thickness))) as unknown as Sh);
+    // A rough centre of the base region, to point each strip outward.
+    const first = regions[0];
+    let cu = 0, cv = 0;
+    if (first) for (const p of first.outer.poly) { cu += p[0]; cv += p[1]; }
+    if (first?.outer.poly.length) { cu /= first.outer.poly.length; cv /= first.outer.poly.length; }
+    for (const ef of before) {
+      if (ef.type !== 'edgeFlange') continue;
+      const edge = this.edgesOf(st)[this.resolveEdge(ef.edge, st)];
+      const d = edge.desc;
+      if (d.type !== 'line' || !d.dir) continue;
+      const a2 = to2d(d.a);
+      const b2 = to2d(d.b);
+      const ex = b2[0] - a2[0], ey = b2[1] - a2[1];
+      const el = Math.hypot(ex, ey);
+      if (el < 1e-6) continue;
+      const ux = ex / el, uy = ey / el;
+      let nx = -uy, ny = ux;
+      const mx = (a2[0] + b2[0]) / 2 - cu, my = (a2[1] + b2[1]) / 2 - cv;
+      if (nx * mx + ny * my < 0) { nx = -nx; ny = -ny; }
+      const rBend = st.sheet?.bendRadius ?? thickness;
+      const angle = (Math.max(0, Math.min(180, num(ef.angle ?? 90))) * Math.PI) / 180;
+      const flat = num(ef.length) + angle * (rBend + k * thickness);
+      // Start inside the base by one thickness so the union is watertight.
+      const su = -thickness;
+      const poly2: [number, number][] = [
+        [a2[0] + nx * su, a2[1] + ny * su],
+        [b2[0] + nx * su, b2[1] + ny * su],
+        [b2[0] + nx * flat, b2[1] + ny * flat],
+        [a2[0] + nx * flat, a2[1] + ny * flat],
+      ];
+      pieces.push(extrude(poly2.map(([u, v]) => toWorld(u, v))));
+    }
+    const flatBody = pieces.length === 1 ? pieces[0] : this.fuseAll(pieces);
+    if (isEmpty(flatBody)) throw new FeatureError(tr("The flat pattern could not be created"));
+    st.body = flatBody;
+    this.setFaces(st, this.nameFaces(f.id, flatBody, st, [], (_d, k2) => `fp${k2}`));
+    st.edges = null;
   }
 
   /** Splits the body with an axis-aligned plane and keeps the requested side. */

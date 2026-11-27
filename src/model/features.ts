@@ -1,7 +1,7 @@
 // Feature factories, display names and parameter metadata.
 
 import type {
-  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, CoilFeature, EdgeFlangeFeature, MoveBodyFeature, OffsetFaceFeature, ScaleBodyFeature, SplitBodyFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
+  AxisFeature, AxisRef, BaseFlangeFeature, BevelGearFeature, CoilFeature, EdgeFlangeFeature, FlatPatternFeature, MoveBodyFeature, OffsetFaceFeature, ScaleBodyFeature, SplitBodyFeature, RibFeature, ThreadFeature, ChamferFeature, CircularPatternFeature, DraftFeature, ExtrudeFeature, Feature, FeatureType, FilletFeature, HoleFeature,
   Id, LinearPatternFeature, LoftFeature, MirrorFeature, PartDocument, PlaneFeature, PlaneRef, RevolveFeature, ShaftFeature, ShellFeature,
   PointFeature, SketchFeature, SpurGearFeature, SprocketFeature, SweepFeature, SyncBeltFeature, VBeltFeature, WormGearFeature,
 } from './types';
@@ -190,6 +190,7 @@ const BASE_NAMES: Record<FeatureType, string> = {
   splitBody: tr('Split Body'),
   baseFlange: tr('Base Flange'),
   edgeFlange: tr('Edge Flange'),
+  flatPattern: tr('Flat Pattern'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -226,6 +227,7 @@ export const FEATURE_LABELS: Record<FeatureType, string> = {
   splitBody: tr('Split Body'),
   baseFlange: tr('Base Flange'),
   edgeFlange: tr('Edge Flange'),
+  flatPattern: tr('Flat Pattern'),
   point: tr('Point'),
   loft: tr('Loft'),
   sweep: tr('Sweep'),
@@ -256,6 +258,7 @@ export function featureIcon(f: Feature): string {
     case 'splitBody': return 'select';
     case 'baseFlange': return 'sheetMetal';
     case 'edgeFlange': return 'edgeFlange';
+    case 'flatPattern': return 'sheetMetal';
     case 'baseFlange': return 'sheetMetal';
     case 'edgeFlange': return 'sheetMetal';
     case 'import': return 'part';
@@ -361,6 +364,10 @@ export const newAxis = (id: Id, name: string): AxisFeature => ({
 
 export const newPoint = (id: Id, name: string): PointFeature => ({
   id, name, type: 'point', kind: 'vertex', point: null, edge: null, face: null, edge2: null, plane: null,
+});
+
+export const newFlatPattern = (id: Id, name: string): FlatPatternFeature => ({
+  id, name, type: 'flatPattern', kFactor: 0.5,
 });
 
 export const newEdgeFlange = (id: Id, name: string): EdgeFlangeFeature => ({

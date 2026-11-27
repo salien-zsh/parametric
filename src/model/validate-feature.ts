@@ -92,6 +92,7 @@ export function validFeature(f: Feature): boolean {
     case 'moveBody': return numeric(r.dx) && numeric(r.dy) && numeric(r.dz)
       && (r.rotX == null || numeric(r.rotX)) && (r.rotY == null || numeric(r.rotY)) && (r.rotZ == null || numeric(r.rotZ));
     case 'baseFlange': return sketchId(r.sketch) && numeric(r.thickness) && numeric(r.bendRadius) && typeof r.flip === 'boolean';
+    case 'flatPattern': return (typeof r.kFactor === 'number' && r.kFactor >= 0 && r.kFactor <= 1) || numeric(r.kFactor);
     case 'edgeFlange': return named(r.edge) && numeric(r.length) && numeric(r.angle) && typeof r.flip === 'boolean'
       && (r.thickness == null || numeric(r.thickness));
     case 'thread': {

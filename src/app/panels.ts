@@ -4,7 +4,7 @@ import type { Frame, Vec2, Vec3 } from '../math/vec';
 import { add, cross, dot, len, scale, sub, toLocal, toWorld } from '../math/vec';
 import {
   defaultName, newChamfer, newCircularPattern, newDraft, newExtrude, newFillet, newHole, newLinearPattern, newLoft,
-  newAxis, newBaseFlange, newBevelGear, newCoil, newEdgeFlange, newMirror, newMoveBody, newOffsetFace, newScaleBody, newSplitBody, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
+  newAxis, newBaseFlange, newBevelGear, newCoil, newEdgeFlange, newFlatPattern, newMirror, newMoveBody, newOffsetFace, newScaleBody, newSplitBody, newPlane, newPoint, newRevolve, newRib, newThread, newShaft, newShell, newSketch, newSpurGear, newSprocket, newSweep, newSyncBelt,
   newVBelt, newWormGear, THREAD_PRESETS,
 } from '../model/features';
 import { BASE_PLANE_NAMES } from '../model/planes';
@@ -15,7 +15,7 @@ import { formatNumber } from '../model/units';
 import { SketchIndex, sketchBounds } from '../sketch/geom';
 import { buildProfiles, inRegion } from '../sketch/profiles';
 import type {
-  AxisFeature, AxisKind, AxisRef, BaseFlangeFeature, ChamferFeature, CoilFeature, EdgeFlangeFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
+  AxisFeature, AxisKind, AxisRef, BaseFlangeFeature, ChamferFeature, CoilFeature, EdgeFlangeFeature, FlatPatternFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
   HoleFeature, Id, LinearPatternFeature, LoftFeature, MirrorFeature, PatternDir, PlaneFeature, PlaneKind, PlaneRef, PointFeature, PointKind, RevolveFeature,
   ShaftFeature, ShellFeature, SketchFeature, SweepFeature,
 } from '../model/types';
@@ -1687,6 +1687,21 @@ export class SweepPanel extends FeaturePanel<SweepFeature> {
 
 // ---------- factory ----------
 
+export class FlatPatternPanel extends FeaturePanel<FlatPatternFeature> {
+  render(): HTMLElement[] {
+    const f = this.f;
+    const k = numberField({ label: tr("K factor"), icon: 'ruler', value: f.kFactor, kind: 'count', ctx: this.ctx(), min: 0, max: 1, onChange: (v) => { f.kFactor = v; this.changed(); } });
+    return [section(tr("Flat Pattern"), [
+      k,
+      h('p', { class: 'field-label' }, tr("Unfolds the base flange and every edge flange using the bend radius and this K factor.")),
+    ])];
+  }
+
+  preview() {
+    return this.f;
+  }
+}
+
 export class EdgeFlangePanel extends FeaturePanel<EdgeFlangeFeature> {
   render(): HTMLElement[] {
     const f = this.f;
@@ -1971,6 +1986,7 @@ export function panelFor(app: App, f: Feature, editing: boolean): PropertyPanel 
     case 'splitBody': return new SplitBodyPanel(app, f, editing);
     case 'baseFlange': return new BaseFlangePanel(app, f, editing);
     case 'edgeFlange': return new EdgeFlangePanel(app, f, editing);
+    case 'flatPattern': return new FlatPatternPanel(app, f, editing);
     case 'draft': return new DraftPanel(app, f, editing);
     case 'shaft': return new ShaftPanel(app, f, editing);
     case 'axis': return new AxisPanel(app, f, editing);
@@ -2058,6 +2074,7 @@ export function startFeature(app: App, type: Feature['type'], opts: { cut?: bool
     }
     case 'loft': f = newLoft(id, name, sel.filter((it) => it.kind === 'feature' && app.store.feature(it.id)?.type === 'sketch').map((it) => (it as { id: Id }).id), !!opts.cut); break;
     case 'sweep': f = newSweep(id, name, !!opts.cut); break;
+    case 'flatPattern': f = newFlatPattern(id, name); break;
     case 'edgeFlange': {
       const x = newEdgeFlange(id, name);
       if (edges[0]) x.edge = edges[0];

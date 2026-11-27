@@ -1966,5 +1966,12 @@
   "The flange length must be greater than zero": "法兰长度必须大于零",
   "The edge flange could not be created": "无法创建边线法兰",
   "Bend a wall up along an edge of the sheet.": "沿钣金边折起侧壁。",
-  "sheet metal edge flange bend wall": "钣金 边线法兰 折弯 侧壁"
+  "sheet metal edge flange bend wall": "钣金 边线法兰 折弯 侧壁",
+  "Flat Pattern": "展开图",
+  "K factor": "中性层系数 K",
+  "Unfolds the base flange and every edge flange using the bend radius and this K factor.": "按折弯半径与该 K 系数展开基体法兰和所有边线法兰。",
+  "Add a base flange before the flat pattern": "请先添加基体法兰再生成展开图",
+  "The flat pattern could not be created": "无法创建展开图",
+  "Unfold the sheet metal along its bends.": "沿折弯展开钣金。",
+  "sheet metal flat pattern unfold bend": "钣金 展开图 折弯"
 }
