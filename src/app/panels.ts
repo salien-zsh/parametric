@@ -12,7 +12,7 @@ import { SHAFT_MATERIALS, sizeShaft } from '../model/shaft';
 import { BaseFeaturePanel } from './pm';
 import { BevelGearPanel, SpurGearPanel, SprocketPanel, SyncBeltPanel, VBeltPanel, WormGearPanel } from './panels-pt';
 import { formatNumber } from '../model/units';
-import { SketchIndex, sketchBounds } from '../sketch/geom';
+import { ORIGIN_ID, SketchIndex, sketchBounds } from '../sketch/geom';
 import { buildProfiles, inRegion } from '../sketch/profiles';
 import type {
   AxisFeature, AxisKind, AxisRef, BaseFlangeFeature, ChamferFeature, CoilFeature, EdgeFlangeFeature, FlatPatternFeature, MoveBodyFeature, OffsetFaceFeature, RibFeature, ScaleBodyFeature, SplitBodyFeature, ThreadFeature, CircularPatternFeature, DraftFeature, EdgeRef, ExtrudeFeature, FaceRef, Feature, FilletFeature,
@@ -1085,7 +1085,17 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       if (target?.type !== 'sketch') return;
       let n = target.entities.length + 1;
       while (target.entities.some((e) => e.id === `p${n}`)) n++;
-      target.entities.push({ id: `p${n}`, t: 'point', x, y });
+      const pointId = `p${n}`;
+      target.entities.push({ id: pointId, t: 'point', x, y });
+      // Driving X/Y dimensions to the sketch origin, visible when the position
+      // sketch is opened — Fusion keeps the hole positions dimensioned.
+      const nextName = () => {
+        let k = 1;
+        while (target.constraints.some((c) => 'name' in c && c.name === `D${k}`)) k++;
+        return `D${k}`;
+      };
+      target.constraints.push({ id: `${pointId}-x`, type: 'hdistance', refs: [pointId, ORIGIN_ID], value: x, at: [x / 2, y - 8], name: nextName() });
+      target.constraints.push({ id: `${pointId}-y`, type: 'vdistance', refs: [pointId, ORIGIN_ID], value: y, at: [x - 8, y / 2], name: nextName() });
     });
     this.renderPositionRows();
     this.syncPlacement();
@@ -1166,14 +1176,22 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       const sk = doc.features.find((f) => f.id === this.f.sketch);
       if (sk?.type !== 'sketch') return;
       const point = sk.entities.find((e) => e.id === id && e.t === 'point');
-      if (point?.t === 'point') point[axis] = value;
+      if (point?.t === 'point') {
+        point[axis] = value;
+        const type = axis === 'x' ? 'hdistance' : 'vdistance';
+        const dim = sk.constraints.find((c) => 'refs' in c && c.type === type && c.refs.includes(id) && c.refs.includes(ORIGIN_ID));
+        if (dim && 'value' in dim) dim.value = value;
+      }
     });
   }
 
   private removePosition(id: Id) {
     this.app.store.change(tr("Remove hole position"), (doc) => {
       const sk = doc.features.find((f) => f.id === this.f.sketch);
-      if (sk?.type === 'sketch') sk.entities = sk.entities.filter((e) => e.id !== id);
+      if (sk?.type === 'sketch') {
+        sk.entities = sk.entities.filter((e) => e.id !== id);
+        sk.constraints = sk.constraints.filter((c) => !('refs' in c && c.refs.includes(id)));
+      }
     });
     this.renderPositionRows();
     this.syncPlacement();

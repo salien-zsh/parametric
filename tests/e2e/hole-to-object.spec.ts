@@ -53,6 +53,18 @@ test('a hole can stop at a planar face and the panel switches end conditions', a
   await page.locator('.panel-layer .pm-section > .sec-head', { hasText: 'Exact placement' }).click();
   await page.getByRole('button', { name: 'Add Exact Position' }).click();
   await expect(page.getByText('A hole position already exists there.')).toBeVisible();
+  // A placed position carries driving X/Y dimensions in its sketch.
+  await page.getByRole('textbox', { name: 'Exact X' }).fill('5');
+  await page.getByRole('textbox', { name: 'Exact X' }).press('Enter');
+  await page.getByRole('textbox', { name: 'Exact Y' }).fill('5');
+  await page.getByRole('textbox', { name: 'Exact Y' }).press('Enter');
+  await page.getByRole('button', { name: 'Add Exact Position' }).click();
+  const autoDims = await page.evaluate(() => {
+    const a = (window as unknown as Handle).__parametric;
+    const sk = a.store.doc.features.find((f) => f.type === 'sketch' && f.id === 'hs') as unknown as { constraints: { type: string; value: number }[] };
+    return sk.constraints.filter((c) => c.type === 'hdistance' || c.type === 'vdistance').map((c) => c.value);
+  });
+  expect(autoDims.sort((x, y) => x - y)).toEqual([5, 5]);
 
   const end = page.getByRole('combobox', { name: 'End condition' });
   await expect(end).toHaveValue('toObject');

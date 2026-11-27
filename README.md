@@ -1,3 +1,4 @@
+- **Hole position dimensions**: each placed hole point gets driving X/Y dimensions to the sketch origin (visible when the position sketch is opened); editing X/Y in the hole panel keeps those dimensions in step, and removing a point removes them.
 - **Fusion hole flow**: pick positions on a planar face, a circular edge or a cylindrical face (centred on the circle) — or a sketch for exact points — set the type/threads/termination and press OK; there is no separate Confirm Positions step.
 - **Hole callouts on drawings**: each drawing view has an opt-in Holes switch; circular edges get a diameter callout (Ø…) with a leader, and the callouts export with the sheet.
 - **Hole position guard**: clicking or adding a position on top of an existing hole point is ignored with a status message, like Fusion.
