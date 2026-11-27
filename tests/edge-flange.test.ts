@@ -37,6 +37,8 @@ describe('edge flange', () => {
     expect(after.bbox!.max[2]).toBeLessThan(20);
     // Still one sheet-metal body joined to the base.
     expect(after.bodies).toBe(1);
+    // The bend follows an arc (faceted approximation), so many more faces.
+    expect(after.faces.length).toBeGreaterThan(before.faces.length + 10);
   });
 
   it('needs a straight edge', async () => {

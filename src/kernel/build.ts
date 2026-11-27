@@ -1724,20 +1724,54 @@ export class ModelBuilder {
     if (!(length > 0)) throw new FeatureError(tr("The flange length must be greater than zero"));
     const angle = (Math.max(0, Math.min(180, num(f.angle ?? 90))) * Math.PI) / 180;
     const up = f.flip ? scale(n, -1) : n;
-    const W = add(scale(sDir, Math.cos(angle)), scale(up, Math.sin(angle)));
-    const Nw = add(scale(sDir, Math.sin(angle)), scale(up, -Math.cos(angle)));
     const faceAt = (s: number, z: number): Vec3 => add(a, add(scale(sDir, s), scale(up, z)));
-    const p0 = faceAt(0, 0);
-    const p1 = add(p0, scale(Nw, thickness));
-    const p2 = add(p1, scale(W, length));
-    const p3 = add(p0, scale(W, length));
-    const m = scale(n, -1);
-    const q0 = a;
-    const q1 = add(a, scale(sDir, thickness));
-    const q2 = add(q1, scale(m, thickness));
-    const q3 = add(a, scale(m, thickness));
     const prism = (points: Vec3[]): Sh => R.basicFaceExtrusion(R.makePolygon(points) as unknown as R.Face, new R.Vector(scale(dir, lenEdge))) as unknown as Sh;
-    const tool = fuse(prism([p0, p1, p2, p3]), prism([q0, q1, q2, q3]));
+    const bendRadius = Math.max(0, st.sheet?.bendRadius ?? 0);
+    let tool: Sh;
+    if (!f.flip && bendRadius > 1e-6) {
+      // Rounded bend: concentric inner (r) and outer (r + t) arcs, then the wall.
+      const r = Math.min(bendRadius, Math.max(length, 1) * 2);
+      const R = r + thickness;
+      const end = angle - Math.PI / 2;
+      const arc = (rad: number, alpha: number): [number, number] => [-r + rad * Math.cos(alpha), r + rad * Math.sin(alpha)];
+      const pts: [number, number][] = [[-r, -thickness]];
+      if (end > -Math.PI / 2 + 1e-6) {
+        const steps = 8;
+        for (let i = 1; i <= steps; i++) {
+          const alpha = -Math.PI / 2 + ((end + Math.PI / 2) * i) / steps;
+          pts.push(arc(R, alpha));
+        }
+      }
+      const outerEnd = arc(R, end);
+      const innerEnd = arc(r, end);
+      const W2: [number, number] = [Math.cos(angle), Math.sin(angle)];
+      pts.push([outerEnd[0] + W2[0] * length, outerEnd[1] + W2[1] * length]);
+      pts.push([innerEnd[0] + W2[0] * length, innerEnd[1] + W2[1] * length]);
+      pts.push(innerEnd);
+      if (end > -Math.PI / 2 + 1e-6) {
+        const steps = 8;
+        for (let i = steps - 1; i >= 1; i--) {
+          const alpha = -Math.PI / 2 + ((end + Math.PI / 2) * i) / steps;
+          pts.push(arc(r, alpha));
+        }
+      }
+      pts.push([-r, 0]);
+      tool = prism(pts.map(([sv, zv]) => add(a, add(scale(sDir, sv), scale(n, zv)))));
+    } else {
+      const up = f.flip ? scale(n, -1) : n;
+      const Wf = add(scale(sDir, Math.cos(angle)), scale(up, Math.sin(angle)));
+      const Nwf = add(scale(sDir, Math.sin(angle)), scale(up, -Math.cos(angle)));
+      const p0 = faceAt(0, 0);
+      const p1 = add(p0, scale(Nwf, thickness));
+      const p2 = add(p1, scale(Wf, length));
+      const p3 = add(p0, scale(Wf, length));
+      const m = scale(n, -1);
+      const q0 = a;
+      const q1 = add(a, scale(sDir, thickness));
+      const q2 = add(q1, scale(m, thickness));
+      const q3 = add(a, scale(m, thickness));
+      tool = fuse(prism([p0, p1, p2, p3]), prism([q0, q1, q2, q3]));
+    }
     if (isEmpty(tool)) throw new FeatureError(tr("The edge flange could not be created"));
     this.applyTool(f.id, st, tool, this.nameTool(f.id, tool, (_d, k) => `e${k}`), false);
   }
