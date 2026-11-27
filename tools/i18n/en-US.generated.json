@@ -284,6 +284,7 @@
   "Click three points on the circle.": "Click three points on the circle.",
   "Click to place sketch points (used to position holes).": "Click to place sketch points (used to position holes).",
   "Click to start a line, click again to add segments. Double-click or press Esc to finish.": "Click to start a line, click again to add segments. Double-click or press Esc to finish.",
+  "Click to start a line, click again to add segments. Drag from the end point to bend the next segment into a tangent arc. Double-click or press Esc to finish.": "Click to start a line, click again to add segments. Drag from the end point to bend the next segment into a tangent arc. Double-click or press Esc to finish.",
   "Click to start a line, click again to add segments. Switch to Arc in the options to chain tangent arcs. Double-click or press Esc to finish.": "Click to start a line, click again to add segments. Switch to Arc in the options to chain tangent arcs. Double-click or press Esc to finish.",
   "Click two points for one edge, then a third for the width.": "Click two points for one edge, then a third for the width.",
   "Click two vertices of a view to place a linear dimension; Esc finishes.": "Click two vertices of a view to place a linear dimension; Esc finishes.",

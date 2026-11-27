@@ -95,3 +95,39 @@ test('feature panels float over the graphics area and can be dragged', async ({ 
   await expect(page.locator('.panel-layer')).toBeHidden();
   expect(errors).toEqual([]);
 });
+
+test('dragging from the end point bends the next segment into a tangent arc', async ({ page }) => {
+  const errors = await openApp(page);
+  await page.getByRole('button', { name: /New part/ }).click();
+  await page.getByRole('treeitem', { name: 'Front Plane' }).click();
+  await page.getByRole('tab', { name: 'Sketch' }).click();
+  await page.locator('[data-cmd="sketch"]').first().click();
+  await expect(page.locator('.view-label')).toHaveText('Front');
+  await page.locator('[data-cmd="tool:line"]').first().click();
+
+  const a = await screenOfModel(page, [0, 0, 0]);
+  const b = await screenOfModel(page, [20, 0, 0]);
+  const c = await screenOfModel(page, [30, 10, 0]);
+  await page.mouse.click(a[0], a[1]);
+  await page.mouse.click(b[0], b[1]);
+  // Drag out of the chain's end point: no switch to the Arc option needed.
+  await page.mouse.move(b[0], b[1]);
+  await page.mouse.down();
+  await page.mouse.move(c[0], c[1], { steps: 8 });
+  await page.mouse.up();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
+  const state = await page.evaluate(() => {
+    const app = (window as unknown as W).__parametric;
+    const sketch = app.store.doc.features.find((f) => f.type === 'sketch')!;
+    if (sketch.type !== 'sketch') return null;
+    return {
+      lines: sketch.entities.filter((e) => e.t === 'line').length,
+      arcs: sketch.entities.filter((e) => e.t === 'arc').length,
+      tangents: sketch.constraints.filter((c) => c.type === 'tangent').length,
+    };
+  });
+  expect(state).toEqual({ lines: 1, arcs: 1, tangents: 1 });
+  expect(errors).toEqual([]);
+});

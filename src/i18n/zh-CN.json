@@ -1973,5 +1973,6 @@
   "Add a base flange before the flat pattern": "请先添加基体法兰再生成展开图",
   "The flat pattern could not be created": "无法创建展开图",
   "Unfold the sheet metal along its bends.": "沿折弯展开钣金。",
-  "sheet metal flat pattern unfold bend": "钣金 展开图 折弯"
+  "sheet metal flat pattern unfold bend": "钣金 展开图 折弯",
+  "Click to start a line, click again to add segments. Drag from the end point to bend the next segment into a tangent arc. Double-click or press Esc to finish.": "单击开始画线，再次单击添加线段；从端点拖出可将下一段弯成相切圆弧。双击或按 Esc 结束。"
 }

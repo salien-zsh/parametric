@@ -103,7 +103,7 @@ export function lineTool(ed: SketchEditor, construction = false): SkTool {
   return {
     id: construction ? 'centerline' : 'line',
     label: construction ? tr("Centerline") : tr("Line"),
-    hint: tr("Click to start a line, click again to add segments. Switch to Arc in the options to chain tangent arcs. Double-click or press Esc to finish."),
+    hint: tr("Click to start a line, click again to add segments. Drag from the end point to bend the next segment into a tangent arc. Double-click or press Esc to finish."),
     from: () => start?.p ?? null,
     exclude: () => new Set<Id>(),
     down(s, e) {
@@ -118,9 +118,11 @@ export function lineTool(ed: SketchEditor, construction = false): SkTool {
       pressStarted = false;
     },
     move(s, _e, dragging) {
-      void dragging;
       if (!start) return;
-      if (mode === 'arc' && tangent) {
+      // Fusion: dragging from the chain's endpoint bends the next segment into
+      // a tangent arc, without switching the tool to Arc first.
+      const draggingArc = dragging && !pressStarted && !!tangent && !!lastCurve;
+      if ((mode === 'arc' || draggingArc) && tangent) {
         const g = tangentArcGeometry(start.p, tangent, s.p);
         if (g) {
           const a0 = angle2(sub2(g.ccw ? start.p : s.p, g.c));
@@ -133,11 +135,18 @@ export function lineTool(ed: SketchEditor, construction = false): SkTool {
       ed.setPreview([[start.p, s.p]], [start.p]);
     },
     up(s, e) {
-      // Click-drag-release draws a single line.
-      if (downAt && Math.hypot(e.x - downAt.x, e.y - downAt.y) > 6 && start && dist2(start.p, s.p) > ed.px * 3) {
-        commitSegment(s);
-        start = null;
-        ed.setPreview([]);
+      const moved = !!downAt && Math.hypot(e.x - downAt.x, e.y - downAt.y) > 6;
+      if (moved && start && dist2(start.p, s.p) > ed.px * 3) {
+        if (!pressStarted && tangent && lastCurve) {
+          // Drag from the end of the chain: a tangent arc, then keep drawing.
+          commitArc(s);
+          ed.setPreview([]);
+        } else {
+          // Click-drag-release from empty space draws a single line.
+          commitSegment(s);
+          start = null;
+          ed.setPreview([]);
+        }
       }
       downAt = null;
     },

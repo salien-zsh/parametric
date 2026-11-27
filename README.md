@@ -8,7 +8,7 @@
 - **Manual dimensions** on drawings: the Dimension tool snaps to projected vertices and places an aligned linear dimension with its true model length; dimensions are listed and deletable in the drawing panel.
 - **Contact sets** group components so moving one (by drag, gizmo or its properties) moves the whole set together.
 - **Exploded views** can be played back with the Play explode button, and their drawings mark the isometric view as EXPLODED.
-- **Fusion interaction**: the Line tool can continue into tangent arcs from its options (Line / Tangent Arc), and command panels float as draggable dialogs over the graphics area instead of taking the left pane.
+- **Fusion interaction**: while drawing lines, dragging from the chain end bends the next segment into a tangent arc (the Line / Tangent Arc options remain), and command panels float as draggable dialogs over the graphics area instead of taking the left pane.
 - **Fusion workflow**: Extrude and Revolve list each closed sketch region as a Profile checkbox, finishing a sketch leaves it selected as the next profile, and double-clicking a component in an assembly activates its part for in-place editing (Finish Part returns to the assembly).
 - The ribbon follows Fusion 360: a **Solid** tab with Create / Modify / Construct / Insert groups, a **Sketch** tab with Create / Modify / Constrain / Dimension / Finish groups, and a separate **Assembly** tab (shown only for assemblies).
 <p align="center"><img src="icon-128.png" width="96" height="96" alt=""></p>
