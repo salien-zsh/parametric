@@ -25,6 +25,13 @@ Parametric models solid parts and assemblies the way mechanical engineers expect
 
 It runs entirely in the browser. The geometry kernel is OpenCascade compiled to WebAssembly, running in a Web Worker so the interface never freezes. Storage, sign-in and settings use [Puter](https://puter.com); you can also work without an account, in which case parts are kept in your browser.
 
+## Fusion / Inventor alignment status
+
+- **Sketching and features**: floating feature dialogs over the graphics area, closed regions listed as Profile checkboxes, the Line tool chaining tangent arcs, and finishing a sketch selects it for the next feature.
+- **Assemblies**: exploded view playback with EXPLODED drawing labels, contact sets that move together, and double-click in-place component editing.
+- **Drawings**: manual linear dimensions with vertex snapping, tolerance callouts (feature-control frames), multi-sheet drawings with one PDF page per sheet, BOM and exploded labels.
+- **Multi-body and sheet metal**: Extrude New body and Split Body keep-both, Base Flange, Edge Flange with rounded bends, and a Flat Pattern that unfolds every flange with a K-factor bend allowance.
+
 ## Features
 
 **Sketching**
