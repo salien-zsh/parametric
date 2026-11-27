@@ -36,13 +36,46 @@ export class ViewCube {
   private hover = -1;
   private hoverCorner = -1;
   private lastKey = '';
+  private drag: { id: number; x: number; y: number; moved: boolean } | null = null;
 
   constructor(private app: App) {
     this.canvas = h('canvas', { class: 'vc-canvas', width: String(this.size), height: String(this.size), 'aria-label': tr("View cube"), role: 'img' }) as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d');
-    this.canvas.addEventListener('pointermove', (e) => this.pick(e, true));
+    this.canvas.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      this.canvas.setPointerCapture(e.pointerId);
+      this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+      this.canvas.style.cursor = 'grabbing';
+    });
+    this.canvas.addEventListener('pointermove', (e) => {
+      const d = this.drag;
+      if (d && d.id === e.pointerId) {
+        const dx = e.clientX - d.x, dy = e.clientY - d.y;
+        if (!d.moved && Math.hypot(dx, dy) > 3) d.moved = true;
+        d.x = e.clientX;
+        d.y = e.clientY;
+        if (d.moved) {
+          // Dragging the cube orbits the camera, like Fusion's ViewCube.
+          this.app.renderer.camera.orbit(dx * 1.2, dy * 1.2);
+          this.sync(true);
+        }
+        return;
+      }
+      this.pick(e, true);
+    });
     this.canvas.addEventListener('pointerleave', () => { if (this.hover !== -1 || this.hoverCorner !== -1) { this.hover = -1; this.hoverCorner = -1; this.sync(true); } });
-    this.canvas.addEventListener('click', (e) => this.pick(e, false));
+    const release = (e: PointerEvent) => {
+      const d = this.drag;
+      if (!d || d.id !== e.pointerId) return;
+      this.drag = null;
+      this.canvas.style.cursor = 'default';
+      try { this.canvas.releasePointerCapture(e.pointerId); } catch { /* not captured */ }
+      // A press without dragging is a click on a face or corner.
+      if (!d.moved) this.pick(e, false);
+    };
+    this.canvas.addEventListener('pointerup', release);
+    this.canvas.addEventListener('pointercancel', () => { this.drag = null; this.canvas.style.cursor = 'default'; });
     const home = h('button', { class: 'vc-home', type: 'button', 'aria-label': tr("Home view"), title: tr("Home view (isometric)") }, icon('viewIso', 16));
     home.addEventListener('click', () => app.viewport.setView('isometric'));
     this.el = h('div', { class: 'view-cube', role: 'group', 'aria-label': tr("View cube") }, this.canvas, home);
@@ -86,7 +119,7 @@ export class ViewCube {
     this.el.hidden = app.inDrawing;
     if (this.el.hidden || !this.ctx) return;
     const cam = app.renderer.camera;
-    const key = [...cam.right, ...cam.up, ...cam.back, cam.viewName() ?? '', String(this.hover), String(this.hoverCorner)].join(',');
+    const key = [...cam.right, ...cam.up, ...cam.back, cam.viewName() ?? '', String(this.hover), String(this.hoverCorner), String(!!this.drag)].join(',');
     if (!force && key === this.lastKey) return;
     this.lastKey = key;
     const ctx = this.ctx;

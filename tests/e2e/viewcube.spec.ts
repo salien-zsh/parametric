@@ -52,5 +52,16 @@ test('the ViewCube turns with the camera and snaps to a clicked face', async ({ 
   const target = [-1 / Math.sqrt(3), 1 / Math.sqrt(3), 1 / Math.sqrt(3)];
   const d = Math.abs((back[0] * target[0] + back[1] * target[1] + back[2] * target[2]) / len);
   expect(d).toBeGreaterThan(0.98);
+
+  // Dragging the cube itself orbits the camera.
+  const canvasBox = (await page.locator('.vc-canvas').boundingBox())!;
+  const before = await page.evaluate(() => [...(window as unknown as W).__parametric.renderer.camera.rot]);
+  await page.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(canvasBox.x + canvasBox.width / 2 + 45, canvasBox.y + canvasBox.height / 2 + 20, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  const after = await page.evaluate(() => [...(window as unknown as W).__parametric.renderer.camera.rot]);
+  expect(Math.hypot(after[0] - before[0], after[1] - before[1], after[2] - before[2], after[3] - before[3])).toBeGreaterThan(0.05);
   expect(errors).toEqual([]);
 });
