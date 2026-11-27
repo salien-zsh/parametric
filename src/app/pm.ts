@@ -266,8 +266,7 @@ export function numberField(o: NumberFieldOptions): HTMLElement {
   }) as HTMLInputElement;
   let current: Param = o.value;
   const fx = h('select', {
-    class: 'input', 'aria-label': tr("Use fx parameter for {0}", [o.label]), title: tr("Link this value to an fx parameter"),
-    style: { width: '74px', flex: '0 0 74px' },
+    class: 'input fx-select', 'aria-label': tr("Use fx parameter for {0}", [o.label]), title: tr("Link this value to an fx parameter"),
   }) as HTMLSelectElement;
   const parameterOptions = () => {
     const names = [...o.ctx.variables().keys()].sort((a, b) => a.localeCompare(b));

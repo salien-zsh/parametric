@@ -1,3 +1,4 @@
+- **Fusion field row**: value, stepper and the fx parameter link share one compact rounded row; the fx dropdown is a small borderless control at the field end.
 - **ViewCube edge zones**: the small edge dots look along the middle of two adjacent faces (e.g. top-front), between the face and corner zones.
 - **ViewCube orbit**: dragging the ViewCube itself orbits the camera (facets and corners still snap on click).
 - **ViewCube corners**: the small corner circles look along that diagonal (isometric corners), complementing the six face buttons and the home button.
