@@ -35,6 +35,7 @@ export class ViewCube {
   private readonly size = 112;
   private hover = -1;
   private hoverCorner = -1;
+  private hoverEdge = -1;
   private lastKey = '';
   private drag: { id: number; x: number; y: number; moved: boolean } | null = null;
 
@@ -64,7 +65,7 @@ export class ViewCube {
       }
       this.pick(e, true);
     });
-    this.canvas.addEventListener('pointerleave', () => { if (this.hover !== -1 || this.hoverCorner !== -1) { this.hover = -1; this.hoverCorner = -1; this.sync(true); } });
+    this.canvas.addEventListener('pointerleave', () => { if (this.hover !== -1 || this.hoverCorner !== -1 || this.hoverEdge !== -1) { this.hover = -1; this.hoverCorner = -1; this.hoverEdge = -1; this.sync(true); } });
     const release = (e: PointerEvent) => {
       const d = this.drag;
       if (!d || d.id !== e.pointerId) return;
@@ -97,8 +98,16 @@ export class ViewCube {
 
   /** The eight cube corners, in world space. */
   private static readonly CORNERS: Vec3[] = [];
+  /** One point on each of the twelve edges, for the edge view zones. */
+  private static readonly EDGES: Vec3[] = [];
   static {
     for (const x of [-1, 1]) for (const y of [-1, 1]) for (const z of [-1, 1]) ViewCube.CORNERS.push([x, y, z]);
+    for (const a of ViewCube.CORNERS) for (const b of ViewCube.CORNERS) {
+      if (a[0] !== b[0] || a[1] !== b[1] || a[2] !== b[2]) {
+        const diff = (a[0] !== b[0] ? 1 : 0) + (a[1] !== b[1] ? 1 : 0) + (a[2] !== b[2] ? 1 : 0);
+        if (diff === 1) ViewCube.EDGES.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]);
+      }
+    }
   }
 
   /** Visible faces, nearest last (painter order). */
@@ -119,7 +128,7 @@ export class ViewCube {
     this.el.hidden = app.inDrawing;
     if (this.el.hidden || !this.ctx) return;
     const cam = app.renderer.camera;
-    const key = [...cam.right, ...cam.up, ...cam.back, cam.viewName() ?? '', String(this.hover), String(this.hoverCorner), String(!!this.drag)].join(',');
+    const key = [...cam.right, ...cam.up, ...cam.back, cam.viewName() ?? '', String(this.hover), String(this.hoverCorner), String(this.hoverEdge), String(!!this.drag)].join(',');
     if (!force && key === this.lastKey) return;
     this.lastKey = key;
     const ctx = this.ctx;
@@ -132,6 +141,17 @@ export class ViewCube {
     const faces = this.visibleFaces();
     // The corner zones sit above the faces: small circles at each visible corner.
     const corners = ViewCube.CORNERS.map((p) => ({ p, ...this.project(p) })).filter((c) => c.z > -0.05);
+    const edges = ViewCube.EDGES.map((p) => ({ p, ...this.project(p) })).filter((c) => c.z > -0.05);
+    edges.forEach((c, i) => {
+      const hot = this.hoverEdge === i;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, hot ? 6 : 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = hot ? 'rgba(42,127,255,0.35)' : 'rgba(120,130,140,0.10)';
+      ctx.fill();
+      ctx.strokeStyle = hot ? active : 'rgba(110,120,130,0.45)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
     corners.forEach((c, i) => {
       const hot = this.hoverCorner === i;
       ctx.beginPath();
@@ -184,10 +204,23 @@ export class ViewCube {
     if (cornerHit >= 0) {
       if (hover) {
         this.canvas.style.cursor = 'pointer';
-        if (cornerHit !== this.hoverCorner) { this.hoverCorner = cornerHit; this.hover = -1; this.sync(true); }
+        if (cornerHit !== this.hoverCorner) { this.hoverCorner = cornerHit; this.hoverEdge = -1; this.hover = -1; this.sync(true); }
         return;
       }
       this.app.viewport.setOrientation(corners[cornerHit].p);
+      return;
+    }
+    // Edge zones: look along the middle of two adjacent faces.
+    const edges = ViewCube.EDGES.map((p) => ({ p, ...this.project(p) })).filter((c) => c.z > -0.05);
+    let edgeHit = -1;
+    edges.forEach((c, i) => { if (Math.hypot(c.x - x, c.y - y) <= 8) edgeHit = i; });
+    if (edgeHit >= 0) {
+      if (hover) {
+        this.canvas.style.cursor = 'pointer';
+        if (edgeHit !== this.hoverEdge) { this.hoverEdge = edgeHit; this.hoverCorner = -1; this.hover = -1; this.sync(true); }
+        return;
+      }
+      this.app.viewport.setOrientation(edges[edgeHit].p);
       return;
     }
     const faces = this.visibleFaces();
@@ -202,7 +235,7 @@ export class ViewCube {
     });
     if (hover) {
       this.canvas.style.cursor = hit >= 0 ? 'pointer' : 'default';
-      if (hit !== this.hover || this.hoverCorner !== -1) { this.hover = hit; this.hoverCorner = -1; this.sync(true); }
+      if (hit !== this.hover || this.hoverCorner !== -1 || this.hoverEdge !== -1) { this.hover = hit; this.hoverCorner = -1; this.hoverEdge = -1; this.sync(true); }
       return;
     }
     if (hit >= 0) this.app.viewport.setView(faces[hit].face.view);

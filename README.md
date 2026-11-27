@@ -1,3 +1,4 @@
+- **ViewCube edge zones**: the small edge dots look along the middle of two adjacent faces (e.g. top-front), between the face and corner zones.
 - **ViewCube orbit**: dragging the ViewCube itself orbits the camera (facets and corners still snap on click).
 - **ViewCube corners**: the small corner circles look along that diagonal (isometric corners), complementing the six face buttons and the home button.
 - **Fusion ViewCube**: a turning ViewCube in the graphics top-right shows FRONT/TOP/RIGHT and the other standard directions; click a face to snap there and the home button returns to isometric.

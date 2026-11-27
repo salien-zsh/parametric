@@ -53,6 +53,26 @@ test('the ViewCube turns with the camera and snaps to a clicked face', async ({ 
   const d = Math.abs((back[0] * target[0] + back[1] * target[1] + back[2] * target[2]) / len);
   expect(d).toBeGreaterThan(0.98);
 
+  // An edge zone looks along the middle of two faces, e.g. (0, 1, 1).
+  const edge = await page.evaluate(() => {
+    const a = (window as unknown as W).__parametric;
+    const cam = a.renderer.camera;
+    const canvas = document.querySelector<HTMLCanvasElement>('.vc-canvas')!;
+    const size = 112, s = 26;
+    const dot = (v: number[], w: number[]) => v[0] * w[0] + v[1] * w[1] + v[2] * w[2];
+    const p = [0, 1, 1];
+    const px = size / 2 + dot(p, cam.right as number[]) * s;
+    const py = size / 2 - dot(p, cam.up as number[]) * s;
+    const rect = canvas.getBoundingClientRect();
+    return { x: rect.left + (px / size) * rect.width, y: rect.top + (py / size) * rect.height };
+  });
+  await page.mouse.click(edge.x, edge.y);
+  await page.waitForTimeout(500);
+  const edgeBack = await page.evaluate(() => (window as unknown as W).__parametric.renderer.camera.back as number[]);
+  const elen = Math.hypot(edgeBack[0], edgeBack[1], edgeBack[2]);
+  expect(Math.abs(edgeBack[1] / elen)).toBeGreaterThan(0.6);
+  expect(Math.abs(edgeBack[2] / elen)).toBeGreaterThan(0.6);
+
   // Dragging the cube itself orbits the camera.
   const canvasBox = (await page.locator('.vc-canvas').boundingBox())!;
   const before = await page.evaluate(() => [...(window as unknown as W).__parametric.renderer.camera.rot]);
