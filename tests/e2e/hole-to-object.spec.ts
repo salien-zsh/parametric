@@ -54,7 +54,21 @@ test('a hole can stop at a planar face and the panel switches end conditions', a
   await expect(page.getByRole('textbox', { name: 'Counterbore diameter', exact: true })).toBeVisible();
   await types.getByRole('button', { name: 'Tapped', exact: true }).click();
   await expect(page.getByRole('combobox', { name: 'Thread size' })).toBeVisible();
-  await types.getByRole('button', { name: 'Simple', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: 'Thread size' })).toBeHidden();
+
+  // Threads follow Fusion: standard first, then the sizes of that standard.
+  const standard = page.getByRole('combobox', { name: 'Thread standard' });
+  await expect(standard).toBeVisible();
+  await standard.selectOption('unc');
+  await page.getByRole('combobox', { name: 'Thread size' }).selectOption({ label: '#10-24 UNC' });
+  // Panel edits are cloned until OK applies them.
+  await page.locator('.panel-layer .pm-actions .ok').click();
+  await page.waitForTimeout(600);
+  const threaded = await page.evaluate(() => {
+    const f = (window as unknown as Handle).__parametric.store.doc.features.find((x) => x.id === 'h1') as unknown as { threadSize?: string; diameter: number; kind: string };
+    return { size: f.threadSize, diameter: Number(f.diameter), kind: f.kind };
+  });
+  expect(threaded.kind).toBe('tapped');
+  expect(threaded.size).toBe('10-24');
+  expect(threaded.diameter).toBeCloseTo(4.826, 2);
   expect(errors).toEqual([]);
 });

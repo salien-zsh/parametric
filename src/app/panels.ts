@@ -759,10 +759,21 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       numberField({ label: tr("Spotface depth"), value: f.sfDepth ?? nominal * 0.4, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.sfDepth = v; this.changed(); } }),
     ];
     const diameter = numberField({ label: tr("Diameter"), value: f.diameter, kind: 'length', ctx, min: 1e-6, onChange: (v) => { f.diameter = v; this.changed(); } });
-    const threadSize = selectField(tr("Thread size"), f.threadSize ?? 'Custom', [
-      ...THREAD_PRESETS.map((p) => ({ value: p.id, label: p.label })),
-      { value: 'Custom', label: tr("Custom") },
-    ], (v) => {
+    // Fusion's Threads section: standard first, then the sizes of that standard.
+    let threadStandard: 'metric' | 'unc' = (f.threadSize ?? '').startsWith('M') ? 'metric' : 'unc';
+    const threadSelect = h('select', { class: 'input', 'aria-label': tr("Thread size") }) as HTMLSelectElement;
+    const fillThreadSizes = () => {
+      threadSelect.textContent = '';
+      for (const p of THREAD_PRESETS.filter((p) => /^M/.test(p.id) === (threadStandard === 'metric'))) {
+        threadSelect.append(h('option', { value: p.id }, p.label));
+      }
+      threadSelect.append(h('option', { value: 'Custom' }, tr("Custom")));
+    };
+    fillThreadSizes();
+    if (f.threadSize && [...threadSelect.options].some((o) => o.value === f.threadSize)) threadSelect.value = f.threadSize;
+    else threadSelect.value = 'Custom';
+    threadSelect.addEventListener('change', () => {
+      const v = threadSelect.value;
       f.threadSize = v;
       const preset = THREAD_PRESETS.find((p) => p.id === v);
       if (preset) {
@@ -772,6 +783,27 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
         setFieldValue(diameter, preset.nominal, 'length');
         setFieldValue(threadPitch, preset.pitch, 'length');
         setFieldValue(tapDrill, preset.tapDrill, 'length');
+      }
+      sync();
+      this.changed();
+    });
+    const threadSize = h('div', {}, h('div', { class: 'field-label' }, tr("Thread size")), threadSelect);
+    const threadStandardField = selectField(tr("Thread standard"), threadStandard, [
+      { value: 'metric' as const, label: tr("ISO Metric") },
+      { value: 'unc' as const, label: tr("ANSI Unified") },
+    ], (v) => {
+      threadStandard = v;
+      fillThreadSizes();
+      const first = THREAD_PRESETS.find((p) => /^M/.test(p.id) === (threadStandard === 'metric'));
+      if (first) {
+        f.threadSize = first.id;
+        f.diameter = first.nominal;
+        f.threadPitch = first.pitch;
+        f.tapDrillDiameter = first.tapDrill;
+        threadSelect.value = first.id;
+        setFieldValue(diameter, first.nominal, 'length');
+        setFieldValue(threadPitch, first.pitch, 'length');
+        setFieldValue(tapDrill, first.tapDrill, 'length');
       }
       sync();
       this.changed();
@@ -815,6 +847,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       sf.forEach((x) => { x.hidden = f.kind !== 'spotface'; });
       const tapped = f.kind === 'tapped';
       const customThread = tapped && (f.threadSize ?? 'Custom') === 'Custom';
+      threadStandardField.hidden = !tapped;
       threadSize.hidden = !tapped;
       threadClass.hidden = !tapped;
       tapDrill.hidden = !tapped;
@@ -898,7 +931,7 @@ export class HolePanel extends FeaturePanel<HoleFeature> {
       typePick, more, diameter,
       ...cb, ...cb2, ...cs, ...cd, ...sf,
     ]);
-    threadSection = section(tr("Threads"), [threadSize, threadClass, threadPitch, tapDrill]);
+    threadSection = section(tr("Threads"), [threadStandardField, threadSize, threadClass, threadPitch, tapDrill]);
     threadSection.hidden = f.kind !== 'tapped';
     this.threadSection = threadSection;
     const endSection = section(tr("Termination"), [

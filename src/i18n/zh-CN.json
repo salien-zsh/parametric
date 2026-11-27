@@ -2005,5 +2005,8 @@
   "Exact placement": "精确位置",
   "Termination": "终止条件",
   "Hole type": "孔类型",
-  "Threads": "螺纹"
+  "Threads": "螺纹",
+  "Thread standard": "螺纹标准",
+  "ISO Metric": "公制螺纹",
+  "ANSI Unified": "英制统一螺纹"
 }
