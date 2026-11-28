@@ -102,6 +102,11 @@ contextBridge.exposeInMainWorld('desktopAPI', {
     write: async (root, file, data) => call('project:write', root, file, await toBytes(data)),
     delete: (root, file) => call('project:delete', root, file),
   },
+  // Project/workspace metadata mirrored into userData/workspace.json.
+  workspace: {
+    read: () => ipcRenderer.sendSync('workspace:read-sync'),
+    write: (state) => call('workspace:write', state),
+  },
   updates: {
     check: () => call('update:check'),
     state: () => call('update:state'),

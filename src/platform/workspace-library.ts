@@ -51,7 +51,62 @@ const readJson = <T>(key: string, fallback: T): T => {
 };
 const writeJson = (key: string, value: unknown) => {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable */ }
+  if (WORKSPACE_KEYS.includes(key)) persistWorkspace();
 };
+
+const WORKSPACE_KEYS = [PROJECT_KEY, ASSIGNMENT_KEY, ACTIVE_PROJECT_KEY, LIBRARY_KEY];
+let persistingWorkspace = false;
+
+/** Mirrors the project metadata into the desktop workspace file. */
+function persistWorkspace() {
+  const bridge = desktopAPI()?.workspace;
+  if (!bridge || persistingWorkspace) return;
+  persistingWorkspace = true;
+  const state: Record<string, unknown> = { form: 1 };
+  for (const key of WORKSPACE_KEYS) state[key] = localStorage.getItem(key);
+  void Promise.resolve(bridge.write(state)).catch(() => { /* best effort */ }).finally(() => { persistingWorkspace = false; });
+}
+
+// Desktop: the renderer origin can change between launches, so restore the
+// project list from the workspace file before anything reads it.
+function hydrateWorkspace() {
+  const bridge = desktopAPI()?.workspace;
+  if (!bridge) return;
+  try {
+    const saved = bridge.read();
+    if (!isRecord(saved) || saved.form !== 1) return;
+    for (const key of WORKSPACE_KEYS) {
+      const value = saved[key];
+      if (typeof value === 'string' && value && !localStorage.getItem(key)) localStorage.setItem(key, value);
+    }
+  } catch { /* unreadable workspace file: start empty */ }
+}
+hydrateWorkspace();
+
+// First run after an upgrade (or a lost renderer origin): rebuild a project
+// from the parts already in local storage instead of showing an empty list.
+function adoptExistingParts() {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    if (localStorage.getItem(PROJECT_KEY) !== null) return;
+    const parts = readJson<unknown[]>('parametric:local-parts', []);
+    if (!Array.isArray(parts) || !parts.length) return;
+    const project: LocalProject = {
+      id: uniqueId('project-recovered-', new Set()),
+      name: tr("Recovered Project"),
+      created: Date.now(),
+      modified: Date.now(),
+    };
+    const assignments: Record<string, string> = {};
+    for (const raw of parts) {
+      if (!isRecord(raw) || typeof raw.id !== 'string') continue;
+      assignments[`local:${raw.id}`] = project.id;
+    }
+    writeJson(PROJECT_KEY, [project]);
+    writeJson(ASSIGNMENT_KEY, assignments);
+  } catch { /* storage unavailable: leave the list empty */ }
+}
+adoptExistingParts();
 
 const projectListeners = new Set<() => void>();
 const resourceListeners = new Set<() => void>();
@@ -121,6 +176,7 @@ export function setActiveProject(id: string | null) {
     if (id && localProjects().some((p) => p.id === id)) localStorage.setItem(ACTIVE_PROJECT_KEY, id);
     else localStorage.removeItem(ACTIVE_PROJECT_KEY);
   } catch { /* storage unavailable */ }
+  persistWorkspace();
   changed(projectListeners);
 }
 

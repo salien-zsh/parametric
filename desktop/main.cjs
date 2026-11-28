@@ -22,6 +22,7 @@ const DIST = path.join(ROOT, 'dist');
 const USER = app.getPath('userData');
 const PARTS = path.join(USER, 'parts');
 const KV_FILE = path.join(USER, 'kv.json');
+const WORKSPACE_FILE = path.join(USER, 'workspace.json');
 const projectRoots = new Set();
 
 const MIME = {
@@ -213,10 +214,39 @@ async function startServer() {
     }
   });
   await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', resolve);
+    // A stable port keeps the renderer origin stable, so localStorage and OPFS
+    // (projects, recent parts) survive every relaunch. Fall back to nearby
+    // ports and finally to an ephemeral one when they are all taken.
+    const FIRST = 17651;
+    let candidate = FIRST;
+    const attempt = () => {
+      const onError = (err) => {
+        server.off('listening', onListening);
+        if (err && err.code === 'EADDRINUSE' && candidate < FIRST + 20) {
+          candidate += 1;
+          setImmediate(attempt);
+          return;
+        }
+        if (candidate >= FIRST + 20) {
+          // Last resort: let the OS pick a port (project metadata then relies
+          // on the workspace file hydration below).
+          server.once('error', reject);
+          server.listen(0, '127.0.0.1', () => resolve());
+          return;
+        }
+        reject(err);
+      };
+      const onListening = () => {
+        server.off('error', onError);
+        port = server.address().port;
+        resolve();
+      };
+      server.once('error', onError);
+      server.once('listening', onListening);
+      server.listen(candidate, '127.0.0.1');
+    };
+    attempt();
   });
-  port = server.address().port;
 }
 
 // ---- 本地文件（兼容 Puter FS 接口）----
@@ -246,6 +276,17 @@ async function kvRead() {
 async function kvWrite(obj) {
   await fsp.mkdir(USER, { recursive: true });
   await fsp.writeFile(KV_FILE, JSON.stringify(obj, null, 2), 'utf8');
+}
+
+// Workspace metadata (local projects, assignments, active project, resource
+// centre) is mirrored here so a changed port can never lose the project list.
+function workspaceReadSync() {
+  try { return JSON.parse(fs.readFileSync(WORKSPACE_FILE, 'utf8')); }
+  catch { return null; }
+}
+async function workspaceWrite(obj) {
+  await fsp.mkdir(USER, { recursive: true });
+  await fsp.writeFile(WORKSPACE_FILE, JSON.stringify(obj ?? {}, null, 2), 'utf8');
 }
 
 function registerIpc() {
@@ -396,6 +437,8 @@ function registerIpc() {
   ipcMain.handle('win:setTitle', (_e, title) => { if (win) win.setTitle(String(title)); });
   ipcMain.handle('win:onClose', () => true);
   ipcMain.handle('app:info', () => ({ userData: USER, partsDir: PARTS, version: app.getVersion(), port }));
+  ipcMain.on('workspace:read-sync', (e) => { e.returnValue = workspaceReadSync(); });
+  ipcMain.handle('workspace:write', async (_e, state) => { await workspaceWrite(state); return true; });
   ipcMain.handle('app:exit', () => app.quit());
   ipcMain.handle('app:openExternal', (_e, url) => shell.openExternal(url));
   ipcMain.handle('app:launchedItems', () => launchedItems);

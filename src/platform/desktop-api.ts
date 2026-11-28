@@ -19,6 +19,8 @@ export interface DesktopAPI {
   info(): Promise<{ userData: string; partsDir: string; version: string; port: number }>;
   openExternal(url: string): Promise<void>;
   projects?: DesktopProjectBridge;
+  /** Mirror of the workspace metadata (projects, assignments, resources). */
+  workspace?: { read(): unknown; write(state: unknown): Promise<boolean> };
   updates?: {
     check(): Promise<boolean>;
     state(): Promise<unknown>;
