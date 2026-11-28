@@ -115,7 +115,7 @@ export function buildStartHome(app: App, files: FileOps, onOpen: () => void): { 
     allOption.selected = projectId === null;
     projectSelect.append(allOption);
     for (const p of localProjects()) {
-      const option = h('option', { value: p.id }, `${p.name} (${counts[p.id] ?? 0})`) as HTMLOptionElement;
+      const option = h('option', { value: p.id, title: p.path ?? tr("Browser project") }, `${p.name} (${counts[p.id] ?? 0}) · ${dateText(p.modified)}`) as HTMLOptionElement;
       option.selected = projectId === p.id;
       projectSelect.append(option);
     }
