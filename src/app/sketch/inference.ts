@@ -27,6 +27,8 @@ export interface SnapOptions {
   tol: number;
   /** Grid step to snap to (sketch units), when snapping to the grid is on. */
   grid?: number;
+  /** Point magnet radius as a multiple of tol (default 1.8). */
+  pointFactor?: number;
 }
 
 export function snapPoint(sk: SketchFeature, raw: Vec2, o: SnapOptions): Snap {
@@ -34,7 +36,7 @@ export function snapPoint(sk: SketchFeature, raw: Vec2, o: SnapOptions): Snap {
   const ix = new SketchIndex(sk.entities);
   const tol = o.tol;
   // Points get a stronger magnet than curves and guides.
-  const pointTol = tol * 1.8;
+  const pointTol = tol * (o.pointFactor ?? 1.8);
   const ex = o.exclude ?? new Set<Id>();
   // 1. Existing points (end points, centres, sketch points) and the origin.
   let best: Snap | null = null;

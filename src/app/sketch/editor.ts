@@ -319,6 +319,7 @@ export class SketchEditor implements ViewportTool {
       exclude: t?.exclude?.(),
       disabled: !!e?.ctrl || t?.snaps === false,
       tol: this.px * 9,
+      pointFactor: this.app.settings.snapStrength === 'weak' ? 1.2 : this.app.settings.snapStrength === 'strong' ? 2.8 : 1.8,
       grid: this.app.settings.snapToGrid ? gridSpacing(this.px) : undefined,
     });
   }

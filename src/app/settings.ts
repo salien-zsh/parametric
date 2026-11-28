@@ -13,6 +13,8 @@ export interface Settings {
   autoNormalTo: boolean;
   /** Show the Fusion-style ViewCube in the graphics area. */
   showViewCube: boolean;
+  /** How strongly sketch points pull the cursor: weak, standard or strong. */
+  snapStrength: 'weak' | 'normal' | 'strong';
   defaultUnits: 'MMGS' | 'CGS' | 'MKS' | 'IPS';
 }
 
@@ -28,6 +30,7 @@ export const DEFAULT_SETTINGS: Settings = {
   quality: 1,
   autoNormalTo: true,
   showViewCube: true,
+  snapStrength: 'normal',
   defaultUnits: 'MMGS',
 };
 
@@ -40,6 +43,7 @@ export function normalizeSettings(value: unknown, fallback: Settings = DEFAULT_S
     if (Object.hasOwn(raw, key) && typeof raw[key] === 'boolean') result[key] = raw[key];
   }
   if (Object.hasOwn(raw, 'quality') && (raw.quality === 0 || raw.quality === 1 || raw.quality === 2)) result.quality = raw.quality;
+  if (raw.snapStrength === 'weak' || raw.snapStrength === 'normal' || raw.snapStrength === 'strong') result.snapStrength = raw.snapStrength;
   if (Object.hasOwn(raw, 'defaultUnits') && (raw.defaultUnits === 'MMGS' || raw.defaultUnits === 'CGS' || raw.defaultUnits === 'MKS' || raw.defaultUnits === 'IPS')) {
     result.defaultUnits = raw.defaultUnits;
   }

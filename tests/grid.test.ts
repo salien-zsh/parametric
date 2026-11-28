@@ -92,3 +92,12 @@ describe('sketch point magnet', () => {
     expect(snapPoint(sk, [12, 0], { tol: 1 }).kind).not.toBe('point');
   });
 });
+
+describe('point snap strength levels', () => {
+  it('scales the point magnet with the pointFactor option', () => {
+    const sk = emptySketch();
+    sk.entities.push({ id: 'p1', t: 'point', x: 10, y: 0 });
+    expect(snapPoint(sk, [11.5, 0], { tol: 1, pointFactor: 1.2 }).kind).not.toBe('point');
+    expect(snapPoint(sk, [12.5, 0], { tol: 1, pointFactor: 2.8 })).toMatchObject({ kind: 'point', p: [10, 0] });
+  });
+});

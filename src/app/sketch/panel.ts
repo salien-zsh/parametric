@@ -146,9 +146,17 @@ export class SketchPanel extends PropertyPanel {
     if (lost) out.push(h('div', { class: 'pm-msg error' }, tr('{0} projected entities (red) lost their model edge and stay where they were. Delete or unlink them, or project the edge again.', [lost])));
     // Fusion-style sketch palette: the plane grid can be shown and snapped to
     // while the sketch is edited.
+    // Point magnet strength: Fusion's snap feels stronger or softer per user.
+    const snap = h('select', { class: 'input', 'aria-label': tr("Point snap strength") }) as HTMLSelectElement;
+    for (const [value, label] of [['weak', tr("Weak")], ['normal', tr("Standard")], ['strong', tr("Strong")]] as const) {
+      snap.append(h('option', { value }, label));
+    }
+    snap.value = app.settings.snapStrength;
+    snap.addEventListener('change', () => app.changeSettings({ snapStrength: snap.value as 'weak' | 'normal' | 'strong' }));
     out.push(section(tr("Grid"), [
       checkbox(tr("Show grid"), app.settings.showGrid, (v) => app.changeSettings({ showGrid: v })),
       checkbox(tr("Snap to grid"), app.settings.snapToGrid, (v) => app.changeSettings({ snapToGrid: v })),
+      h('div', { class: 'row' }, h('span', { class: 'field-label grow' }, tr("Point snap strength")), h('div', { class: 'grow' }, snap)),
     ]));
     return out;
   }

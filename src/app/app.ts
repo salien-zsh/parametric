@@ -581,11 +581,12 @@ export class App {
     const quality = this.settings.quality;
     const grid = this.settings.showGrid;
     const snapGrid = this.settings.snapToGrid;
+    const snapStrength = this.settings.snapStrength;
     this.settings = normalizeSettings(s, this.settings);
     if (quality !== this.settings.quality) this.requestRebuild();
     // The sketch palette shows both grid switches: keep them in step when the
     // View menu changes them.
-    if (this.sketchEditor && (grid !== this.settings.showGrid || snapGrid !== this.settings.snapToGrid)) this.refreshSketchPanel();
+    if (this.sketchEditor && (grid !== this.settings.showGrid || snapGrid !== this.settings.snapToGrid || snapStrength !== this.settings.snapStrength)) this.refreshSketchPanel();
     const v = this.viewport;
     v.showPlanes = this.settings.showPlanes;
     v.showOrigin = this.settings.showOrigin;
