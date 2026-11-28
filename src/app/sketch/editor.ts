@@ -1031,10 +1031,12 @@ export class SketchEditor implements ViewportTool {
     for (const e of sk.entities) {
       if (e.t !== 'point') continue;
       const isSel = selected.has(e.id), isHov = hoverId === e.id;
-      const c = this.colorFor(e, isSel, isHov, conflicted, external);
+      const standalone = !used.has(e.id);
+      // Free sketch points get the accent colour so they read apart from line ends.
+      const base = this.colorFor(e, isSel, isHov, conflicted, external);
+      const c = standalone && !isSel && !isHov ? this.app.colors.sketchSelected : base;
       ppos.push(...toWorld(fr, [e.x, e.y]));
       pcol.push(c[0] * 255, c[1] * 255, c[2] * 255, 255);
-      const standalone = !used.has(e.id);
       psz.push(standalone ? 11 : centers.has(e.id) ? 8 : isSel || isHov ? 9 : 6, standalone ? 1 : centers.has(e.id) ? 2 : 0);
     }
     const oSel = this.app.selection.has({ kind: 'sk', id: ORIGIN_ID }) || hoverId === ORIGIN_ID;

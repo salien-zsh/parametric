@@ -1,3 +1,4 @@
+- **Sketch point colours**: free sketch points draw as larger accent discs, while line end points and circle centres keep their entity colour, so hole positions stand out at a glance.
 - **Project options show detail**: each dropdown entry carries the part count and last-modified date, with the project folder (or Browser project) as its tooltip.
 - **Snap strength setting**: the sketch palette Grid section chooses the point magnet (weak 1.2x, standard 1.8x, strong 2.8x); other snap types keep their thresholds.
 - **Project dropdown**: the home sidebar lists every local project in one dropdown; choosing one makes it the current project and opens it. Sketch points draw larger (standalone discs 11 px) and snap from 1.8x the curve tolerance.
